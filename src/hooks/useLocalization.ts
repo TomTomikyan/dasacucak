@@ -1,7 +1,7 @@
 import { armenianTranslations } from '../locales/armenian';
 
 export const useLocalization = () => {
-  const t = (key: string, params?: Record<string, string | number>): string => {
+  const t = (key: string, params?: Record<string, string | number>): any => {
     const keys = key.split('.');
     let value: any = armenianTranslations;
     
@@ -14,9 +14,9 @@ export const useLocalization = () => {
       }
     }
     
+    // If the value is not a string (e.g., array, object), return it as-is
     if (typeof value !== 'string') {
-      console.warn(`Translation value is not a string: ${key}`);
-      return key;
+      return value;
     }
     
     // Replace parameters in the string
