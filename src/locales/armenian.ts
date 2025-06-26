@@ -52,7 +52,23 @@ export const armenianTranslations = {
     available: 'Հասանելի',
     assigned: 'Նշանակված',
     total: 'Ընդամենը',
-    required: 'Պարտադիր'
+    required: 'Պարտադիր',
+    optional: 'Ընտրովի',
+    firstName: 'Անուն',
+    lastName: 'Ազգանուն',
+    email: 'Էլ. փոստ',
+    phone: 'Հեռախոս',
+    address: 'Հասցե',
+    notes: 'Նշումներ',
+    description: 'Նկարագրություն',
+    status: 'Կարգավիճակ',
+    active: 'Ակտիվ',
+    inactive: 'Ոչ ակտիվ',
+    enabled: 'Միացված',
+    disabled: 'Անջատված',
+    created: 'Ստեղծված',
+    updated: 'Թարմացված',
+    deleted: 'Ջնջված'
   },
 
   // Setup
@@ -131,7 +147,7 @@ export const armenianTranslations = {
     autoAssignment: 'Ավտոմատ Ուսուցիչների Նշանակում',
     autoAssignmentDesc: 'Ուսուցիչները ավտոմատ նշանակվում են առարկաներին՝ հիմնվելով իրենց դասավանդող առարկաների վրա։ Երբ դուք ավելացնում կամ խմբագրում եք առարկա, այն ուսուցիչները, ովքեր կարող են դասավանդել այն, ավտոմատ կնշանակվեն։',
     autoAssignmentPreview: 'Ավտոմատ Նշանակման Նախադիտում',
-    autoAssignedTeachers: 'Հետևյալ ուսուցիչները ավտомат կնշանակվեն այս առարկային՝',
+    autoAssignedTeachers: 'Հետևյալ ուսուցիչները ավտոմատ կնշանակվեն այս առարկային՝',
     noTeachersForSubject: 'Ներկայումս ոչ մի ուսուցիչ չի դասավանդում "{subject}"։ Դուք կարող եք նշանակել ուսուցիչներ այս առարկային Ուսուցիչներ բաժնում։',
     manualAssignment: 'Ձեռքով Նշանակել Ուսուցիչներ (Ընտրովի)',
     manualAssignmentNote: 'Նշում՝ Ուսուցիչները ավտոմատ նշանակվում են՝ հիմնվելով իրենց դասավանդող առարկաների վրա։ Ձեռքով նշանակումը փոխարինում է ավտոմատ նշանակումը։',
@@ -140,7 +156,12 @@ export const armenianTranslations = {
     noSubjectsDesc: 'Սկսեք ձեր առաջին առարկան ավելացնելով։',
     autoAssigned: 'Ավտո-նշանակված',
     noTeachersAssigned: 'Ուսուցիչներ չեն նշանակված',
-    groups: 'խմբեր'
+    groups: 'խմբեր',
+    subjectDetails: 'Առարկայի Մանրամասներ',
+    courseLevel: 'Կուրսի Մակարդակ',
+    specializationRequired: 'Պահանջվող Մասնագիտացում',
+    noSpecializationRequired: 'Մասնագիտացում չի պահանջվում',
+    allSpecializations: 'Բոլոր մասնագիտացումները'
   },
 
   // Classrooms
@@ -168,7 +189,18 @@ export const armenianTranslations = {
     noAvailableRooms: 'Հասանելի տեսական դասարաններ չկան',
     noAvailableRoomsDesc: 'Բոլոր տեսական դասարանները արդեն նշանակված են կամ հասանելի դասարաններ չկան։ Ավելացրեք ավելի շատ դասարաններ Դասարաններ բաժնում։',
     computers: 'Համակարգիչներ',
-    noComputers: 'Համակարգիչներ չկան'
+    noComputers: 'Համակարգիչներ չկան',
+    bulkGenerate: 'Զանգվածային Ստեղծում',
+    generateClassrooms: 'Ստեղծել Դասարաններ',
+    floors: 'Հարկեր',
+    roomsPerFloor: 'Սենյակներ հարկի վրա',
+    generateRooms: 'Ստեղծել Սենյակներ',
+    classroomDetails: 'Դասարանի Մանրամասներ',
+    equipment: 'Սարքավորումներ',
+    assignedTeacher: 'Նշանակված Ուսուցիչ',
+    noAssignedTeacher: 'Նշանակված ուսուցիչ չկա',
+    roomCapacity: 'Սենյակի Տարողություն',
+    floorLevel: 'Հարկի Մակարդակ'
   },
 
   // Groups
@@ -193,7 +225,19 @@ export const armenianTranslations = {
     noGroupsDesc: 'Սկսեք ձեր առաջին խումբը ավելացնելով։',
     noAssignedRoom: 'Նշանակված սենյակ չկա',
     editSubjects: 'Խմբագրել առարկաները',
-    lessonsCount: 'դասեր'
+    lessonsCount: 'դասեր',
+    bulkGenerate: 'Զանգվածային Ստեղծում',
+    generateGroups: 'Ստեղծել Խմբեր',
+    entryYears: 'Մուտքի Տարիներ',
+    selectYears: 'Ընտրեք տարիները',
+    selectSpecializations: 'Ընտրեք մասնագիտացումները',
+    generateCollegeGroups: 'Ստեղծել Քոլեջի Խմբեր',
+    groupDetails: 'Խմբի Մանրամասներ',
+    courseYear: 'Կուրսի Տարի',
+    groupType: 'Խմբի Տեսակ',
+    collegeGroup: 'Քոլեջի Խումբ',
+    academicYear: 'Ակադեմիական Տարի',
+    currentCourse: 'Ներկայիս Կուրս'
   },
 
   // Teachers
@@ -227,7 +271,18 @@ export const armenianTranslations = {
     noGroupsAvailable: 'Հասանելի Խմբեր Չկան',
     noGroupsAvailableDesc: 'Նախ պետք է ստեղծել խմբեր՝ ուսուցիչներ ավելացնելուց առաջ։ Գնացեք Խմբեր բաժին՝ խմբեր ավելացնելու համար։',
     noGroupsAssigned: '⚠ Խմբեր չեն նշանակված',
-    days: 'օր'
+    days: 'օր',
+    teacherDetails: 'Ուսուցչի Մանրամասներ',
+    personalInfo: 'Անձնական Տեղեկություններ',
+    workSchedule: 'Աշխատանքային Ժամանակացույց',
+    qualifications: 'Որակավորումներ',
+    experience: 'Փորձ',
+    contactInfo: 'Կապի Տեղեկություններ',
+    fullName: 'Լրիվ Անուն',
+    position: 'Պաշտոն',
+    department: 'Ամբիոն',
+    hireDate: 'Աշխատանքի Ընդունման Ամսաթիվ',
+    workload: 'Աշխատանքային Բեռ'
   },
 
   // Schedule
@@ -289,7 +344,19 @@ export const armenianTranslations = {
     exportSuccessTitle: 'Արտահանումը Հաջողվեց',
     exportSuccessDesc: 'Ժամանակացույցը հաջողությամբ արտահանվեց! Ֆայլ՝ {filename} {eventsCount} իրադարձություններով։ Դուք կարող եք ներմուծել այս ֆայլը Google Calendar, Outlook կամ ցանկացած այլ օրացույցային հավելված։',
     noScheduleToExport: 'Ժամանակացույց Չկա',
-    noScheduleToExportDesc: 'Արտահանելու համար ժամանակացույց չկա։ Խնդրում ենք նախ ստեղծել ժամանակացույց։'
+    noScheduleToExportDesc: 'Արտահանելու համար ժամանակացույց չկա։ Խնդրում ենք նախ ստեղծել ժամանակացույց։',
+    
+    // Schedule View
+    weekView: 'Շաբաթային Տեսք',
+    dayView: 'Օրական Տեսք',
+    monthView: 'Ամսական Տեսք',
+    printSchedule: 'Տպել Ժամանակացույցը',
+    scheduleSettings: 'Ժամանակացույցի Կարգավորումներ',
+    showTeacherNames: 'Ցույց տալ ուսուցիչների անունները',
+    showRoomNumbers: 'Ցույց տալ սենյակների համարները',
+    showSubjectTypes: 'Ցույց տալ առարկաների տեսակները',
+    compactView: 'Կոմպակտ տեսք',
+    detailedView: 'Մանրամասն տեսք'
   },
 
   // Overview
@@ -304,7 +371,48 @@ export const armenianTranslations = {
     stats: 'Վիճակագրություն',
     institutionInfo: 'Հաստատության Տեղեկություններ',
     scheduleInfo: 'Ժամանակացույցի Տեղեկություններ',
-    dataManagement: 'Տվյալների Կառավարում'
+    dataManagement: 'Տվյալների Կառավարում',
+    summary: 'Ամփոփում',
+    totalGroups: 'Ընդհանուր Խմբեր',
+    totalSubjects: 'Ընդհանուր Առարկաներ',
+    totalTeachers: 'Ընդհանուր Ուսուցիչներ',
+    totalClassrooms: 'Ընդհանուր Դասարաններ',
+    totalLessons: 'Ընդհանուր Դասեր',
+    scheduledLessons: 'Ծրագրված Դասեր',
+    unscheduledLessons: 'Չծրագրված Դասեր',
+    scheduleCompleteness: 'Ժամանակացույցի Ամբողջականություն',
+    institutionSettings: 'Հաստատության Կարգավորումներ',
+    workingDaysCount: 'Աշխատանքային Օրեր',
+    lessonsPerDay: 'Դասեր Օրական',
+    lessonDuration: 'Դասի Տևողություն',
+    academicWeeks: 'Ակադեմիական Շաբաթներ',
+    specializations: 'Մասնագիտացումներ',
+    dataStatistics: 'Տվյալների Վիճակագրություն',
+    theorySubjects: 'Տեսական Առարկաներ',
+    labSubjects: 'Լաբորատոր Առարկաներ',
+    theoryClassrooms: 'Տեսական Դասարաններ',
+    laboratories: 'Լաբորատորիաներ',
+    teacherLabs: 'Ուսուցիչների Լաբորատորիաներ',
+    averageStudentsPerGroup: 'Միջին Ուսանողներ Խմբում',
+    averageSubjectsPerGroup: 'Միջին Առարկաներ Խմբում',
+    averageGroupsPerTeacher: 'Միջին Խմբեր Ուսուցչի Համար',
+    systemHealth: 'Համակարգի Առողջություն',
+    configurationStatus: 'Կարգավորման Կարգավիճակ',
+    complete: 'Ամբողջական',
+    incomplete: 'Անամբողջական',
+    warnings: 'Զգուշացումներ',
+    recommendations: 'Առաջարկություններ',
+    noWarnings: 'Զգուշացումներ չկան',
+    noRecommendations: 'Առաջարկություններ չկան',
+    exportData: 'Արտահանել Տվյալները',
+    importData: 'Ներմուծել Տվյալները',
+    backupData: 'Պահուստավորել Տվյալները',
+    restoreData: 'Վերականգնել Տվյալները',
+    clearAllData: 'Մաքրել Բոլոր Տվյալները',
+    lastModified: 'Վերջին Փոփոխություն',
+    createdDate: 'Ստեղծման Ամսաթիվ',
+    version: 'Տարբերակ',
+    buildInfo: 'Կառուցման Տեղեկություններ'
   },
 
   // Toast Messages
@@ -324,6 +432,30 @@ export const armenianTranslations = {
     generationSuccessfulDesc: 'Ժամանակացույցը հաջողությամբ ստեղծվեց {count} դասերով!',
     regenerationSuccessful: 'Վերաստեղծումը Հաջողվեց',
     regenerationSuccessfulDesc: 'Ժամանակացույցը հաջողությամբ վերաստեղծվեց {count} դասերով!',
+    subjectAdded: 'Առարկան Ավելացվեց',
+    subjectAddedDesc: '"{name}" առարկան հաջողությամբ ավելացվեց!',
+    subjectUpdated: 'Առարկան Թարմացվեց',
+    subjectUpdatedDesc: '"{name}" առարկան հաջողությամբ թարմացվեց!',
+    subjectDeleted: 'Առարկան Ջնջվեց',
+    subjectDeletedDesc: '"{name}" առարկան հաջողությամբ ջնջվեց!',
+    classroomAdded: 'Դասարանը Ավելացվեց',
+    classroomAddedDesc: 'Սենյակ {number} հաջողությամբ ավելացվեց!',
+    classroomUpdated: 'Դասարանը Թարմացվեց',
+    classroomUpdatedDesc: 'Սենյակ {number} հաջողությամբ թարմացվեց!',
+    classroomDeleted: 'Դասարանը Ջնջվեց',
+    classroomDeletedDesc: 'Սենյակ {number} հաջողությամբ ջնջվեց!',
+    groupAdded: 'Խումբը Ավելացվեց',
+    groupAddedDesc: '"{name}" խումբը հաջողությամբ ավելացվեց!',
+    groupUpdated: 'Խումբը Թարմացվեց',
+    groupUpdatedDesc: '"{name}" խումբը հաջողությամբ թարմացվեց!',
+    groupDeleted: 'Խումբը Ջնջվեց',
+    groupDeletedDesc: '"{name}" խումբը հաջողությամբ ջնջվեց!',
+    teacherAdded: 'Ուսուցիչը Ավելացվեց',
+    teacherAddedDesc: '{name} ուսուցիչը հաջողությամբ ավելացվեց!',
+    teacherUpdated: 'Ուսուցիչը Թարմացվեց',
+    teacherUpdatedDesc: '{name} ուսուցիչը հաջողությամբ թարմացվեց!',
+    teacherDeleted: 'Ուսուցիչը Ջնջվեց',
+    teacherDeletedDesc: '{name} ուսուցիչը հաջողությամբ ջնջվեց!',
 
     // Error messages
     exportFailed: 'Արտահանումը Ձախողվեց',
@@ -336,14 +468,34 @@ export const armenianTranslations = {
     regenerationFailed: 'Վերաստեղծումը Ձախողվեց',
     generationError: 'Ստեղծման Սխալ',
     generationErrorDesc: 'Ժամանակացույցի ստեղծման ժամանակ անսպասելի սխալ տեղի ունեցավ։',
+    saveFailed: 'Պահպանումը Ձախողվեց',
+    saveFailedDesc: 'Տվյալների պահպանումը ձախողվեց։ Խնդրում ենք կրկին փորձել։',
+    deleteFailed: 'Ջնջումը Ձախողվեց',
+    deleteFailedDesc: 'Տվյալների ջնջումը ձախողվեց։ Խնդրում ենք կրկին փորձել։',
+    updateFailed: 'Թարմացումը Ձախողվեց',
+    updateFailedDesc: 'Տվյալների թարմացումը ձախողվեց։ Խնդրում ենք կրկին փորձել։',
+    validationError: 'Վավերացման Սխալ',
+    validationErrorDesc: 'Խնդրում ենք ստուգել մուտքագրված տվյալները և կրկին փորձել։',
 
     // Info messages
     specializationRemoved: 'Մասնագիտացումը Հեռացվեց',
     specializationRemovedDesc: '"{name}"-ը հեռացվեց։',
+    autoAssignmentComplete: 'Ավտոմատ Նշանակումը Ավարտվեց',
+    autoAssignmentCompleteDesc: 'Ուսուցիչները ավտոմատ նշանակվեցին առարկաներին։',
+    dataLoaded: 'Տվյալները Բեռնվեցին',
+    dataLoadedDesc: 'Բոլոր տվյալները հաջողությամբ բեռնվեցին։',
 
     // Warning messages
     noScheduleWarning: 'Ժամանակացույց Չկա',
-    noScheduleWarningDesc: 'Արտահանելու համար ժամանակացույց չկա։ Խնդրում ենք նախ ստեղծել ժամանակացույց։'
+    noScheduleWarningDesc: 'Արտահանելու համար ժամանակացույց չկա։ Խնդրում ենք նախ ստեղծել ժամանակացույց։',
+    incompleteConfiguration: 'Անամբողջական Կարգավորում',
+    incompleteConfigurationDesc: 'Որոշ կարգավորումներ բացակայում են։ Խնդրում ենք ամբողջացնել կարգավորումը։',
+    noTeachersAssigned: 'Ուսուցիչներ Չեն Նշանակված',
+    noTeachersAssignedDesc: 'Որոշ առարկաների համար ուսուցիչներ չեն նշանակված։',
+    noSubjectsAssigned: 'Առարկաներ Չեն Նշանակված',
+    noSubjectsAssignedDesc: 'Որոշ խմբերի համար առարկաներ չեն նշանակված։',
+    conflictsDetected: 'Բախումներ Հայտնաբերվեցին',
+    conflictsDetectedDesc: 'Ժամանակացույցում բախումներ են հայտնաբերվել։'
   },
 
   // Undo functionality
@@ -370,6 +522,27 @@ export const armenianTranslations = {
     maxLength: 'Առավելագույնը {max} նիշ',
     invalidNumber: 'Անվավեր թիվ',
     roomNumberExists: 'Սենյակի համարն արդեն գոյություն ունի',
-    selectAtLeastOne: 'Ընտրեք առնվազն մեկը'
+    selectAtLeastOne: 'Ընտրեք առնվազն մեկը',
+    invalidTimeFormat: 'Անվավեր ժամանակի ֆորմատ',
+    invalidDateFormat: 'Անվավեր ամսաթվի ֆորմատ',
+    duplicateName: 'Այս անունն արդեն գոյություն ունի',
+    invalidRange: 'Անվավեր տիրույթ',
+    tooManyItems: 'Չափազանց շատ տարրեր',
+    tooFewItems: 'Չափազանց քիչ տարրեր'
+  },
+
+  // Error messages
+  errors: {
+    networkError: 'Ցանցային Սխալ',
+    serverError: 'Սերվերի Սխալ',
+    notFound: 'Չի Գտնվել',
+    unauthorized: 'Չարտոնված',
+    forbidden: 'Արգելված',
+    timeout: 'Ժամանակի Սպառում',
+    unknownError: 'Անհայտ Սխալ',
+    fileNotFound: 'Ֆայլը Չի Գտնվել',
+    invalidFile: 'Անվավեր Ֆայլ',
+    fileTooLarge: 'Ֆայլը Չափազանց Մեծ Է',
+    unsupportedFormat: 'Չապահովված Ֆորմատ'
   }
 };
