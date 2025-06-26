@@ -97,46 +97,63 @@ export const useScheduleData = () => {
     saveToStorage(STORAGE_KEYS.SCHEDULE, schedule);
   }, [schedule]);
 
-  // Auto-assign teachers to subjects when teachers change
-  useEffect(() => {
-    if (teachers.length > 0 && subjects.length > 0) {
-      const updatedSubjects = subjects.map(subject => {
-        // Find teachers who teach this subject
-        const matchingTeachers = teachers.filter(teacher => 
-          teacher.subjects.includes(subject.name)
-        );
-        
-        // Get current teacher IDs for this subject
-        const currentTeacherIds = subject.teacherIds || [];
-        
-        // Get IDs of matching teachers
-        const matchingTeacherIds = matchingTeachers.map(teacher => teacher.id);
-        
-        // Only update if there are changes
-        const shouldUpdate = 
-          matchingTeacherIds.length !== currentTeacherIds.length ||
-          !matchingTeacherIds.every(id => currentTeacherIds.includes(id));
-        
-        if (shouldUpdate) {
-          return {
-            ...subject,
-            teacherIds: matchingTeacherIds
-          };
-        }
-        
-        return subject;
-      });
-      
-      // Check if any subjects were actually updated
-      const hasChanges = updatedSubjects.some((subject, index) => 
-        JSON.stringify(subject.teacherIds) !== JSON.stringify(subjects[index].teacherIds)
+  // 🔥 ИСПРАВЛЕННАЯ ЛОГИКА: Автоматическое назначение учителей к предметам
+  const autoAssignTeachersToSubjects = useCallback(() => {
+    if (teachers.length === 0 || subjects.length === 0) return;
+
+    let hasChanges = false;
+    const updatedSubjects = subjects.map(subject => {
+      // Найти учителей, которые преподают этот предмет
+      const matchingTeachers = teachers.filter(teacher => 
+        teacher.subjects.includes(subject.name)
       );
       
-      if (hasChanges) {
-        setSubjects(updatedSubjects);
+      // Получить текущие ID учителей для этого предмета
+      const currentTeacherIds = subject.teacherIds || [];
+      
+      // Получить ID подходящих учителей
+      const matchingTeacherIds = matchingTeachers.map(teacher => teacher.id);
+      
+      // Проверить, нужно ли обновление
+      const shouldUpdate = 
+        matchingTeacherIds.length !== currentTeacherIds.length ||
+        !matchingTeacherIds.every(id => currentTeacherIds.includes(id)) ||
+        !currentTeacherIds.every(id => teachers.some(t => t.id === id)); // 🔥 НОВАЯ ПРОВЕРКА: убедиться, что все назначенные учителя еще существуют
+      
+      if (shouldUpdate) {
+        hasChanges = true;
+        return {
+          ...subject,
+          teacherIds: matchingTeacherIds
+        };
+      }
+      
+      return subject;
+    });
+    
+    if (hasChanges) {
+      setSubjects(updatedSubjects);
+      console.log('🔄 Auto-assigned teachers to subjects');
+    }
+  }, [teachers, subjects]);
+
+  // 🔥 НОВЫЙ ЭФФЕКТ: Запускать автоназначение при изменении учителей ИЛИ предметов
+  useEffect(() => {
+    autoAssignTeachersToSubjects();
+  }, [autoAssignTeachersToSubjects]);
+
+  // 🔥 ДОПОЛНИТЕЛЬНАЯ ОЧИСТКА: Удалить несуществующих учителей из расписания
+  useEffect(() => {
+    if (schedule.length > 0 && teachers.length > 0) {
+      const existingTeacherIds = new Set(teachers.map(t => t.id));
+      const cleanedSchedule = schedule.filter(slot => existingTeacherIds.has(slot.teacherId));
+      
+      if (cleanedSchedule.length !== schedule.length) {
+        console.log(`🧹 Cleaned ${schedule.length - cleanedSchedule.length} schedule slots with non-existent teachers`);
+        setSchedule(cleanedSchedule);
       }
     }
-  }, [teachers]); // Only depend on teachers, not subjects to avoid infinite loop
+  }, [teachers, schedule]);
 
   const updateInstitution = useCallback((updates: Partial<Institution>) => {
     setInstitution(prev => {
@@ -175,7 +192,7 @@ export const useScheduleData = () => {
       id: Date.now().toString(),
     };
     
-    // Auto-assign teachers who teach this subject
+    // 🔥 ИСПРАВЛЕНО: Автоназначение учителей при создании предмета
     const matchingTeachers = teachers.filter(teacher => 
       teacher.subjects.includes(subject.name)
     );
@@ -198,6 +215,7 @@ export const useScheduleData = () => {
       id: Date.now().toString(),
     };
     setTeachers(prev => [...prev, newTeacher]);
+    // 🔥 Автоназначение произойдет автоматически через useEffect
   }, []);
 
   const generateClassrooms = useCallback((floors: number, roomsPerFloor: number) => {
