@@ -81,6 +81,17 @@ const Teachers: React.FC<TeachersProps> = ({
     return t(`courses.${courseNumber}`);
   };
 
+  // 🔥 NEW: Function to get current subject names based on teacher's subject list
+  // This ensures that if a subject name changes, it's reflected in the teacher's display
+  const getTeacherSubjectNames = (teacherSubjects: string[]) => {
+    return teacherSubjects.map(subjectName => {
+      // Try to find the subject by name in the current subjects list
+      const currentSubject = subjects.find(s => s.name === subjectName);
+      // If found, return the current name; otherwise, return the stored name
+      return currentSubject ? currentSubject.name : subjectName;
+    });
+  };
+
   const startEditing = (teacher: Teacher) => {
     setEditingTeacher(teacher);
     setShowValidationError(false);
@@ -515,6 +526,9 @@ const Teachers: React.FC<TeachersProps> = ({
               <tbody className="bg-white divide-y divide-gray-200">
                 {teachers.map((teacher) => {
                   const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
+                  // 🔥 FIXED: Use the function to get current subject names
+                  const currentSubjectNames = getTeacherSubjectNames(teacher.subjects);
+                  
                   return (
                     <tr key={teacher.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -533,14 +547,15 @@ const Teachers: React.FC<TeachersProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">
-                          {teacher.subjects.slice(0, 2).map(subject => (
-                            <span key={subject} className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
-                              {subject}
+                          {/* 🔥 FIXED: Display current subject names instead of stored names */}
+                          {currentSubjectNames.slice(0, 2).map((subjectName, index) => (
+                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+                              {subjectName}
                             </span>
                           ))}
-                          {teacher.subjects.length > 2 && (
+                          {currentSubjectNames.length > 2 && (
                             <span className="text-xs text-gray-500">
-                              +{teacher.subjects.length - 2} {t('common.more')}
+                              +{currentSubjectNames.length - 2} {t('common.more')}
                             </span>
                           )}
                         </div>
