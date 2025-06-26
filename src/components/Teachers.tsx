@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, GraduationCap, Mail, Trash2, Clock, BookOpen, MapPin, Edit, Save, X, Users } from 'lucide-react';
+import { Plus, GraduationCap, Trash2, Clock, BookOpen, MapPin, Edit, Save, X, Users } from 'lucide-react';
 import { Teacher, Subject, Classroom, ClassGroup, Institution } from '../types';
+import { useLocalization } from '../hooks/useLocalization';
 
 interface TeachersProps {
   teachers: Teacher[];
@@ -10,6 +11,12 @@ interface TeachersProps {
   classrooms: Classroom[];
   classGroups: ClassGroup[];
   institution: Institution;
+  showToast: {
+    showSuccess: (title: string, message: string, duration?: number) => void;
+    showError: (title: string, message: string, duration?: number) => void;
+    showWarning: (title: string, message: string, duration?: number) => void;
+    showInfo: (title: string, message: string, duration?: number) => void;
+  };
 }
 
 const Teachers: React.FC<TeachersProps> = ({
@@ -20,7 +27,9 @@ const Teachers: React.FC<TeachersProps> = ({
   classrooms,
   classGroups,
   institution,
+  showToast,
 }) => {
+  const { t } = useLocalization();
   const [showForm, setShowForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [showValidationError, setShowValidationError] = useState(false);
@@ -60,24 +69,16 @@ const Teachers: React.FC<TeachersProps> = ({
 
   const getClassroomName = (classroomId: string) => {
     const classroom = classrooms.find(c => c.id === classroomId);
-    return classroom ? `${classroom.number} (Floor ${classroom.floor})` : 'Unknown';
+    return classroom ? `${classroom.number} (${t('common.floor')} ${classroom.floor})` : t('common.unknown');
   };
 
   const getGroupName = (groupId: string) => {
     const group = classGroups.find(g => g.id === groupId);
-    return group ? group.name : 'Unknown';
+    return group ? group.name : t('common.unknown');
   };
 
   const getCourseText = (courseNumber: number) => {
-    const courseNames = {
-      1: '1st Course',
-      2: '2nd Course', 
-      3: '3rd Course',
-      4: '4th Course',
-      5: '5th Course',
-      6: '6th Course'
-    };
-    return courseNames[courseNumber as keyof typeof courseNames] || `${courseNumber} Course`;
+    return t(`courses.${courseNumber}`);
   };
 
   const startEditing = (teacher: Teacher) => {
@@ -126,6 +127,7 @@ const Teachers: React.FC<TeachersProps> = ({
     // Validate required fields
     if (formData.assignedClassGroups.length === 0) {
       setShowValidationError(true);
+      showToast.showError(t('validation.required'), t('teachers.selectGroupsRequired'));
       return;
     }
     
@@ -148,12 +150,20 @@ const Teachers: React.FC<TeachersProps> = ({
       );
       setTeachers(updatedTeachers);
       setEditingTeacher(null);
+      showToast.showSuccess(
+        t('toast.teacherUpdated'), 
+        t('toast.teacherUpdatedDesc', { name: `${formData.firstName} ${formData.lastName}` })
+      );
     } else {
       // Create new teacher
       addTeacher({
         ...formData,
         homeClassroom: formData.homeClassroom || undefined,
       });
+      showToast.showSuccess(
+        t('toast.teacherAdded'), 
+        t('toast.teacherAddedDesc', { name: `${formData.firstName} ${formData.lastName}` })
+      );
     }
     
     setFormData({
@@ -168,8 +178,13 @@ const Teachers: React.FC<TeachersProps> = ({
   };
 
   const deleteTeacher = (id: string) => {
-    if (confirm('Are you sure you want to delete this teacher?')) {
+    const teacher = teachers.find(t => t.id === id);
+    if (teacher && confirm(t('common.confirmDelete'))) {
       setTeachers(teachers.filter(teacher => teacher.id !== id));
+      showToast.showSuccess(
+        t('toast.teacherDeleted'), 
+        t('toast.teacherDeletedDesc', { name: `${teacher.firstName} ${teacher.lastName}` })
+      );
     }
   };
 
@@ -208,25 +223,20 @@ const Teachers: React.FC<TeachersProps> = ({
     });
   };
 
-  const getSubjectName = (subjectId: string) => {
-    const subject = subjects.find(s => s.id === subjectId);
-    return subject ? subject.name : subjectId;
-  };
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <GraduationCap className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Teachers</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('teachers.title')}</h2>
         </div>
         <button
           onClick={() => setShowForm(true)}
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Teacher
+          {t('teachers.addTeacher')}
         </button>
       </div>
 
@@ -237,7 +247,7 @@ const Teachers: React.FC<TeachersProps> = ({
             <form onSubmit={handleSubmit} className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
+                  {editingTeacher ? t('teachers.editTeacher') : t('teachers.addNewTeacher')}
                 </h3>
                 <button
                   type="button"
@@ -252,26 +262,26 @@ const Teachers: React.FC<TeachersProps> = ({
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('teachers.firstName')}</label>
                     <input
                       type="text"
                       required
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Jane"
+                      placeholder={t('teachers.firstNamePlaceholder')}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('teachers.lastName')}</label>
                     <input
                       type="text"
                       required
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Smith"
+                      placeholder={t('teachers.lastNamePlaceholder')}
                     />
                   </div>
                 </div>
@@ -280,7 +290,7 @@ const Teachers: React.FC<TeachersProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="inline h-4 w-4 mr-1" />
-                    Teacher's Own Classroom/Office (Optional)
+                    {t('teachers.ownClassroom')}
                   </label>
                   {getAvailableClassrooms(editingTeacher?.id).length > 0 ? (
                     <select
@@ -288,25 +298,25 @@ const Teachers: React.FC<TeachersProps> = ({
                       onChange={(e) => setFormData({ ...formData, homeClassroom: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">No assigned classroom</option>
+                      <option value="">{t('groups.noAssignedClassroom')}</option>
                       {getAvailableClassrooms(editingTeacher?.id).map((classroom) => (
                         <option key={classroom.id} value={classroom.id}>
-                          {classroom.number} - Floor {classroom.floor} (Teacher Lab, Capacity: {classroom.capacity})
+                          {classroom.number} - {t('common.floor')} {classroom.floor} ({t('classrooms.teacherLab')}, {t('common.capacity')}: {classroom.capacity})
                         </option>
                       ))}
                     </select>
                   ) : (
                     <div>
                       <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                        No available teacher labs for assignment
+                        {t('teachers.noAvailableTeacherLabs')}
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        All teacher labs are already assigned or no teacher labs available. Add more teacher labs in the Classrooms section.
+                        {t('teachers.noAvailableTeacherLabsDesc')}
                       </p>
                     </div>
                   )}
                   <p className="mt-1 text-xs text-gray-500">
-                    This will be the teacher's personal classroom/office where they can conduct consultations or have their own workspace. Only teacher labs are available for assignment.
+                    {t('teachers.ownClassroomDesc')}
                   </p>
                 </div>
 
@@ -315,7 +325,7 @@ const Teachers: React.FC<TeachersProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <BookOpen className="inline h-4 w-4 mr-1" />
-                      Teaching Subjects
+                      {t('teachers.teachingSubjects')}
                     </label>
                     <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-3">
                       <div className="grid grid-cols-2 gap-2">
@@ -340,7 +350,7 @@ const Teachers: React.FC<TeachersProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <Users className="inline h-4 w-4 mr-1" />
-                      Assigned Groups <span className="text-red-500">*</span>
+                      {t('teachers.assignedGroupsRequired')}
                     </label>
                     <div className={`max-h-40 overflow-y-auto border-2 rounded-md p-3 transition-colors ${
                       showValidationError && formData.assignedClassGroups.length === 0
@@ -360,7 +370,7 @@ const Teachers: React.FC<TeachersProps> = ({
                               <div className="ml-3">
                                 <span className="text-sm font-medium text-gray-900">{group.name}</span>
                                 <div className="text-xs text-gray-500">
-                                  {getCourseText(group.course || 1)} • {group.specialization || 'No specialization'} • {group.studentsCount} students
+                                  {getCourseText(group.course || 1)} • {group.specialization || t('groups.noSpecialization')} • {group.studentsCount} {t('common.students')}
                                 </div>
                               </div>
                             </div>
@@ -373,19 +383,19 @@ const Teachers: React.FC<TeachersProps> = ({
                     {showValidationError && formData.assignedClassGroups.length === 0 ? (
                       <div className="mt-2 p-3 bg-red-100 border border-red-300 rounded-md">
                         <p className="text-sm text-red-700 font-medium">
-                           Please select at least one group for this teacher.
+                          {t('teachers.selectGroupsRequired')}
                         </p>
                         <p className="text-xs text-red-600 mt-1">
-                          Teachers must be assigned to groups to generate schedules properly.
+                          {t('teachers.groupsRequiredDesc')}
                         </p>
                       </div>
                     ) : formData.assignedClassGroups.length > 0 ? (
                       <p className="mt-1 text-sm text-green-600">
-                        ✓ {formData.assignedClassGroups.length} group{formData.assignedClassGroups.length !== 1 ? 's' : ''} selected
+                        {t('teachers.groupsSelected', { count: formData.assignedClassGroups.length })}
                       </p>
                     ) : (
                       <p className="mt-1 text-sm text-gray-500">
-                        Select which groups this teacher will be teaching. This helps with schedule generation and organization.
+                        {t('teachers.selectGroupsDesc')}
                       </p>
                     )}
                   </div>
@@ -394,9 +404,9 @@ const Teachers: React.FC<TeachersProps> = ({
                     <div className="flex items-center">
                       <Users className="h-5 w-5 text-yellow-600 mr-2" />
                       <div>
-                        <h4 className="text-sm font-medium text-yellow-800">No Groups Available</h4>
+                        <h4 className="text-sm font-medium text-yellow-800">{t('teachers.noGroupsAvailable')}</h4>
                         <p className="text-sm text-yellow-700 mt-1">
-                          You need to create groups first before adding teachers. Go to the Groups section to add groups.
+                          {t('teachers.noGroupsAvailableDesc')}
                         </p>
                       </div>
                     </div>
@@ -407,12 +417,12 @@ const Teachers: React.FC<TeachersProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     <Clock className="inline h-4 w-4 mr-1" />
-                    Available Hours ({institution.lessonsPerDay} lessons per day)
+                    {t('teachers.availableHours', { lessonsPerDay: institution.lessonsPerDay })}
                   </label>
                   <div className="space-y-3">
                     {institution.workingDays.map((day) => (
                       <div key={day} className="flex items-center space-x-3">
-                        <div className="w-20 text-sm font-medium text-gray-700">{day}</div>
+                        <div className="w-20 text-sm font-medium text-gray-700">{t(`days.${day.toLowerCase()}`)}</div>
                         <div className="flex space-x-2">
                           {lessonHours.map((hour) => (
                             <label key={hour} className="flex items-center">
@@ -430,7 +440,10 @@ const Teachers: React.FC<TeachersProps> = ({
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-gray-500">
-                    Select the lesson hours when this teacher is available. Based on your institution settings: {institution.lessonsPerDay} lessons per day on {institution.workingDays.join(', ')}.
+                    {t('teachers.availableHoursDesc', { 
+                      lessonsPerDay: institution.lessonsPerDay, 
+                      workingDays: institution.workingDays.map(day => t(`days.${day.toLowerCase()}`)).join(', ')
+                    })}
                   </p>
                 </div>
               </div>
@@ -441,7 +454,7 @@ const Teachers: React.FC<TeachersProps> = ({
                   onClick={cancelEdit}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -451,10 +464,10 @@ const Teachers: React.FC<TeachersProps> = ({
                   {editingTeacher ? (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {t('common.save')}
                     </>
                   ) : (
-                    'Add Teacher'
+                    t('teachers.addTeacher')
                   )}
                 </button>
               </div>
@@ -468,8 +481,8 @@ const Teachers: React.FC<TeachersProps> = ({
         {teachers.length === 0 ? (
           <div className="p-8 text-center">
             <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No teachers yet</h3>
-            <p className="text-gray-500 mb-4">Start by adding your first teacher.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('teachers.noTeachers')}</h3>
+            <p className="text-gray-500 mb-4">{t('teachers.noTeachersDesc')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -477,25 +490,25 @@ const Teachers: React.FC<TeachersProps> = ({
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Teacher
+                    {t('common.teacher')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Subjects
+                    {t('subjects.title')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned Groups
+                    {t('teachers.assignedGroups')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Own Classroom
+                    {t('teachers.ownClassroom')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Available Days
+                    {t('teachers.availableDays')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Weekly Hours
+                    {t('teachers.weeklyHours')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -527,7 +540,7 @@ const Teachers: React.FC<TeachersProps> = ({
                           ))}
                           {teacher.subjects.length > 2 && (
                             <span className="text-xs text-gray-500">
-                              +{teacher.subjects.length - 2} more
+                              +{teacher.subjects.length - 2} {t('common.more')}
                             </span>
                           )}
                         </div>
@@ -541,11 +554,11 @@ const Teachers: React.FC<TeachersProps> = ({
                           ))}
                           {teacher.assignedClassGroups.length > 3 && (
                             <span className="text-xs text-gray-500">
-                              +{teacher.assignedClassGroups.length - 3} more
+                              +{teacher.assignedClassGroups.length - 3} {t('common.more')}
                             </span>
                           )}
                           {teacher.assignedClassGroups.length === 0 && (
-                            <span className="text-xs text-red-500 font-medium">⚠ No groups assigned</span>
+                            <span className="text-xs text-red-500 font-medium">{t('teachers.noGroupsAssigned')}</span>
                           )}
                         </div>
                       </td>
@@ -556,16 +569,16 @@ const Teachers: React.FC<TeachersProps> = ({
                             <span>{getClassroomName(teacher.homeClassroom)}</span>
                           </div>
                         ) : (
-                          <span className="text-gray-400 italic">No assigned room</span>
+                          <span className="text-gray-400 italic">{t('groups.noAssignedRoom')}</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {Object.keys(teacher.availableHours).filter(day => teacher.availableHours[day].length > 0).length} days
+                        {Object.keys(teacher.availableHours).filter(day => teacher.availableHours[day].length > 0).length} {t('teachers.days')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-900">
                           <Clock className="h-4 w-4 mr-1 text-gray-400" />
-                          {totalHours}h/week
+                          {totalHours}ժ/{t('common.week')}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -573,14 +586,14 @@ const Teachers: React.FC<TeachersProps> = ({
                           <button
                             onClick={() => startEditing(teacher)}
                             className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="Edit teacher"
+                            title={t('common.edit')}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteTeacher(teacher.id)}
                             className="text-red-600 hover:text-red-900 transition-colors"
-                            title="Delete teacher"
+                            title={t('common.delete')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>

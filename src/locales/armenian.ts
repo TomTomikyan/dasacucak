@@ -19,6 +19,7 @@ export const armenianTranslations = {
     cancel: 'Չեղարկել',
     close: 'Փակել',
     confirm: 'Հաստատել',
+    confirmDelete: 'Վստա՞հ եք, որ ցանկանում եք ջնջել:',
     yes: 'Այո',
     no: 'Ոչ',
     loading: 'Բեռնվում է...',
@@ -49,6 +50,7 @@ export const armenianTranslations = {
     subject: 'Առարկա',
     group: 'Խումբ',
     specialization: 'Մասնագիտացում',
+    specializations: 'Մասնագիտացումներ',
     available: 'Հասանելի',
     assigned: 'Նշանակված',
     total: 'Ընդամենը',
@@ -68,7 +70,11 @@ export const armenianTranslations = {
     disabled: 'Անջատված',
     created: 'Ստեղծված',
     updated: 'Թարմացված',
-    deleted: 'Ջնջված'
+    deleted: 'Ջնջված',
+    unknown: 'Անհայտ',
+    notSet: 'Չի սահմանված',
+    more: 'ավելին',
+    items: 'տարրեր'
   },
 
   // Setup
@@ -93,7 +99,7 @@ export const armenianTranslations = {
     saving: 'Պահպանվում է...',
     saved: 'Պահպանված է!',
     autoSaved: 'Կարգավորումները ավտոմատ պահպանվում են ձեր բրաուզերում',
-    noSpecializations: 'Դեռ մասնագիտացումներ չեն ավելացվել։ Ավելացրեք մասնագիտացումներ, որոնք կօգտագործվեն խմբեր ստեղծելիս։',
+    noSpecializations: 'Դեռ մասնագիտացումներ չեն ավելացվել։ Ավելացրեք մասնագիտացումներ,որոնք կօգտագործվեն խմբեր ստեղծելիս։',
     specializationsConfigured: 'մասնագիտացում կարգավորված',
     addSpecialization: 'Ավելացնել մասնագիտացում',
     removeSpecialization: 'Հեռացնել մասնագիտացումը',
@@ -237,7 +243,8 @@ export const armenianTranslations = {
     groupType: 'Խմբի Տեսակ',
     collegeGroup: 'Քոլեջի Խումբ',
     academicYear: 'Ակադեմիական Տարի',
-    currentCourse: 'Ներկայիս Կուրս'
+    currentCourse: 'Ներկայիս Կուրս',
+    noSpecialization: 'Մասնագիտացում չկա'
   },
 
   // Teachers

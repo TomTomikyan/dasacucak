@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Users, GraduationCap, Trash2, Edit, BookOpen, Clock, Save, X, MapPin } from 'lucide-react';
+import { Plus, Users, GraduationCap, Trash2, Edit, BookOpen, Clock, Save, X, MapPin, Building } from 'lucide-react';
 import { ClassGroup, Institution, Subject, Classroom } from '../types';
+import { useLocalization } from '../hooks/useLocalization';
 
 interface ClassGroupsProps {
   classGroups: ClassGroup[];
@@ -11,6 +12,12 @@ interface ClassGroupsProps {
   generateCollegeGroups: (years: number[], specializations: string[]) => void;
   subjects: Subject[];
   classrooms: Classroom[];
+  showToast: {
+    showSuccess: (title: string, message: string, duration?: number) => void;
+    showError: (title: string, message: string, duration?: number) => void;
+    showWarning: (title: string, message: string, duration?: number) => void;
+    showInfo: (title: string, message: string, duration?: number) => void;
+  };
 }
 
 const ClassGroups: React.FC<ClassGroupsProps> = ({
@@ -22,8 +29,11 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
   generateCollegeGroups,
   subjects,
   classrooms,
+  showToast,
 }) => {
+  const { t } = useLocalization();
   const [showForm, setShowForm] = useState(false);
+  const [showBulkForm, setShowBulkForm] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ClassGroup | null>(null);
   const [editingSubjects, setEditingSubjects] = useState<string | null>(null);
   const [tempSubjectHours, setTempSubjectHours] = useState<{ [subjectId: string]: number }>({});
@@ -36,17 +46,13 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
     subjectHours: {} as { [subjectId: string]: number },
     studentsCount: 25,
   });
+  const [bulkData, setBulkData] = useState({
+    years: [] as number[],
+    specializations: [] as string[],
+  });
 
   const getCourseText = (courseNumber: number) => {
-    const courseNames = {
-      1: '1st Course',
-      2: '2nd Course', 
-      3: '3rd Course',
-      4: '4th Course',
-      5: '5th Course',
-      6: '6th Course'
-    };
-    return courseNames[courseNumber as keyof typeof courseNames] || `${courseNumber} Course`;
+    return t(`courses.${courseNumber}`);
   };
 
   // Get available classrooms for assignment (theory classrooms not used by other groups)
@@ -63,7 +69,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
 
   const getClassroomName = (classroomId: string) => {
     const classroom = classrooms.find(c => c.id === classroomId);
-    return classroom ? `${classroom.number} (Floor ${classroom.floor})` : 'Unknown';
+    return classroom ? `${classroom.number} (${t('common.floor')} ${classroom.floor})` : t('common.unknown');
   };
 
   const startEditingGroup = (group: ClassGroup) => {
@@ -114,6 +120,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
       );
       setClassGroups(updatedGroups);
       setEditingGroup(null);
+      showToast.showSuccess(
+        t('toast.groupUpdated'), 
+        t('toast.groupUpdatedDesc', { name: formData.name })
+      );
     } else {
       // Create new group
       const newGroup: Omit<ClassGroup, 'id'> = {
@@ -127,6 +137,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
       };
       
       addClassGroup(newGroup);
+      showToast.showSuccess(
+        t('toast.groupAdded'), 
+        t('toast.groupAddedDesc', { name: formData.name })
+      );
     }
     
     setFormData({
@@ -141,8 +155,30 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
     setShowForm(false);
   };
 
+  const handleBulkGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (bulkData.years.length === 0 || bulkData.specializations.length === 0) {
+      showToast.showError(t('validation.selectAtLeastOne'), t('groups.selectYears'));
+      return;
+    }
+    
+    generateCollegeGroups(bulkData.years, bulkData.specializations);
+    setShowBulkForm(false);
+    showToast.showSuccess(
+      t('toast.generationSuccessful'), 
+      t('toast.generationSuccessfulDesc', { count: bulkData.years.length * bulkData.specializations.length * 3 })
+    );
+  };
+
   const deleteClassGroup = (id: string) => {
-    setClassGroups(classGroups.filter(group => group.id !== id));
+    const group = classGroups.find(g => g.id === id);
+    if (group && confirm(t('common.confirmDelete'))) {
+      setClassGroups(classGroups.filter(group => group.id !== id));
+      showToast.showSuccess(
+        t('toast.groupDeleted'), 
+        t('toast.groupDeletedDesc', { name: group.name })
+      );
+    }
   };
 
   const startEditingSubjects = (groupId: string) => {
@@ -158,6 +194,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
       updateClassGroupSubjects(editingSubjects, tempSubjectHours);
       setEditingSubjects(null);
       setTempSubjectHours({});
+      showToast.showSuccess(
+        t('toast.subjectUpdated'), 
+        t('subjects.assignSubjects')
+      );
     }
   };
 
@@ -200,7 +240,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
 
   const getSubjectName = (subjectId: string) => {
     const subject = subjects.find(s => s.id === subjectId);
-    return subject ? subject.name : 'Unknown Subject';
+    return subject ? subject.name : t('common.unknown');
   };
 
   const getTotalHours = (subjectHours: { [subjectId: string]: number }) => {
@@ -220,22 +260,141 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
     return subjects.filter(subject => subject.course === formData.course);
   };
 
+  const handleYearSelection = (year: number, checked: boolean) => {
+    setBulkData({
+      ...bulkData,
+      years: checked
+        ? [...bulkData.years, year]
+        : bulkData.years.filter(y => y !== year)
+    });
+  };
+
+  const handleSpecializationSelection = (spec: string, checked: boolean) => {
+    setBulkData({
+      ...bulkData,
+      specializations: checked
+        ? [...bulkData.specializations, spec]
+        : bulkData.specializations.filter(s => s !== spec)
+    });
+  };
+
+  const currentYear = new Date().getFullYear();
+  const availableYears = Array.from({ length: 6 }, (_, i) => currentYear - i);
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Users className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Groups</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('groups.title')}</h2>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Group
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowBulkForm(true)}
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Building className="h-4 w-4 mr-2" />
+            {t('groups.bulkGenerate')}
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {t('groups.addGroup')}
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Generation Form Modal */}
+      {showBulkForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleBulkGenerate} className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">{t('groups.generateCollegeGroups')}</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">{t('groups.entryYears')}</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {availableYears.map((year) => (
+                      <label key={year} className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bulkData.years.includes(year)}
+                          onChange={(e) => handleYearSelection(year, e.target.checked)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{year}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">{t('groups.selectSpecializations')}</label>
+                  {institution.specializations.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {institution.specializations.map((spec) => (
+                        <label key={spec} className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={bulkData.specializations.includes(spec)}
+                            onChange={(e) => handleSpecializationSelection(spec, e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">{spec}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-700">
+                        {t('setup.noSpecializations')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {bulkData.years.length > 0 && bulkData.specializations.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <p className="text-sm text-blue-700">
+                      {t('groups.generateGroups')}: {bulkData.years.length} {t('groups.entryYears')} × {bulkData.specializations.length} {t('common.specializations')} × 3 = {bulkData.years.length * bulkData.specializations.length * 3} {t('groups.title').toLowerCase()}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkForm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkData.years.length === 0 || bulkData.specializations.length === 0}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('common.generate')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Form Modal */}
       {showForm && (
@@ -244,7 +403,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
             <form onSubmit={handleSubmit} className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingGroup ? 'Edit Group' : 'Add New Group'}
+                  {editingGroup ? t('groups.editGroup') : t('groups.addNewGroup')}
                 </h3>
                 <button
                   type="button"
@@ -257,21 +416,21 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')}</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="216"
+                    placeholder={t('groups.groupNamePlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <GraduationCap className="inline h-4 w-4 mr-1" />
-                    Course
+                    {t('common.course')}
                   </label>
                   <input
                     type="number"
@@ -285,14 +444,14 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.specialization')}</label>
                   {institution.specializations.length > 0 ? (
                     <select
                       value={formData.specialization}
                       onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">Select specialization</option>
+                      <option value="">{t('groups.selectSpecializations')}</option>
                       {institution.specializations.map((spec) => (
                         <option key={spec} value={spec}>{spec}</option>
                       ))}
@@ -304,10 +463,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                         value={formData.specialization}
                         onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Programming"
+                        placeholder="Ծրագրավորում"
                       />
                       <p className="mt-1 text-xs text-yellow-600">
-                        No specializations configured in Setup. You can enter manually or configure them in Setup first.
+                        {t('setup.noSpecializations')}
                       </p>
                     </div>
                   )}
@@ -317,7 +476,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="inline h-4 w-4 mr-1" />
-                    Home Classroom (Optional)
+                    {t('groups.homeClassroom')}
                   </label>
                   {getAvailableClassrooms(editingGroup?.id).length > 0 ? (
                     <select
@@ -325,20 +484,20 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                       onChange={(e) => setFormData({ ...formData, homeRoom: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">No assigned classroom</option>
+                      <option value="">{t('groups.noAssignedClassroom')}</option>
                       {getAvailableClassrooms(editingGroup?.id).map((classroom) => (
                         <option key={classroom.id} value={classroom.id}>
-                          {classroom.number} - Floor {classroom.floor} (Capacity: {classroom.capacity})
+                          {classroom.number} - {t('common.floor')} {classroom.floor} ({t('common.capacity')}: {classroom.capacity})
                         </option>
                       ))}
                     </select>
                   ) : (
                     <div>
                       <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                        No available theory classrooms
+                        {t('classrooms.noAvailableRooms')}
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        All theory classrooms are already assigned or no classrooms available. Add more classrooms in the Classrooms section.
+                        {t('classrooms.noAvailableRoomsDesc')}
                       </p>
                     </div>
                   )}
@@ -349,7 +508,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <BookOpen className="inline h-4 w-4 mr-1" />
-                      Select Subjects for {getCourseText(formData.course)}
+                      {t('groups.selectSubjects', { course: getCourseText(formData.course) })}
                     </label>
                     <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
                       <div className="space-y-3">
@@ -362,7 +521,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                                   ? 'bg-blue-100 text-blue-800' 
                                   : 'bg-green-100 text-green-800'
                               }`}>
-                                {subject.type === 'theory' ? 'Theory' : 'Lab'}
+                                {subject.type === 'theory' ? t('subjects.theory') : t('subjects.lab')}
                               </span>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -375,7 +534,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                                 className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="0"
                               />
-                              <span className="text-sm text-gray-500">h/year</span>
+                              <span className="text-sm text-gray-500">ժ/{t('common.year')}</span>
                             </div>
                           </div>
                         ))}
@@ -385,9 +544,9 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     {/* Total Hours Display */}
                     <div className="mt-3 p-2 bg-blue-50 rounded-md">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-blue-900">Total Hours per Year:</span>
+                        <span className="text-sm font-medium text-blue-900">{t('groups.totalHoursPerYear')}:</span>
                         <span className="text-lg font-bold text-blue-900">
-                          {getTotalHours(formData.subjectHours)} hours
+                          {getTotalHours(formData.subjectHours)} {t('common.hours')}
                         </span>
                       </div>
                     </div>
@@ -397,13 +556,13 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 {getAvailableSubjectsForForm().length === 0 && (
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                     <p className="text-sm text-yellow-700">
-                      No subjects available for {getCourseText(formData.course)}. Please add subjects for this course first.
+                      {t('groups.noSubjectsForCourse', { course: getCourseText(formData.course) })}
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Students Count</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('groups.studentsCount')}</label>
                   <input
                     type="number"
                     min="1"
@@ -421,7 +580,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   onClick={cancelEdit}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -430,10 +589,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   {editingGroup ? (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {t('common.save')}
                     </>
                   ) : (
-                    'Add Group'
+                    t('groups.addGroup')
                   )}
                 </button>
               </div>
@@ -449,7 +608,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Assign Subjects - {classGroups.find(g => g.id === editingSubjects)?.name}
+                  {t('groups.assignSubjects')} - {classGroups.find(g => g.id === editingSubjects)?.name}
                   <span className="ml-2 text-sm text-gray-500">
                     ({getCourseText(classGroups.find(g => g.id === editingSubjects)?.course || 1)})
                   </span>
@@ -460,14 +619,14 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
                   >
                     <Save className="h-4 w-4 mr-1" />
-                    Save
+                    {t('common.save')}
                   </button>
                   <button
                     onClick={cancelEditingSubjects}
                     className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700"
                   >
                     <X className="h-4 w-4 mr-1" />
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -475,7 +634,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
               <div className="space-y-3">
                 {getAvailableSubjectsForGroup(editingSubjects).length === 0 ? (
                   <p className="text-gray-500 text-center py-4">
-                    No subjects available for this course. Please add subjects for {getCourseText(classGroups.find(g => g.id === editingSubjects)?.course || 1)} first.
+                    {t('groups.noSubjectsForCourse', { course: getCourseText(classGroups.find(g => g.id === editingSubjects)?.course || 1) })}
                   </p>
                 ) : (
                   getAvailableSubjectsForGroup(editingSubjects).map((subject) => (
@@ -485,7 +644,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                         <div>
                           <span className="font-medium text-gray-900">{subject.name}</span>
                           <div className="text-sm text-gray-500">
-                            {subject.type === 'theory' ? 'Theory' : 'Laboratory'} • {getCourseText(subject.course)}
+                            {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')} • {getCourseText(subject.course)}
                           </div>
                         </div>
                       </div>
@@ -499,7 +658,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                           className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="0"
                         />
-                        <span className="text-sm text-gray-500">hours/year</span>
+                        <span className="text-sm text-gray-500">ժամ/{t('common.year')}</span>
                       </div>
                     </div>
                   ))
@@ -509,9 +668,9 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
               {getAvailableSubjectsForGroup(editingSubjects).length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-900">Total Hours per Year:</span>
+                    <span className="text-sm font-medium text-blue-900">{t('groups.totalHoursPerYear')}:</span>
                     <span className="text-lg font-bold text-blue-900">
-                      {getTotalHours(tempSubjectHours)} hours
+                      {getTotalHours(tempSubjectHours)} {t('common.hours')}
                     </span>
                   </div>
                 </div>
@@ -527,10 +686,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
           <div className="p-8 text-center">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No groups yet
+              {t('groups.noGroups')}
             </h3>
             <p className="text-gray-500 mb-4">
-              Start by adding your first group.
+              {t('groups.noGroupsDesc')}
             </p>
           </div>
         ) : (
@@ -539,25 +698,25 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    {t('common.name')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Course
+                    {t('common.course')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Specialization
+                    {t('common.specialization')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Home Room
+                    {t('groups.homeClassroom')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Students
+                    {t('common.students')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Subjects
+                    {t('subjects.title')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -590,7 +749,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                           <span>{getClassroomName(group.homeRoom)}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">No assigned room</span>
+                        <span className="text-gray-400 italic">{t('groups.noAssignedRoom')}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -601,14 +760,14 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                         <div className="flex items-center space-x-1">
                           <BookOpen className="h-4 w-4 text-gray-400" />
                           <span className="text-sm text-gray-600">
-                            {Object.keys(group.subjectHours || {}).length} subjects
+                            {Object.keys(group.subjectHours || {}).length} {t('subjects.title').toLowerCase()}
                           </span>
                         </div>
                         {getTotalHours(group.subjectHours || {}) > 0 && (
                           <div className="flex items-center space-x-1">
                             <Clock className="h-4 w-4 text-gray-400" />
                             <span className="text-sm text-gray-600">
-                              {getTotalHours(group.subjectHours || {})}h/year
+                              {getTotalHours(group.subjectHours || {})}ժ/{t('common.year')}
                             </span>
                           </div>
                         )}
@@ -619,21 +778,21 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                         <button
                           onClick={() => startEditingGroup(group)}
                           className="text-blue-600 hover:text-blue-900 transition-colors"
-                          title="Edit group"
+                          title={t('common.edit')}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => startEditingSubjects(group.id)}
                           className="text-green-600 hover:text-green-900 transition-colors"
-                          title="Edit subjects"
+                          title={t('groups.editSubjects')}
                         >
                           <BookOpen className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => deleteClassGroup(group.id)}
                           className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete group"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

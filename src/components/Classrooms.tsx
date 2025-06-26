@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, MapPin, Monitor, Trash2, Building, BookOpen, Edit, Save, X } from 'lucide-react';
 import { Classroom, Subject } from '../types';
+import { useLocalization } from '../hooks/useLocalization';
 
 interface ClassroomsProps {
   classrooms: Classroom[];
@@ -8,6 +9,12 @@ interface ClassroomsProps {
   setClassrooms: (classrooms: Classroom[]) => void;
   generateClassrooms: (floors: number, roomsPerFloor: number) => void;
   subjects: Subject[];
+  showToast: {
+    showSuccess: (title: string, message: string, duration?: number) => void;
+    showError: (title: string, message: string, duration?: number) => void;
+    showWarning: (title: string, message: string, duration?: number) => void;
+    showInfo: (title: string, message: string, duration?: number) => void;
+  };
 }
 
 const Classrooms: React.FC<ClassroomsProps> = ({
@@ -16,8 +23,11 @@ const Classrooms: React.FC<ClassroomsProps> = ({
   setClassrooms,
   generateClassrooms,
   subjects,
+  showToast,
 }) => {
+  const { t } = useLocalization();
   const [showForm, setShowForm] = useState(false);
+  const [showBulkForm, setShowBulkForm] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<Classroom | null>(null);
   const [formData, setFormData] = useState({
     number: '',
@@ -26,6 +36,10 @@ const Classrooms: React.FC<ClassroomsProps> = ({
     hasComputers: false,
     selectedSubjects: [] as string[],
     capacity: 30,
+  });
+  const [bulkData, setBulkData] = useState({
+    floors: 3,
+    roomsPerFloor: 10,
   });
 
   // Check if room number already exists
@@ -67,7 +81,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
     
     // Validate room number uniqueness
     if (isRoomNumberTaken(formData.number, editingClassroom?.id)) {
-      alert(`Room number "${formData.number}" already exists. Please choose a different number.`);
+      showToast.showError(t('validation.duplicateName'), t('validation.roomNumberExists'));
       return;
     }
     
@@ -88,6 +102,10 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       );
       setClassrooms(updatedClassrooms);
       setEditingClassroom(null);
+      showToast.showSuccess(
+        t('toast.classroomUpdated'), 
+        t('toast.classroomUpdatedDesc', { number: formData.number })
+      );
     } else {
       // Create new classroom
       addClassroom({
@@ -98,6 +116,10 @@ const Classrooms: React.FC<ClassroomsProps> = ({
         specialization: formData.selectedSubjects.join(', '),
         capacity: formData.capacity,
       });
+      showToast.showSuccess(
+        t('toast.classroomAdded'), 
+        t('toast.classroomAddedDesc', { number: formData.number })
+      );
     }
     
     setFormData({
@@ -111,8 +133,25 @@ const Classrooms: React.FC<ClassroomsProps> = ({
     setShowForm(false);
   };
 
+  const handleBulkGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    generateClassrooms(bulkData.floors, bulkData.roomsPerFloor);
+    setShowBulkForm(false);
+    showToast.showSuccess(
+      t('toast.generationSuccessful'), 
+      t('toast.generationSuccessfulDesc', { count: bulkData.floors * bulkData.roomsPerFloor })
+    );
+  };
+
   const deleteClassroom = (id: string) => {
-    setClassrooms(classrooms.filter(classroom => classroom.id !== id));
+    const classroom = classrooms.find(c => c.id === id);
+    if (classroom && confirm(t('common.confirmDelete'))) {
+      setClassrooms(classrooms.filter(classroom => classroom.id !== id));
+      showToast.showSuccess(
+        t('toast.classroomDeleted'), 
+        t('toast.classroomDeletedDesc', { number: classroom.number })
+      );
+    }
   };
 
   const handleSubjectSelection = (subjectId: string, checked: boolean) => {
@@ -160,6 +199,17 @@ const Classrooms: React.FC<ClassroomsProps> = ({
     }
   };
 
+  const getTypeText = (type: string) => {
+    switch (type) {
+      case 'lab':
+        return t('subjects.laboratory');
+      case 'teacher_lab':
+        return t('classrooms.teacherLab');
+      default:
+        return t('classrooms.theoryClassroom');
+    }
+  };
+
   // Filter subjects for lab selection (only lab subjects)
   const labSubjects = subjects.filter(subject => subject.type === 'lab');
 
@@ -169,18 +219,95 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <MapPin className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Classrooms</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('classrooms.title')}</h2>
         </div>
         <div className="flex space-x-2">
+          <button
+            onClick={() => setShowBulkForm(true)}
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Building className="h-4 w-4 mr-2" />
+            {t('classrooms.bulkGenerate')}
+          </button>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Classroom
+            {t('classrooms.addClassroom')}
           </button>
         </div>
       </div>
+
+      {/* Bulk Generation Form Modal */}
+      {showBulkForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <form onSubmit={handleBulkGenerate} className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">{t('classrooms.generateClassrooms')}</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('classrooms.floors')}</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    required
+                    value={bulkData.floors}
+                    onChange={(e) => setBulkData({ ...bulkData, floors: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('classrooms.roomsPerFloor')}</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    required
+                    value={bulkData.roomsPerFloor}
+                    onChange={(e) => setBulkData({ ...bulkData, roomsPerFloor: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-sm text-blue-700">
+                    {t('classrooms.generateRooms')}: {bulkData.floors} {t('common.floor')} × {bulkData.roomsPerFloor} = {bulkData.floors * bulkData.roomsPerFloor} {t('classrooms.title').toLowerCase()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkForm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700"
+                >
+                  {t('common.generate')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Form Modal */}
       {showForm && (
@@ -189,7 +316,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
             <form onSubmit={handleSubmit} className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingClassroom ? 'Edit Classroom' : 'Add New Classroom'}
+                  {editingClassroom ? t('classrooms.editClassroom') : t('classrooms.addNewClassroom')}
                 </h3>
                 <button
                   type="button"
@@ -203,7 +330,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('classrooms.roomNumber')}</label>
                     <input
                       type="text"
                       required
@@ -214,17 +341,17 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                           ? 'border-red-300 focus:ring-red-500 bg-red-50'
                           : 'border-gray-300 focus:ring-blue-500'
                       }`}
-                      placeholder="101"
+                      placeholder={t('classrooms.roomNumberPlaceholder')}
                     />
                     {formData.number && isRoomNumberTaken(formData.number, editingClassroom?.id) && (
                       <p className="mt-1 text-sm text-red-600">
-                        Room number already exists
+                        {t('classrooms.roomExists')}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Floor</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.floor')}</label>
                     <input
                       type="number"
                       min="1"
@@ -238,20 +365,20 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Classroom Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('classrooms.classroomType')}</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as 'theory' | 'lab' | 'teacher_lab' })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="theory">Theory Classroom</option>
-                    <option value="lab">Laboratory</option>
-                    <option value="teacher_lab">Teacher's Lab</option>
+                    <option value="theory">{t('classrooms.theoryClassroom')}</option>
+                    <option value="lab">{t('subjects.laboratory')}</option>
+                    <option value="teacher_lab">{t('classrooms.teacherLab')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.capacity')}</label>
                   <input
                     type="number"
                     min="1"
@@ -276,7 +403,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       />
                       <label htmlFor="hasComputers" className="ml-2 text-sm text-gray-700 flex items-center">
                         <Monitor className="h-4 w-4 mr-1" />
-                        Has Computers
+                        {t('classrooms.hasComputers')}
                       </label>
                     </div>
 
@@ -285,7 +412,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           <BookOpen className="inline h-4 w-4 mr-1" />
-                          Dedicated Laboratory Subjects
+                          {t('classrooms.dedicatedLabSubjects')}
                         </label>
                         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
                           <div className="flex items-start space-x-2">
@@ -293,10 +420,9 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                               <Monitor className="h-5 w-5 text-blue-600 mt-0.5" />
                             </div>
                             <div>
-                              <h4 className="text-sm font-medium text-blue-900">Специализированная лаборатория</h4>
+                              <h4 className="text-sm font-medium text-blue-900">{t('classrooms.specializedLab')}</h4>
                               <p className="text-sm text-blue-700 mt-1">
-                                Выберите предметы, для которых эта аудитория будет использоваться <strong>исключительно</strong>. 
-                                В этой лаборатории будут проводиться только занятия по выбранным предметам.
+                                {t('classrooms.specializedLabDesc')}
                               </p>
                             </div>
                           </div>
@@ -312,7 +438,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 />
                                 <span className="ml-2 text-sm text-gray-700 font-medium">{subject.name}</span>
-                                <span className="ml-auto text-xs text-gray-500">Лабораторная работа</span>
+                                <span className="ml-auto text-xs text-gray-500">{t('subjects.laboratory')}</span>
                               </label>
                             ))}
                           </div>
@@ -320,15 +446,14 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                         {formData.selectedSubjects.length > 0 && (
                           <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
                             <p className="text-sm text-green-700">
-                              <strong>Выбрано:</strong> {formData.selectedSubjects.length} предмет(ов). 
-                              Эта лаборатория будет использоваться только для этих предметов.
+                              {t('classrooms.selectedSubjects', { count: formData.selectedSubjects.length })}
                             </p>
                           </div>
                         )}
                         {formData.selectedSubjects.length === 0 && (
                           <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                             <p className="text-sm text-yellow-700">
-                              Если не выбрать предметы, лаборатория будет доступна для всех лабораторных работ.
+                              {t('classrooms.noSubjectsSelected')}
                             </p>
                           </div>
                         )}
@@ -339,7 +464,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                         <p className="text-sm text-blue-700">
                           <Building className="inline h-4 w-4 mr-1" />
-                          Teacher's Lab: This classroom can be assigned to a teacher as their personal workspace/office.
+                          {t('classrooms.teacherLabDesc')}
                         </p>
                       </div>
                     )}
@@ -353,7 +478,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                   onClick={cancelEdit}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -363,10 +488,10 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                   {editingClassroom ? (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {t('common.save')}
                     </>
                   ) : (
-                    'Add Classroom'
+                    t('classrooms.addClassroom')
                   )}
                 </button>
               </div>
@@ -380,8 +505,8 @@ const Classrooms: React.FC<ClassroomsProps> = ({
         {classrooms.length === 0 ? (
           <div className="p-8 text-center">
             <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No classrooms yet</h3>
-            <p className="text-gray-500 mb-4">Start by adding classrooms or use bulk generation.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('classrooms.noClassrooms')}</h3>
+            <p className="text-gray-500 mb-4">{t('classrooms.noClassroomsDesc')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -389,22 +514,22 @@ const Classrooms: React.FC<ClassroomsProps> = ({
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room
+                    {t('common.room')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Floor
+                    {t('common.floor')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    {t('common.type')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Capacity
+                    {t('common.capacity')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Specialization
+                    {t('common.specialization')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -420,15 +545,15 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      Floor {classroom.floor}
+                      {t('common.floor')} {classroom.floor}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(classroom.type)}`}>
-                        {classroom.type === 'theory' ? 'Theory' : classroom.type === 'lab' ? 'Laboratory' : 'Teacher Lab'}
+                        {getTypeText(classroom.type)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {classroom.capacity} students
+                      {classroom.capacity} {t('common.students')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div className="flex flex-col space-y-1">
@@ -439,7 +564,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                               : 'bg-gray-100 text-gray-600'
                           }`}>
                             <Monitor className="h-3 w-3 mr-1" />
-                            {classroom.hasComputers ? 'Computers' : 'No computers'}
+                            {classroom.hasComputers ? t('classrooms.computers') : t('classrooms.noComputers')}
                           </span>
                         )}
                         {classroom.specialization && classroom.type === 'lab' && (
@@ -452,7 +577,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                           </div>
                         )}
                         {classroom.type === 'lab' && !classroom.specialization && (
-                          <span className="text-xs text-gray-400 italic">Universal lab</span>
+                          <span className="text-xs text-gray-400 italic">{t('classrooms.universalLab')}</span>
                         )}
                       </div>
                     </td>
@@ -461,14 +586,14 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                         <button
                           onClick={() => startEditing(classroom)}
                           className="text-blue-600 hover:text-blue-900 transition-colors"
-                          title="Edit classroom"
+                          title={t('common.edit')}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => deleteClassroom(classroom.id)}
                           className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete classroom"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
