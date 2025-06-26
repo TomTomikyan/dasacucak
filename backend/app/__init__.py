@@ -1,0 +1,1 @@
+# FastAPI College Schedule Generator Backend

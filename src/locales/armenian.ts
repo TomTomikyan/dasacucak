@@ -1,0 +1,375 @@
+export const armenianTranslations = {
+  // Navigation and Layout
+  navigation: {
+    setup: 'Կարգավորում',
+    subjects: 'Առարկաներ',
+    classrooms: 'Դասարաններ',
+    groups: 'Խմբեր',
+    teachers: 'Ուսուցիչներ',
+    overview: 'Ընդհանուր',
+    schedule: 'Ժամանակացույց'
+  },
+
+  // Common
+  common: {
+    add: 'Ավելացնել',
+    edit: 'Խմբագրել',
+    delete: 'Ջնջել',
+    save: 'Պահպանել',
+    cancel: 'Չեղարկել',
+    close: 'Փակել',
+    confirm: 'Հաստատել',
+    yes: 'Այո',
+    no: 'Ոչ',
+    loading: 'Բեռնվում է...',
+    search: 'Փնտրել',
+    filter: 'Զտել',
+    clear: 'Մաքրել',
+    export: 'Արտահանել',
+    import: 'Ներմուծել',
+    generate: 'Ստեղծել',
+    regenerate: 'Վերաստեղծել',
+    undo: 'Հետ գնալ',
+    actions: 'Գործողություններ',
+    name: 'Անուն',
+    type: 'Տեսակ',
+    course: 'Կուրս',
+    floor: 'Հարկ',
+    capacity: 'Տարողություն',
+    students: 'Ուսանողներ',
+    hours: 'Ժամեր',
+    week: 'շաբաթ',
+    year: 'տարի',
+    lesson: 'Դաս',
+    lessons: 'Դասեր',
+    day: 'Օր',
+    time: 'Ժամ',
+    room: 'Սենյակ',
+    teacher: 'Ուսուցիչ',
+    subject: 'Առարկա',
+    group: 'Խումբ',
+    specialization: 'Մասնագիտացում',
+    available: 'Հասանելի',
+    assigned: 'Նշանակված',
+    total: 'Ընդամենը',
+    required: 'Պարտադիր'
+  },
+
+  // Setup
+  setup: {
+    title: 'Քոլեջի Կարգավորում',
+    subtitle: 'Կարգավորեք ձեր քոլեջի հիմնական պարամետրերը',
+    collegeName: 'Քոլեջի Անունը',
+    collegeNamePlaceholder: 'Մուտքագրեք քոլեջի անունը',
+    specializations: 'Մասնագիտացումներ',
+    specializationsPlaceholder: 'Մուտքագրեք մասնագիտացման անունը (օր.՝ Ծրագրավորում, Դիզայն, Բիզնես)',
+    workingDays: 'Աշխատանքային Օրեր',
+    startTime: 'Սկսման Ժամը',
+    lessonsPerDay: 'Դասեր օրական',
+    lessonDuration: 'Դասի տևողությունը (րոպե)',
+    breakConfiguration: 'Ընդմիջումների Կարգավորում',
+    academicWeeks: 'Ակադեմիական շաբաթներ տարեկան',
+    academicWeeksNote: 'Սովորաբար 40-45 շաբաթ քոլեջների համար',
+    saveConfiguration: 'Պահպանել Կարգավորումները',
+    importConfig: 'Ներմուծել',
+    clearAll: 'Մաքրել Բոլորը',
+    importing: 'Ներմուծվում է...',
+    saving: 'Պահպանվում է...',
+    saved: 'Պահպանված է!',
+    autoSaved: 'Կարգավորումները ավտոմատ պահպանվում են ձեր բրաուզերում',
+    noSpecializations: 'Դեռ մասնագիտացումներ չեն ավելացվել։ Ավելացրեք մասնագիտացումներ, որոնք կօգտագործվեն խմբեր ստեղծելիս։',
+    specializationsConfigured: 'մասնագիտացում կարգավորված',
+    addSpecialization: 'Ավելացնել մասնագիտացում',
+    removeSpecialization: 'Հեռացնել մասնագիտացումը',
+    clearAllData: 'Մաքրել Բոլոր Տվյալները',
+    clearAllConfirm: 'Այս գործողությունը հնարավոր չէ հետարկել',
+    clearAllQuestion: 'Վստա՞հ եք, որ ցանկանում եք մաքրել բոլոր կարգավորման տվյալները։ Սա կհեռացնի՝',
+    clearAllItems: [
+      'Հաստատության կարգավորումները',
+      'Բոլոր խմբերը և առարկաները',
+      'Բոլոր դասարանները և ուսուցիչները',
+      'Ստեղծված ժամանակացույցները'
+    ]
+  },
+
+  // Days of week
+  days: {
+    monday: 'Երկուշաբթի',
+    tuesday: 'Երեքշաբթի',
+    wednesday: 'Չորեքշաբթի',
+    thursday: 'Հինգշաբթի',
+    friday: 'Ուրբաթ',
+    saturday: 'Շաբաթ',
+    sunday: 'Կիրակի'
+  },
+
+  // Courses
+  courses: {
+    1: '1-ին Կուրս',
+    2: '2-րդ Կուրս',
+    3: '3-րդ Կուրս',
+    4: '4-րդ Կուրս',
+    5: '5-րդ Կուրս',
+    6: '6-րդ Կուրս'
+  },
+
+  // Subjects
+  subjects: {
+    title: 'Առարկաներ',
+    addSubject: 'Ավելացնել Առարկա',
+    editSubject: 'Խմբագրել Առարկան',
+    addNewSubject: 'Ավելացնել Նոր Առարկա',
+    subjectName: 'Առարկայի Անունը',
+    subjectNamePlaceholder: 'Մաթեմատիկա',
+    subjectType: 'Առարկայի Տեսակը',
+    theory: 'Տեսություն',
+    laboratory: 'Լաբորատորիա',
+    lab: 'Լաբ',
+    teachers: 'Ուսուցիչներ',
+    assignedGroups: 'Նշանակված Խմբեր',
+    totalHours: 'Ընդհանուր Ժամեր',
+    autoAssignment: 'Ավտոմատ Ուսուցիչների Նշանակում',
+    autoAssignmentDesc: 'Ուսուցիչները ավտոմատ նշանակվում են առարկաներին՝ հիմնվելով իրենց դասավանդող առարկաների վրա։ Երբ դուք ավելացնում կամ խմբագրում եք առարկա, այն ուսուցիչները, ովքեր կարող են դասավանդել այն, ավտոմատ կնշանակվեն։',
+    autoAssignmentPreview: 'Ավտոմատ Նշանակման Նախադիտում',
+    autoAssignedTeachers: 'Հետևյալ ուսուցիչները ավտомат կնշանակվեն այս առարկային՝',
+    noTeachersForSubject: 'Ներկայումս ոչ մի ուսուցիչ չի դասավանդում "{subject}"։ Դուք կարող եք նշանակել ուսուցիչներ այս առարկային Ուսուցիչներ բաժնում։',
+    manualAssignment: 'Ձեռքով Նշանակել Ուսուցիչներ (Ընտրովի)',
+    manualAssignmentNote: 'Նշում՝ Ուսուցիչները ավտոմատ նշանակվում են՝ հիմնվելով իրենց դասավանդող առարկաների վրա։ Ձեռքով նշանակումը փոխարինում է ավտոմատ նշանակումը։',
+    teachesThisSubject: '(դասավանդում է այս առարկան)',
+    noSubjects: 'Դեռ առարկաներ չկան',
+    noSubjectsDesc: 'Սկսեք ձեր առաջին առարկան ավելացնելով։',
+    autoAssigned: 'Ավտո-նշանակված',
+    noTeachersAssigned: 'Ուսուցիչներ չեն նշանակված',
+    groups: 'խմբեր'
+  },
+
+  // Classrooms
+  classrooms: {
+    title: 'Դասարաններ',
+    addClassroom: 'Ավելացնել Դասարան',
+    editClassroom: 'Խմբագրել Դասարանը',
+    addNewClassroom: 'Ավելացնել Նոր Դասարան',
+    roomNumber: 'Սենյակի Համարը',
+    roomNumberPlaceholder: '101',
+    classroomType: 'Դասարանի Տեսակը',
+    theoryClassroom: 'Տեսական Դասարան',
+    teacherLab: 'Ուսուցչի Լաբորատորիա',
+    hasComputers: 'Ունի Համակարգիչներ',
+    specializedLab: 'Մասնագիտացված Լաբորատորիա',
+    specializedLabDesc: 'Ընտրեք առարկաները, որոնց համար այս դասարանը կօգտագործվի բացառապես։ Այս լաբորատորիայում կանցկացվեն միայն ընտրված առարկաների դասերը։',
+    selectedSubjects: 'Ընտրված՝ {count} առարկա(ներ)։ Այս լաբորատորիան կօգտագործվի միայն այս առարկաների համար։',
+    noSubjectsSelected: 'Եթե առարկաներ չընտրեք, լաբորատորիան հասանելի կլինի բոլոր լաբորատոր աշխատանքների համար։',
+    teacherLabDesc: 'Ուսուցչի Լաբորատորիա՝ Այս դասարանը կարող է նշանակվել ուսուցչի՝ որպես նրա անձնական աշխատատեղ/գրասենյակ։',
+    dedicatedLabSubjects: 'Նվիրված Լաբորատորիայի Առարկաներ',
+    universalLab: 'Համընդհանուր լաբ',
+    noClassrooms: 'Դեռ դասարաններ չկան',
+    noClassroomsDesc: 'Սկսեք դասարաններ ավելացնելով կամ օգտագործեք զանգվածային ստեղծումը։',
+    roomExists: 'Սենյակի համարն արդեն գոյություն ունի',
+    noAvailableRooms: 'Հասանելի տեսական դասարաններ չկան',
+    noAvailableRoomsDesc: 'Բոլոր տեսական դասարանները արդեն նշանակված են կամ հասանելի դասարաններ չկան։ Ավելացրեք ավելի շատ դասարաններ Դասարաններ բաժնում։',
+    computers: 'Համակարգիչներ',
+    noComputers: 'Համակարգիչներ չկան'
+  },
+
+  // Groups
+  groups: {
+    title: 'Խմբեր',
+    addGroup: 'Ավելացնել Խումբ',
+    editGroup: 'Խմբագրել Խումբը',
+    addNewGroup: 'Ավելացնել Նոր Խումբ',
+    groupName: 'Խմբի Անունը',
+    groupNamePlaceholder: '216',
+    homeClassroom: 'Տնային Դասարան (Ընտրովի)',
+    noAssignedClassroom: 'Նշանակված դասարան չկա',
+    assignedClassroom: 'Նշանակված դասարան',
+    studentsCount: 'Ուսանողների Քանակը',
+    selectSubjects: 'Ընտրել Առարկաներ {course}-ի համար',
+    assignSubjects: 'Նշանակել Առարկաներ - {group}',
+    subjectAssignment: 'Առարկաների Նշանակում',
+    hoursPerYear: 'ժամ/տարի',
+    totalHoursPerYear: 'Ընդհանուր Ժամեր Տարեկան՝',
+    noSubjectsForCourse: 'Հասանելի առարկաներ չկան {course}-ի համար։ Խնդրում ենք նախ ավելացնել առարկաներ այս կուրսի համար։',
+    noGroups: 'Դեռ խմբեր չկան',
+    noGroupsDesc: 'Սկսեք ձեր առաջին խումբը ավելացնելով։',
+    noAssignedRoom: 'Նշանակված սենյակ չկա',
+    editSubjects: 'Խմբագրել առարկաները',
+    lessonsCount: 'դասեր'
+  },
+
+  // Teachers
+  teachers: {
+    title: 'Ուսուցիչներ',
+    addTeacher: 'Ավելացնել Ուսուցիչ',
+    editTeacher: 'Խմբագրել Ուսուցիչը',
+    addNewTeacher: 'Ավելացնել Նոր Ուսուցիչ',
+    firstName: 'Անուն',
+    firstNamePlaceholder: 'Անի',
+    lastName: 'Ազգանուն',
+    lastNamePlaceholder: 'Սմիթ',
+    teachingSubjects: 'Դասավանդող Առարկաներ',
+    assignedGroups: 'Նշանակված Խմբեր',
+    assignedGroupsRequired: 'Նշանակված Խմբեր *',
+    ownClassroom: 'Ուսուցչի Սեփական Դասարան/Գրասենյակ (Ընտրովի)',
+    ownClassroomDesc: 'Սա կլինի ուսուցչի անձնական դասարանը/գրասենյակը, որտեղ նա կարող է անցկացնել խորհրդատվություններ կամ ունենալ իր աշխատատեղը։ Միայն ուսուցիչների լաբորատորիաները հասանելի են նշանակման համար։',
+    availableHours: 'Հասանելի Ժամեր ({lessonsPerDay} դաս օրական)',
+    availableHoursDesc: 'Ընտրեք դասային ժամերը, երբ այս ուսուցիչը հասանելի է։ Հիմնվելով ձեր հաստատության կարգավորումների վրա՝ {lessonsPerDay} դաս օրական {workingDays}-ին։',
+    availableDays: 'Հասանելի Օրեր',
+    weeklyHours: 'ժ/շաբաթ',
+    noTeachers: 'Դեռ ուսուցիչներ չկան',
+    noTeachersDesc: 'Սկսեք ձեր առաջին ուսուցիչը ավելացնելով։',
+    noAssignedRoom: 'Նշանակված սենյակ չկա',
+    noAvailableTeacherLabs: 'Նշանակման համար հասանելի ուսուցիչների լաբորատորիաներ չկան',
+    noAvailableTeacherLabsDesc: 'Բոլոր ուսուցիչների լաբորատորիաները արդեն նշանակված են կամ հասանելի ուսուցիչների լաբորատորիաներ չկան։ Ավելացրեք ավելի շատ ուսուցիչների լաբորատորիաներ Դասարաններ բաժնում։',
+    selectGroupsRequired: 'Խնդրում ենք ընտրել առնվազն մեկ խումբ այս ուսուցչի համար։',
+    groupsRequiredDesc: 'Ուսուցիչները պետք է նշանակվեն խմբերի՝ ժամանակացույցները ճիշտ ստեղծելու համար։',
+    groupsSelected: '✓ {count} խումբ ընտրված',
+    selectGroupsDesc: 'Ընտրեք, թե որ խմբերին այս ուսուցիչը կդասավանդի։ Սա օգնում է ժամանակացույցի ստեղծման և կազմակերպման հետ։',
+    noGroupsAvailable: 'Հասանելի Խմբեր Չկան',
+    noGroupsAvailableDesc: 'Նախ պետք է ստեղծել խմբեր՝ ուսուցիչներ ավելացնելուց առաջ։ Գնացեք Խմբեր բաժին՝ խմբեր ավելացնելու համար։',
+    noGroupsAssigned: '⚠ Խմբեր չեն նշանակված',
+    days: 'օր'
+  },
+
+  // Schedule
+  schedule: {
+    title: 'Ժամանակացույց',
+    generate: 'Ստեղծել',
+    regenerate: 'Վերաստեղծել',
+    generating: 'Ստեղծվում է...',
+    export: 'Արտահանել',
+    exporting: 'Արտահանվում է...',
+    filterByGroup: 'Զտել Խմբով',
+    allGroups: 'Բոլոր Խմբերը',
+    totalLessons: 'Ընդհանուր Դասեր՝',
+    dragToMove: 'Քաշեք՝ տեղափոխելու կամ փոխանակելու համար',
+    noSchedule: 'Դեռ ժամանակացույց չի ստեղծվել',
+    noScheduleDesc: 'Ստեղծեք խելացի ժամանակացույց, որը ավտոմատ կմշակի բախումները և կօպտիմալացնի բաշխումը։',
+    regenerateConfirm: 'Վերաստեղծե՞լ Ժամանակացույցը',
+    regenerateWarning: 'Զգուշացում!',
+    regenerateWarningItems: [
+      'Ներկայիս ժամանակացույցը ամբողջությամբ կջնջվի',
+      'Բոլոր ձեռքով փոփոխությունները կկորչեն',
+      'Նոր ժամանակացույց կստեղծվի սկզբից',
+      'Նոր ժամանակացույցը կարող է տարբերվել ներկայիցից'
+    ],
+    currentSchedule: 'Ներկայիս ժամանակացույց՝',
+    yesRegenerate: 'Այո, Վերաստեղծել',
+    requirementsCheck: 'Պահանջների Ստուգում',
+    subjectAssignments: 'Առարկաների նշանակումներ',
+    teacherAssignments: 'Ուսուցիչների նշանակումներ',
+    
+    // Drag and Drop
+    swapLessons: 'Փոխանակել Դասերը Խմբի {group} համար',
+    moving: 'Տեղափոխվում է՝',
+    swappingWith: 'Փոխանակվում է հետևյալի հետ՝',
+    conflictsDetected: '⚠️ Բախումներ հայտնաբերվել են՝',
+    swapPossible: '✅ Փոխանակումը հնարավոր է! Բախումներ չեն հայտնաբերվել։',
+    confirmSwap: 'Հաստատել Փոխանակումը',
+    cannotSwap: 'Հնարավոր չէ Փոխանակել',
+    moveError: 'Տեղափոխման Սխալ',
+    swapError: 'Փոխանակման Սխալ',
+    cannotMoveBetweenGroups: 'Հնարավոր չէ տեղափոխել դասը տարբեր խմբերի միջև! Խմբի {sourceGroup} դասը չի կարող տեղափոխվել խմբի {targetGroup} սյունակ։',
+    cannotSwapBetweenGroups: 'Հնարավոր չէ փոխանակել դասերը տարբեր խմբերի միջև! Խմբի {sourceGroup} դասը չի կարող փոխանակվել խմբի {targetGroup} դասի հետ։ Դուք կարող եք փոխանակել դասերը միայն նույն խմբի ներսում։',
+    lessonMoved: 'Դասը Տեղափոխվեց',
+    lessonMovedDesc: 'Դասը հաջողությամբ տեղափոխվեց!',
+    lessonsSwapped: 'Դասերը Փոխանակվեցին',
+    lessonsSwappedDesc: 'Դասերը հաջողությամբ փոխանակվեցին!',
+    
+    // Instructions
+    dragDropInstructions: 'Քաշել և Գցել Հրահանգներ',
+    moveWithinGroup: 'Տեղափոխել խմբի ներսում՝',
+    moveWithinGroupDesc: 'Քաշեք ցանկացած դաս դատարկ տեղ նույն խմբի սյունակի ներսում։',
+    swapLessonsDesc: 'Փոխանակել դասերը՝',
+    swapLessonsDescText: 'Քաշեք դասը մեկ այլ դասի վրա նույն խմբի՝ իրենց դիրքերը փոխանակելու համար։',
+    restriction: '⚠️ Սահմանափակում՝',
+    restrictionDesc: 'Դուք չեք կարող տեղափոխել կամ փոխանակել դասերը տարբեր խմբերի սյունակների միջև։',
+    drop: 'Գցել',
+    
+    // Export
+    exportSuccessTitle: 'Արտահանումը Հաջողվեց',
+    exportSuccessDesc: 'Ժամանակացույցը հաջողությամբ արտահանվեց! Ֆայլ՝ {filename} {eventsCount} իրադարձություններով։ Դուք կարող եք ներմուծել այս ֆայլը Google Calendar, Outlook կամ ցանկացած այլ օրացույցային հավելված։',
+    noScheduleToExport: 'Ժամանակացույց Չկա',
+    noScheduleToExportDesc: 'Արտահանելու համար ժամանակացույց չկա։ Խնդրում ենք նախ ստեղծել ժամանակացույց։'
+  },
+
+  // Overview
+  overview: {
+    title: 'Ընդհանուր Տեսություն',
+    subtitle: 'Ձեր քոլեջի կարգավորման ամփոփ տեսք',
+    institution: 'Հաստատություն',
+    configuration: 'Կարգավորում',
+    data: 'Տվյալներ',
+    actions: 'Գործողություններ',
+    exportConfig: 'Արտահանել Կարգավորումը',
+    stats: 'Վիճակագրություն',
+    institutionInfo: 'Հաստատության Տեղեկություններ',
+    scheduleInfo: 'Ժամանակացույցի Տեղեկություններ',
+    dataManagement: 'Տվյալների Կառավարում'
+  },
+
+  // Toast Messages
+  toast: {
+    // Success messages
+    specializationAdded: 'Մասնագիտացումը Ավելացվեց',
+    specializationAddedDesc: '"{name}"-ը հաջողությամբ ավելացվեց!',
+    configurationSaved: 'Կարգավորումը Պահպանվեց',
+    configurationSavedDesc: 'Ձեր հաստատության կարգավորումները հաջողությամբ պահպանվեցին!',
+    exportSuccessful: 'Արտահանումը Հաջողվեց',
+    exportSuccessfulDesc: 'Կարգավորումը հաջողությամբ արտահանվեց!',
+    importSuccessful: 'Ներմուծումը Հաջողվեց',
+    importSuccessfulDesc: 'Կարգավորումը հաջողությամբ ներմուծվեց!',
+    dataCleared: 'Տվյալները Մաքրվեցին',
+    dataClearedDesc: 'Բոլոր տվյալները հաջողությամբ մաքրվեցին!',
+    generationSuccessful: 'Ստեղծումը Հաջողվեց',
+    generationSuccessfulDesc: 'Ժամանակացույցը հաջողությամբ ստեղծվեց {count} դասերով!',
+    regenerationSuccessful: 'Վերաստեղծումը Հաջողվեց',
+    regenerationSuccessfulDesc: 'Ժամանակացույցը հաջողությամբ վերաստեղծվեց {count} դասերով!',
+
+    // Error messages
+    exportFailed: 'Արտահանումը Ձախողվեց',
+    exportFailedDesc: 'Կարգավորման արտահանումը ձախողվեց։ Խնդրում ենք կրկին փորձել։',
+    importFailed: 'Ներմուծումը Ձախողվեց',
+    importFailedDesc: 'Կարգավորման ներմուծումը ձախողվեց։ Խնդրում ենք ստուգել ֆայլի ֆորմատը։',
+    clearFailed: 'Մաքրումը Ձախողվեց',
+    clearFailedDesc: 'Տվյալների մաքրումը ձախողվեց։ Խնդրում ենք կրկին փորձել։',
+    generationFailed: 'Ստեղծումը Ձախողվեց',
+    regenerationFailed: 'Վերաստեղծումը Ձախողվեց',
+    generationError: 'Ստեղծման Սխալ',
+    generationErrorDesc: 'Ժամանակացույցի ստեղծման ժամանակ անսպասելի սխալ տեղի ունեցավ։',
+
+    // Info messages
+    specializationRemoved: 'Մասնագիտացումը Հեռացվեց',
+    specializationRemovedDesc: '"{name}"-ը հեռացվեց։',
+
+    // Warning messages
+    noScheduleWarning: 'Ժամանակացույց Չկա',
+    noScheduleWarningDesc: 'Արտահանելու համար ժամանակացույց չկա։ Խնդրում ենք նախ ստեղծել ժամանակացույց։'
+  },
+
+  // Undo functionality
+  undo: {
+    undo: 'Հետ գնալ',
+    deleted: 'ջնջվեց',
+    updated: 'թարմացվեց',
+    created: 'ստեղծվեց',
+    undoDelete: 'Հետ գնալ ջնջումը',
+    undoUpdate: 'Հետ գնալ թարմացումը',
+    undoCreate: 'Հետ գնալ ստեղծումը',
+    group: 'խումբ',
+    subject: 'առարկա',
+    classroom: 'դասարան',
+    teacher: 'ուսուցիչ',
+    schedule: 'ժամանակացույց'
+  },
+
+  // Validation and errors
+  validation: {
+    required: 'Այս դաշտը պարտադիր է',
+    invalidEmail: 'Անվավեր էլ. փոստի հասցե',
+    minLength: 'Նվազագույնը {min} նիշ',
+    maxLength: 'Առավելագույնը {max} նիշ',
+    invalidNumber: 'Անվավեր թիվ',
+    roomNumberExists: 'Սենյակի համարն արդեն գոյություն ունի',
+    selectAtLeastOne: 'Ընտրեք առնվազն մեկը'
+  }
+};
