@@ -249,13 +249,14 @@ export const useScheduleData = () => {
 
   // Export/Import functions
   const exportConfiguration = useCallback(() => {
+    // Экспортируем все данные КРОМЕ расписания
     const configData = {
       institution,
       classGroups,
       subjects,
       classrooms,
       teachers,
-      schedule,
+      // schedule - исключаем из экспорта
       exportDate: new Date().toISOString(),
       version: '1.0'
     };
@@ -271,7 +272,7 @@ export const useScheduleData = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [institution, classGroups, subjects, classrooms, teachers, schedule]);
+  }, [institution, classGroups, subjects, classrooms, teachers]); // убрали schedule из зависимостей
 
   const importConfiguration = useCallback((file: File) => {
     return new Promise<void>((resolve, reject) => {
@@ -285,13 +286,13 @@ export const useScheduleData = () => {
             throw new Error('Invalid configuration file format');
           }
 
-          // Import data
+          // Import data (без расписания)
           setInstitution(configData.institution);
           setClassGroups(configData.classGroups || []);
           setSubjects(configData.subjects || []);
           setClassrooms(configData.classrooms || []);
           setTeachers(configData.teachers || []);
-          setSchedule(configData.schedule || []);
+          // setSchedule - НЕ импортируем расписание, оставляем текущее
           
           resolve();
         } catch (error) {
