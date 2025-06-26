@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, BookOpen, Users, Trash2, Monitor, Edit, Save, X, GraduationCap, CheckCircle } from 'lucide-react';
 import { Subject, ClassGroup, Teacher } from '../types';
+import { useLocalization } from '../hooks/useLocalization';
 
 interface SubjectsProps {
   subjects: Subject[];
@@ -17,6 +18,7 @@ const Subjects: React.FC<SubjectsProps> = ({
   classGroups,
   teachers,
 }) => {
+  const { t } = useLocalization();
   const [showForm, setShowForm] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [formData, setFormData] = useState({
@@ -27,15 +29,7 @@ const Subjects: React.FC<SubjectsProps> = ({
   });
 
   const getCourseText = (courseNumber: number) => {
-    const courseNames = {
-      1: '1st Course',
-      2: '2nd Course', 
-      3: '3rd Course',
-      4: '4th Course',
-      5: '5th Course',
-      6: '6th Course'
-    };
-    return courseNames[courseNumber as keyof typeof courseNames] || `${courseNumber} Course`;
+    return t(`courses.${courseNumber}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -103,7 +97,7 @@ const Subjects: React.FC<SubjectsProps> = ({
 
   const getTeacherName = (teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId);
-    return teacher ? `${teacher.firstName} ${teacher.lastName}` : 'Unknown';
+    return teacher ? `${teacher.firstName} ${teacher.lastName}` : t('common.unknown');
   };
 
   const getAssignedGroups = (subjectId: string) => {
@@ -127,14 +121,14 @@ const Subjects: React.FC<SubjectsProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <BookOpen className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Subjects</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('subjects.title')}</h2>
         </div>
         <button
           onClick={() => setShowForm(true)}
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Subject
+          {t('subjects.addSubject')}
         </button>
       </div>
 
@@ -144,10 +138,9 @@ const Subjects: React.FC<SubjectsProps> = ({
           <div className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5 text-blue-600" />
             <div>
-              <h3 className="text-sm font-medium text-blue-900">Automatic Teacher Assignment</h3>
+              <h3 className="text-sm font-medium text-blue-900">{t('subjects.autoAssignment')}</h3>
               <p className="text-sm text-blue-700 mt-1">
-                Teachers are automatically assigned to subjects based on their teaching subjects. 
-                When you add or edit a subject, teachers who can teach it will be automatically assigned.
+                {t('subjects.autoAssignmentDesc')}
               </p>
             </div>
           </div>
@@ -161,7 +154,7 @@ const Subjects: React.FC<SubjectsProps> = ({
             <form onSubmit={handleSubmit} className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingSubject ? 'Edit Subject' : 'Add New Subject'}
+                  {editingSubject ? t('subjects.editSubject') : t('subjects.addNewSubject')}
                 </h3>
                 <button
                   type="button"
@@ -174,20 +167,20 @@ const Subjects: React.FC<SubjectsProps> = ({
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Subject Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('subjects.subjectName')}</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Mathematics"
+                    placeholder={t('subjects.subjectNamePlaceholder')}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject Type</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('subjects.subjectType')}</label>
                     <div className="flex space-x-4">
                       <label className="flex items-center">
                         <input
@@ -197,7 +190,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                           onChange={(e) => setFormData({ ...formData, type: e.target.value as 'theory' | 'lab' })}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Theory</span>
+                        <span className="ml-2 text-sm text-gray-700">{t('subjects.theory')}</span>
                       </label>
                       <label className="flex items-center">
                         <input
@@ -207,7 +200,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                           onChange={(e) => setFormData({ ...formData, type: e.target.value as 'theory' | 'lab' })}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Laboratory</span>
+                        <span className="ml-2 text-sm text-gray-700">{t('subjects.laboratory')}</span>
                       </label>
                     </div>
                   </div>
@@ -215,7 +208,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <GraduationCap className="inline h-4 w-4 mr-1" />
-                      Course
+                      {t('common.course')}
                     </label>
                     <input
                       type="number"
@@ -234,14 +227,14 @@ const Subjects: React.FC<SubjectsProps> = ({
                   <div className="bg-green-50 border border-green-200 rounded-md p-3">
                     <h4 className="text-sm font-medium text-green-900 mb-2">
                       <CheckCircle className="inline h-4 w-4 mr-1" />
-                      Auto-assignment Preview
+                      {t('subjects.autoAssignmentPreview')}
                     </h4>
                     {(() => {
                       const availableTeachers = getAvailableTeachersForSubject(formData.name);
                       return availableTeachers.length > 0 ? (
                         <div>
                           <p className="text-sm text-green-700 mb-2">
-                            The following teachers will be automatically assigned to this subject:
+                            {t('subjects.autoAssignedTeachers')}
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {availableTeachers.map(teacher => (
@@ -253,7 +246,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                         </div>
                       ) : (
                         <p className="text-sm text-green-700">
-                          No teachers currently teach "{formData.name}". You can assign teachers to this subject in the Teachers section.
+                          {t('subjects.noTeachersForSubject', { subject: formData.name })}
                         </p>
                       );
                     })()}
@@ -264,7 +257,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                 {editingSubject && teachers.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Manually Assign Teachers (Optional)
+                      {t('subjects.manualAssignment')}
                     </label>
                     <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
                       {teachers.map((teacher) => (
@@ -278,14 +271,14 @@ const Subjects: React.FC<SubjectsProps> = ({
                           <span className="ml-2 text-sm text-gray-700">
                             {teacher.firstName} {teacher.lastName}
                             {teacher.subjects.includes(formData.name) && (
-                              <span className="ml-1 text-xs text-green-600">(teaches this subject)</span>
+                              <span className="ml-1 text-xs text-green-600">({t('subjects.teachesThisSubject')})</span>
                             )}
                           </span>
                         </label>
                       ))}
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Note: Teachers are automatically assigned based on their teaching subjects. Manual assignment overrides automatic assignment.
+                      {t('subjects.manualAssignmentNote')}
                     </p>
                   </div>
                 )}
@@ -297,7 +290,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                   onClick={cancelEdit}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -306,10 +299,10 @@ const Subjects: React.FC<SubjectsProps> = ({
                   {editingSubject ? (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {t('common.save')}
                     </>
                   ) : (
-                    'Add Subject'
+                    t('subjects.addSubject')
                   )}
                 </button>
               </div>
@@ -323,8 +316,8 @@ const Subjects: React.FC<SubjectsProps> = ({
         {subjects.length === 0 ? (
           <div className="p-8 text-center">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No subjects yet</h3>
-            <p className="text-gray-500 mb-4">Start by adding your first subject.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('subjects.noSubjects')}</h3>
+            <p className="text-gray-500 mb-4">{t('subjects.noSubjectsDesc')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -332,25 +325,25 @@ const Subjects: React.FC<SubjectsProps> = ({
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Subject
+                    {t('common.subject')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Course
+                    {t('common.course')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    {t('common.type')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Teachers
+                    {t('subjects.teachers')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned Groups
+                    {t('subjects.assignedGroups')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Hours
+                    {t('subjects.totalHours')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -375,7 +368,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                             {subject.teacherIds.length > 0 && (
                               <div className="flex items-center mt-1">
                                 <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-                                <span className="text-xs text-green-600">Auto-assigned</span>
+                                <span className="text-xs text-green-600">{t('subjects.autoAssigned')}</span>
                               </div>
                             )}
                           </div>
@@ -393,7 +386,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {subject.type === 'theory' ? 'Theory' : 'Laboratory'}
+                          {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -405,36 +398,36 @@ const Subjects: React.FC<SubjectsProps> = ({
                           ))}
                           {subject.teacherIds.length > 2 && (
                             <span className="text-xs text-gray-500">
-                              +{subject.teacherIds.length - 2} more
+                              +{subject.teacherIds.length - 2} {t('common.more')}
                             </span>
                           )}
                           {subject.teacherIds.length === 0 && (
-                            <span className="text-xs text-gray-400 italic">No teachers assigned</span>
+                            <span className="text-xs text-gray-400 italic">{t('subjects.noTeachersAssigned')}</span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
                           <Users className="h-4 w-4 mr-1 text-gray-400" />
-                          {assignedGroups.length} groups
+                          {assignedGroups.length} {t('subjects.groups')}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="font-medium">{totalHours}h/year</span>
+                        <span className="font-medium">{totalHours}ժ/{t('common.year')}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
                             onClick={() => startEditing(subject)}
                             className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="Edit subject"
+                            title={t('common.edit')}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteSubject(subject.id)}
                             className="text-red-600 hover:text-red-900 transition-colors"
-                            title="Delete subject"
+                            title={t('common.delete')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
