@@ -97,83 +97,27 @@ export const useScheduleData = () => {
     saveToStorage(STORAGE_KEYS.SCHEDULE, schedule);
   }, [schedule]);
 
-  // 🔥 НОВАЯ ЛОГИКА: Автоматическое обновление названий предметов у учителей
-  const updateTeacherSubjectNames = useCallback(() => {
-    if (teachers.length === 0 || subjects.length === 0) return;
-
-    let hasChanges = false;
-    const updatedTeachers = teachers.map(teacher => {
-      // Создаем карту старых названий -> новых названий
-      const updatedSubjects = teacher.subjects.map(oldSubjectName => {
-        // Ищем предмет с таким же названием в текущем списке
-        const currentSubject = subjects.find(s => s.name === oldSubjectName);
-        if (currentSubject) {
-          return currentSubject.name; // Возвращаем текущее название
-        }
-        
-        // Если предмет не найден по точному названию, возможно он был переименован
-        // Ищем предмет, который мог быть переименован (по ID в teacherIds)
-        const renamedSubject = subjects.find(s => s.teacherIds.includes(teacher.id));
-        if (renamedSubject && !teacher.subjects.includes(renamedSubject.name)) {
-          // Если нашли предмет, который назначен этому учителю, но его названия нет в списке учителя
-          return renamedSubject.name;
-        }
-        
-        return oldSubjectName; // Оставляем старое название, если ничего не найдено
-      });
-
-      // Удаляем дубликаты и пустые значения
-      const uniqueSubjects = [...new Set(updatedSubjects)].filter(Boolean);
-      
-      // Проверяем, изменились ли предметы
-      const subjectsChanged = 
-        uniqueSubjects.length !== teacher.subjects.length ||
-        !uniqueSubjects.every(subject => teacher.subjects.includes(subject));
-
-      if (subjectsChanged) {
-        hasChanges = true;
-        return {
-          ...teacher,
-          subjects: uniqueSubjects
-        };
-      }
-      
-      return teacher;
-    });
-    
-    if (hasChanges) {
-      setTeachers(updatedTeachers);
-      console.log('🔄 Updated teacher subject names');
-    }
-  }, [teachers, subjects]);
-
-  // 🔥 ЭФФЕКТ: Обновлять названия предметов у учителей при изменении предметов
-  useEffect(() => {
-    updateTeacherSubjectNames();
-  }, [subjects]); // Запускаем только при изменении предметов
-
-  // 🔥 ИСПРАВЛЕННАЯ ЛОГИКА: Автоматическое назначение учителей к предметам
+  // Auto-assign teachers to subjects
   const autoAssignTeachersToSubjects = useCallback(() => {
     if (teachers.length === 0 || subjects.length === 0) return;
 
     let hasChanges = false;
     const updatedSubjects = subjects.map(subject => {
-      // Найти учителей, которые преподают этот предмет
+      // Find teachers who teach this subject
       const matchingTeachers = teachers.filter(teacher => 
         teacher.subjects.includes(subject.name)
       );
       
-      // Получить текущие ID учителей для этого предмета
+      // Get current teacher IDs for this subject
       const currentTeacherIds = subject.teacherIds || [];
       
-      // Получить ID подходящих учителей
+      // Get IDs of matching teachers
       const matchingTeacherIds = matchingTeachers.map(teacher => teacher.id);
       
-      // Проверить, нужно ли обновление
+      // Check if update is needed
       const shouldUpdate = 
         matchingTeacherIds.length !== currentTeacherIds.length ||
-        !matchingTeacherIds.every(id => currentTeacherIds.includes(id)) ||
-        !currentTeacherIds.every(id => teachers.some(t => t.id === id)); // 🔥 НОВАЯ ПРОВЕРКА: убедиться, что все назначенные учителя еще существуют
+        !matchingTeacherIds.every(id => currentTeacherIds.includes(id));
       
       if (shouldUpdate) {
         hasChanges = true;
@@ -192,23 +136,10 @@ export const useScheduleData = () => {
     }
   }, [teachers, subjects]);
 
-  // 🔥 ЭФФЕКТ: Запускать автоназначение при изменении учителей
+  // Auto-assign when teachers or subjects change
   useEffect(() => {
     autoAssignTeachersToSubjects();
-  }, [teachers]); // Запускаем только при изменении учителей
-
-  // 🔥 ДОПОЛНИТЕЛЬНАЯ ОЧИСТКА: Удалить несуществующих учителей из расписания
-  useEffect(() => {
-    if (schedule.length > 0 && teachers.length > 0) {
-      const existingTeacherIds = new Set(teachers.map(t => t.id));
-      const cleanedSchedule = schedule.filter(slot => existingTeacherIds.has(slot.teacherId));
-      
-      if (cleanedSchedule.length !== schedule.length) {
-        console.log(`🧹 Cleaned ${schedule.length - cleanedSchedule.length} schedule slots with non-existent teachers`);
-        setSchedule(cleanedSchedule);
-      }
-    }
-  }, [teachers, schedule]);
+  }, [autoAssignTeachersToSubjects]);
 
   const updateInstitution = useCallback((updates: Partial<Institution>) => {
     setInstitution(prev => {
@@ -247,7 +178,7 @@ export const useScheduleData = () => {
       id: Date.now().toString(),
     };
     
-    // 🔥 ИСПРАВЛЕНО: Автоназначение учителей при создании предмета
+    // Auto-assign teachers when creating subject
     const matchingTeachers = teachers.filter(teacher => 
       teacher.subjects.includes(subject.name)
     );
@@ -270,7 +201,6 @@ export const useScheduleData = () => {
       id: Date.now().toString(),
     };
     setTeachers(prev => [...prev, newTeacher]);
-    // 🔥 Автоназначение произойдет автоматически через useEffect
   }, []);
 
   const generateClassrooms = useCallback((floors: number, roomsPerFloor: number) => {
