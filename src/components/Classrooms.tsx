@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, MapPin, Monitor, Trash2, Building, BookOpen, Edit, Save, X } from 'lucide-react';
+import { Plus, MapPin, Monitor, Trash2, BookOpen, Edit, Save, X } from 'lucide-react';
 import { Classroom, Subject } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -182,7 +182,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       case 'lab':
         return <Monitor className="h-4 w-4" />;
       case 'teacher_lab':
-        return <Building className="h-4 w-4" />;
+        return <MapPin className="h-4 w-4" />;
       default:
         return <MapPin className="h-4 w-4" />;
     }
@@ -222,13 +222,6 @@ const Classrooms: React.FC<ClassroomsProps> = ({
           <h2 className="text-2xl font-bold text-gray-900">{t('classrooms.title')}</h2>
         </div>
         <div className="flex space-x-2">
-          <button
-            onClick={() => setShowBulkForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-          >
-            <Building className="h-4 w-4 mr-2" />
-            {t('classrooms.bulkGenerate')}
-          </button>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
@@ -463,7 +456,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     {formData.type === 'teacher_lab' && (
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                         <p className="text-sm text-blue-700">
-                          <Building className="inline h-4 w-4 mr-1" />
+                          <MapPin className="inline h-4 w-4 mr-1" />
                           {t('classrooms.teacherLabDesc')}
                         </p>
                       </div>
