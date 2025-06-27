@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, GraduationCap, Trash2, Edit, BookOpen, Clock, Save, X, MapPin, Building } from 'lucide-react';
+import { Plus, Users, GraduationCap, Trash2, Edit, BookOpen, Clock, Save, X, MapPin } from 'lucide-react';
 import { ClassGroup, Institution, Subject, Classroom } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -290,13 +290,6 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
           <h2 className="text-2xl font-bold text-gray-900">{t('groups.title')}</h2>
         </div>
         <div className="flex space-x-2">
-          <button
-            onClick={() => setShowBulkForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-          >
-            <Building className="h-4 w-4 mr-2" />
-            {t('groups.bulkGenerate')}
-          </button>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
