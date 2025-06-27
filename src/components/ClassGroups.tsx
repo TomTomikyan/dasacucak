@@ -286,13 +286,13 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-blue-600" />
+          <Users className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">{t('groups.title')}</h2>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('groups.addGroup')}
@@ -326,7 +326,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                           type="checkbox"
                           checked={bulkData.years.includes(year)}
                           onChange={(e) => handleYearSelection(year, e.target.checked)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">{year}</span>
                       </label>
@@ -344,7 +344,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                             type="checkbox"
                             checked={bulkData.specializations.includes(spec)}
                             onChange={(e) => handleSpecializationSelection(spec, e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                           />
                           <span className="ml-2 text-sm text-gray-700">{spec}</span>
                         </label>
@@ -360,8 +360,8 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 </div>
 
                 {bulkData.years.length > 0 && bulkData.specializations.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                    <p className="text-sm text-blue-700">
+                  <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-md p-3">
+                    <p className="text-sm text-[#03524f]">
                       {t('groups.generateGroups')}: {bulkData.years.length} {t('groups.entryYears')} × {bulkData.specializations.length} {t('common.specializations')} × 3 = {bulkData.years.length * bulkData.specializations.length * 3} {t('groups.title').toLowerCase()}
                     </p>
                   </div>
@@ -379,7 +379,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <button
                   type="submit"
                   disabled={bulkData.years.length === 0 || bulkData.specializations.length === 0}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('common.generate')}
                 </button>
@@ -415,7 +415,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     placeholder={t('groups.groupNamePlaceholder')}
                   />
                 </div>
@@ -431,7 +431,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     max="6"
                     value={formData.course}
                     onChange={(e) => setFormData({ ...formData, course: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     placeholder={getCourseText(formData.course)}
                   />
                 </div>
@@ -442,7 +442,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     <select
                       value={formData.specialization}
                       onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     >
                       <option value="">{t('groups.selectSpecializations')}</option>
                       {institution.specializations.map((spec) => (
@@ -455,7 +455,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                         type="text"
                         value={formData.specialization}
                         onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                         placeholder="Ծրագրավորում"
                       />
                       <p className="mt-1 text-xs text-yellow-600">
@@ -475,7 +475,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     <select
                       value={formData.homeRoom}
                       onChange={(e) => setFormData({ ...formData, homeRoom: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     >
                       <option value="">{t('groups.noAssignedClassroom')}</option>
                       {getAvailableClassrooms(editingGroup?.id).map((classroom) => (
@@ -511,7 +511,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                               <span className="text-sm text-gray-700">{subject.name}</span>
                               <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                                 subject.type === 'theory' 
-                                  ? 'bg-blue-100 text-blue-800' 
+                                  ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
                                   : 'bg-green-100 text-green-800'
                               }`}>
                                 {subject.type === 'theory' ? t('subjects.theory') : t('subjects.lab')}
@@ -524,7 +524,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                                 max="200"
                                 value={formData.subjectHours[subject.id] || 0}
                                 onChange={(e) => updateFormSubjectHours(subject.id, parseInt(e.target.value) || 0)}
-                                className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                                 placeholder="0"
                               />
                               <span className="text-sm text-gray-500">ժ/{t('common.year')}</span>
@@ -535,10 +535,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     </div>
                     
                     {/* Total Hours Display */}
-                    <div className="mt-3 p-2 bg-blue-50 rounded-md">
+                    <div className="mt-3 p-2 bg-[#03524f] bg-opacity-10 rounded-md">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-blue-900">{t('groups.totalHoursPerYear')}:</span>
-                        <span className="text-lg font-bold text-blue-900">
+                        <span className="text-sm font-medium text-[#03524f]">{t('groups.totalHoursPerYear')}:</span>
+                        <span className="text-lg font-bold text-[#03524f]">
                           {getTotalHours(formData.subjectHours)} {t('common.hours')}
                         </span>
                       </div>
@@ -562,7 +562,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                     max="50"
                     value={formData.studentsCount}
                     onChange={(e) => setFormData({ ...formData, studentsCount: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                   />
                 </div>
               </div>
@@ -577,7 +577,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {editingGroup ? (
                     <>
@@ -609,7 +609,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <div className="flex space-x-2">
                   <button
                     onClick={saveSubjectHours}
-                    className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
+                    className="inline-flex items-center px-3 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239]"
                   >
                     <Save className="h-4 w-4 mr-1" />
                     {t('common.save')}
@@ -633,7 +633,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   getAvailableSubjectsForGroup(editingSubjects).map((subject) => (
                     <div key={subject.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-md">
                       <div className="flex items-center space-x-3">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
+                        <BookOpen className="h-5 w-5 text-[#03524f]" />
                         <div>
                           <span className="font-medium text-gray-900">{subject.name}</span>
                           <div className="text-sm text-gray-500">
@@ -648,7 +648,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                           max="200"
                           value={tempSubjectHours[subject.id] || 0}
                           onChange={(e) => updateSubjectHours(subject.id, parseInt(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                           placeholder="0"
                         />
                         <span className="text-sm text-gray-500">ժամ/{t('common.year')}</span>
@@ -659,10 +659,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
               </div>
 
               {getAvailableSubjectsForGroup(editingSubjects).length > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                <div className="mt-4 p-3 bg-[#03524f] bg-opacity-10 rounded-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-900">{t('groups.totalHoursPerYear')}:</span>
-                    <span className="text-lg font-bold text-blue-900">
+                    <span className="text-sm font-medium text-[#03524f]">{t('groups.totalHoursPerYear')}:</span>
+                    <span className="text-lg font-bold text-[#03524f]">
                       {getTotalHours(tempSubjectHours)} {t('common.hours')}
                     </span>
                   </div>
@@ -718,8 +718,8 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   <tr key={group.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                          <span className="text-xs font-medium text-blue-600">
+                        <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                          <span className="text-xs font-medium text-[#03524f]">
                             {group.name.substring(0, 2)}
                           </span>
                         </div>
@@ -770,7 +770,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                       <div className="flex space-x-2">
                         <button
                           onClick={() => startEditingGroup(group)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                          className="text-[#03524f] hover:text-[#024239] transition-colors"
                           title={t('common.edit')}
                         >
                           <Edit className="h-4 w-4" />

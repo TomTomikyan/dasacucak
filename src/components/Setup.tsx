@@ -219,9 +219,9 @@ const Setup: React.FC<SetupProps> = ({
   return (
     <div className="max-w-4xl mx-auto">
       <div 
-        className={`bg-white rounded-lg shadow-sm border-2 transition-all duration-200 ${
+        className={`bg-white rounded-lg shadow-sm border-2 transition-all duration-200 relative ${
           isDragOver 
-            ? 'border-blue-400 border-dashed bg-blue-50' 
+            ? 'border-[#03524f] border-dashed bg-green-50' 
             : 'border-gray-200'
         }`}
         onDragOver={handleDragOver}
@@ -230,11 +230,11 @@ const Setup: React.FC<SetupProps> = ({
       >
         {/* Drag overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 bg-blue-100 bg-opacity-90 rounded-lg flex items-center justify-center z-10 pointer-events-none">
+          <div className="absolute inset-0 bg-[#03524f] bg-opacity-10 rounded-lg flex items-center justify-center z-10 pointer-events-none">
             <div className="text-center">
-              <FileText className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-              <p className="text-xl font-semibold text-blue-800">Отпустите файл для импорта</p>
-              <p className="text-blue-600 mt-2">Поддерживаются только JSON файлы</p>
+              <FileText className="h-16 w-16 text-[#03524f] mx-auto mb-4" />
+              <p className="text-xl font-semibold text-[#03524f]">Отпустите файл для импорта</p>
+              <p className="text-[#03524f] opacity-80 mt-2">Поддерживаются только JSON файлы</p>
             </div>
           </div>
         )}
@@ -242,7 +242,7 @@ const Setup: React.FC<SetupProps> = ({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Building2 className="h-6 w-6 text-blue-600" />
+              <Building2 className="h-6 w-6 text-[#03524f]" />
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">{t('setup.title')}</h2>
                 <p className="text-sm text-gray-500">
@@ -282,7 +282,7 @@ const Setup: React.FC<SetupProps> = ({
               type="text"
               value={institution.name}
               onChange={(e) => setInstitution({ name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
               placeholder={t('setup.collegeNamePlaceholder')}
             />
           </div>
@@ -300,14 +300,14 @@ const Setup: React.FC<SetupProps> = ({
                 value={newSpecialization}
                 onChange={(e) => setNewSpecialization(e.target.value)}
                 onKeyPress={handleSpecializationKeyPress}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
                 placeholder={t('setup.specializationsPlaceholder')}
               />
               <button
                 type="button"
                 onClick={handleAddSpecialization}
                 disabled={!newSpecialization.trim() || institution.specializations.includes(newSpecialization.trim())}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 {t('setup.addSpecialization')}
@@ -320,13 +320,13 @@ const Setup: React.FC<SetupProps> = ({
                   {institution.specializations.map((specialization, index) => (
                     <div
                       key={index}
-                      className="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"
+                      className="inline-flex items-center px-3 py-2 bg-[#03524f] bg-opacity-10 text-[#03524f] text-sm font-medium rounded-full"
                     >
                       <span>{specialization}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveSpecialization(specialization)}
-                        className="ml-2 text-blue-600 hover:text-blue-800 transition-colors"
+                        className="ml-2 text-[#03524f] hover:text-[#024239] transition-colors"
                         title={t('setup.removeSpecialization')}
                       >
                         <X className="h-4 w-4" />
@@ -360,7 +360,7 @@ const Setup: React.FC<SetupProps> = ({
                     type="checkbox"
                     checked={institution.workingDays.includes(day.key)}
                     onChange={(e) => handleWorkingDaysChange(day.key, e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700">{day.label}</span>
                 </label>
@@ -379,7 +379,7 @@ const Setup: React.FC<SetupProps> = ({
                 type="time"
                 value={institution.startTime}
                 onChange={(e) => setInstitution({ startTime: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
               />
             </div>
 
@@ -401,7 +401,7 @@ const Setup: React.FC<SetupProps> = ({
                   max="8"
                   value={institution.lessonsPerDay}
                   onChange={(e) => handleLessonsPerDayChange(parseInt(e.target.value) || 1)}
-                  className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                 />
                 <button
                   type="button"
@@ -424,7 +424,7 @@ const Setup: React.FC<SetupProps> = ({
                 step="5"
                 value={institution.lessonDuration}
                 onChange={(e) => setInstitution({ lessonDuration: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
               />
             </div>
           </div>
@@ -440,8 +440,8 @@ const Setup: React.FC<SetupProps> = ({
                   <div key={time.lesson} className="flex items-center justify-between py-2">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">{time.lesson}</span>
+                        <div className="w-8 h-8 bg-[#03524f] bg-opacity-10 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-[#03524f]">{time.lesson}</span>
                         </div>
                         <span className="text-sm text-gray-600">
                           {time.startTime} - {time.endTime}
@@ -459,7 +459,7 @@ const Setup: React.FC<SetupProps> = ({
                           step="5"
                           value={time.breakDuration || 10}
                           onChange={(e) => handleBreakDurationChange(index, parseInt(e.target.value) || 10)}
-                          className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                         />
                         <span className="text-sm text-gray-500">րոպե</span>
                       </div>
@@ -485,7 +485,7 @@ const Setup: React.FC<SetupProps> = ({
               max="52"
               value={institution.academicWeeks}
               onChange={(e) => setInstitution({ academicWeeks: parseInt(e.target.value) })}
-              className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
               placeholder="40"
             />
             <p className="mt-1 text-xs text-gray-500">
@@ -502,7 +502,7 @@ const Setup: React.FC<SetupProps> = ({
             <button 
               onClick={handleSaveConfiguration}
               disabled={saveStatus === 'saving'}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#03524f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saveStatus === 'saving' ? (
                 <>
