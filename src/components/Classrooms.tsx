@@ -193,9 +193,9 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       case 'lab':
         return 'bg-green-100 text-green-800';
       case 'teacher_lab':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-[#03524f] bg-opacity-10 text-[#03524f]';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-[#03524f] bg-opacity-10 text-[#03524f]';
     }
   };
 
@@ -218,13 +218,13 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <MapPin className="h-6 w-6 text-blue-600" />
+          <MapPin className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">{t('classrooms.title')}</h2>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('classrooms.addClassroom')}
@@ -258,7 +258,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     required
                     value={bulkData.floors}
                     onChange={(e) => setBulkData({ ...bulkData, floors: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                   />
                 </div>
 
@@ -271,12 +271,12 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     required
                     value={bulkData.roomsPerFloor}
                     onChange={(e) => setBulkData({ ...bulkData, roomsPerFloor: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                  <p className="text-sm text-blue-700">
+                <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-md p-3">
+                  <p className="text-sm text-[#03524f]">
                     {t('classrooms.generateRooms')}: {bulkData.floors} {t('common.floor')} × {bulkData.roomsPerFloor} = {bulkData.floors * bulkData.roomsPerFloor} {t('classrooms.title').toLowerCase()}
                   </p>
                 </div>
@@ -292,7 +292,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {t('common.generate')}
                 </button>
@@ -332,7 +332,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
                         formData.number && isRoomNumberTaken(formData.number, editingClassroom?.id)
                           ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : 'border-gray-300 focus:ring-blue-500'
+                          : 'border-gray-300 focus:ring-[#03524f]'
                       }`}
                       placeholder={t('classrooms.roomNumberPlaceholder')}
                     />
@@ -352,7 +352,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       required
                       value={formData.floor}
                       onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     />
                   </div>
                 </div>
@@ -362,7 +362,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as 'theory' | 'lab' | 'teacher_lab' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                   >
                     <option value="theory">{t('classrooms.theoryClassroom')}</option>
                     <option value="lab">{t('subjects.laboratory')}</option>
@@ -379,7 +379,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     required
                     value={formData.capacity}
                     onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                   />
                 </div>
 
@@ -392,7 +392,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                         id="hasComputers"
                         checked={formData.hasComputers}
                         onChange={(e) => setFormData({ ...formData, hasComputers: e.target.checked })}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                       />
                       <label htmlFor="hasComputers" className="ml-2 text-sm text-gray-700 flex items-center">
                         <Monitor className="h-4 w-4 mr-1" />
@@ -407,14 +407,14 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                           <BookOpen className="inline h-4 w-4 mr-1" />
                           {t('classrooms.dedicatedLabSubjects')}
                         </label>
-                        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
+                        <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-md p-3 mb-3">
                           <div className="flex items-start space-x-2">
                             <div className="flex-shrink-0">
-                              <Monitor className="h-5 w-5 text-blue-600 mt-0.5" />
+                              <Monitor className="h-5 w-5 text-[#03524f] mt-0.5" />
                             </div>
                             <div>
-                              <h4 className="text-sm font-medium text-blue-900">{t('classrooms.specializedLab')}</h4>
-                              <p className="text-sm text-blue-700 mt-1">
+                              <h4 className="text-sm font-medium text-[#03524f]">{t('classrooms.specializedLab')}</h4>
+                              <p className="text-sm text-[#03524f] opacity-80 mt-1">
                                 {t('classrooms.specializedLabDesc')}
                               </p>
                             </div>
@@ -428,7 +428,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                                   type="checkbox"
                                   checked={formData.selectedSubjects.includes(subject.id)}
                                   onChange={(e) => handleSubjectSelection(subject.id, e.target.checked)}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                                 />
                                 <span className="ml-2 text-sm text-gray-700 font-medium">{subject.name}</span>
                                 <span className="ml-auto text-xs text-gray-500">{t('subjects.laboratory')}</span>
@@ -437,8 +437,8 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                           </div>
                         </div>
                         {formData.selectedSubjects.length > 0 && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                            <p className="text-sm text-green-700">
+                          <div className="mt-2 p-2 bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-md">
+                            <p className="text-sm text-[#03524f]">
                               {t('classrooms.selectedSubjects', { count: formData.selectedSubjects.length })}
                             </p>
                           </div>
@@ -454,8 +454,8 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     )}
 
                     {formData.type === 'teacher_lab' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                        <p className="text-sm text-blue-700">
+                      <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-md p-3">
+                        <p className="text-sm text-[#03524f]">
                           <MapPin className="inline h-4 w-4 mr-1" />
                           {t('classrooms.teacherLabDesc')}
                         </p>
@@ -476,7 +476,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 <button
                   type="submit"
                   disabled={formData.number && isRoomNumberTaken(formData.number, editingClassroom?.id)}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingClassroom ? (
                     <>
@@ -531,7 +531,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                   <tr key={classroom.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
                           {getTypeIcon(classroom.type)}
                         </div>
                         <span className="font-medium text-gray-900">{classroom.number}</span>
@@ -553,7 +553,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                         {(classroom.type === 'lab' || classroom.type === 'teacher_lab') && (
                           <span className={`inline-flex px-2 py-1 text-xs rounded w-fit ${
                             classroom.hasComputers 
-                              ? 'bg-green-100 text-green-700' 
+                              ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
                               : 'bg-gray-100 text-gray-600'
                           }`}>
                             <Monitor className="h-3 w-3 mr-1" />
@@ -563,7 +563,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                         {classroom.specialization && classroom.type === 'lab' && (
                           <div className="flex flex-wrap gap-1">
                             {getSpecializationDisplay(classroom.specialization).split(', ').map((subject, index) => (
-                              <span key={index} className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+                              <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
                                 {subject}
                               </span>
                             ))}
@@ -578,7 +578,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       <div className="flex space-x-2">
                         <button
                           onClick={() => startEditing(classroom)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                          className="text-[#03524f] hover:text-[#024239] transition-colors"
                           title={t('common.edit')}
                         >
                           <Edit className="h-4 w-4" />

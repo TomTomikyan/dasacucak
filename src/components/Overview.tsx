@@ -161,7 +161,7 @@ const Overview: React.FC<OverviewProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Eye className="h-6 w-6 text-blue-600" />
+          <Eye className="h-6 w-6 text-[#03524f]" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{t('overview.title')}</h2>
             <p className="text-sm text-gray-500">{t('overview.subtitle')}</p>
@@ -169,7 +169,7 @@ const Overview: React.FC<OverviewProps> = ({
         </div>
         <button
           onClick={handleExport}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
         >
           <Download className="h-4 w-4 mr-2" />
           {t('overview.exportConfig')}
@@ -179,7 +179,7 @@ const Overview: React.FC<OverviewProps> = ({
       {/* Institution Info */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-3 mb-4">
-          <Building2 className="h-5 w-5 text-blue-600" />
+          <Building2 className="h-5 w-5 text-[#03524f]" />
           <h3 className="text-lg font-medium text-gray-900">{t('overview.institutionInfo')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -220,28 +220,28 @@ const Overview: React.FC<OverviewProps> = ({
           title={t('overview.totalGroups')}
           value={stats.totalGroups}
           icon={<Users className="h-6 w-6 text-white" />}
-          color="bg-blue-500"
+          color="bg-[#03524f]"
           subtitle={`${stats.averageStudentsPerGroup} ${t('common.students')}/խումբ`}
         />
         <StatCard
           title={t('overview.totalSubjects')}
           value={stats.totalSubjects}
           icon={<BookOpen className="h-6 w-6 text-white" />}
-          color="bg-green-500"
+          color="bg-[#03524f]"
           subtitle={`${stats.theorySubjects} տեսական, ${stats.labSubjects} լաբ`}
         />
         <StatCard
           title={t('overview.totalTeachers')}
           value={stats.totalTeachers}
           icon={<GraduationCap className="h-6 w-6 text-white" />}
-          color="bg-purple-500"
+          color="bg-[#03524f]"
           subtitle={`${stats.averageGroupsPerTeacher} խումբ/ուսուցիչ`}
         />
         <StatCard
           title={t('overview.totalClassrooms')}
           value={stats.totalClassrooms}
           icon={<MapPin className="h-6 w-6 text-white" />}
-          color="bg-orange-500"
+          color="bg-[#03524f]"
           subtitle={`${stats.theoryClassrooms} տեսական, ${stats.laboratories} լաբ`}
         />
       </div>
@@ -250,7 +250,7 @@ const Overview: React.FC<OverviewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <Calendar className="h-5 w-5 text-blue-600" />
+            <Calendar className="h-5 w-5 text-[#03524f]" />
             <h3 className="text-lg font-medium text-gray-900">{t('overview.scheduleInfo')}</h3>
           </div>
           <div className="space-y-4">
@@ -264,7 +264,7 @@ const Overview: React.FC<OverviewProps> = ({
                 <div className="w-24 bg-gray-200 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full ${
-                      scheduleCompleteness >= 80 ? 'bg-green-500' : 
+                      scheduleCompleteness >= 80 ? 'bg-[#03524f]' : 
                       scheduleCompleteness >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
                     style={{ width: `${Math.min(scheduleCompleteness, 100)}%` }}
@@ -278,7 +278,7 @@ const Overview: React.FC<OverviewProps> = ({
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <BarChart3 className="h-5 w-5 text-blue-600" />
+            <BarChart3 className="h-5 w-5 text-[#03524f]" />
             <h3 className="text-lg font-medium text-gray-900">{t('overview.dataStatistics')}</h3>
           </div>
           <div className="space-y-4">
@@ -306,7 +306,7 @@ const Overview: React.FC<OverviewProps> = ({
             <h3 className="text-lg font-medium text-gray-900">{t('overview.warnings')}</h3>
           </div>
           {warnings.length === 0 ? (
-            <div className="flex items-center space-x-2 text-green-600">
+            <div className="flex items-center space-x-2 text-[#03524f]">
               <CheckCircle className="h-4 w-4" />
               <span className="text-sm">{t('overview.noWarnings')}</span>
             </div>
@@ -324,18 +324,18 @@ const Overview: React.FC<OverviewProps> = ({
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
+            <TrendingUp className="h-5 w-5 text-[#03524f]" />
             <h3 className="text-lg font-medium text-gray-900">{t('overview.recommendations')}</h3>
           </div>
           {recommendations.length === 0 ? (
-            <div className="flex items-center space-x-2 text-green-600">
+            <div className="flex items-center space-x-2 text-[#03524f]">
               <CheckCircle className="h-4 w-4" />
               <span className="text-sm">{t('overview.noRecommendations')}</span>
             </div>
           ) : (
             <div className="space-y-2">
               {recommendations.map((recommendation, index) => (
-                <div key={index} className="flex items-start space-x-2 text-blue-700">
+                <div key={index} className="flex items-start space-x-2 text-[#03524f]">
                   <TrendingUp className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <span className="text-sm">{recommendation}</span>
                 </div>
@@ -348,42 +348,42 @@ const Overview: React.FC<OverviewProps> = ({
       {/* Configuration Status */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-3 mb-4">
-          <Settings className="h-5 w-5 text-blue-600" />
+          <Settings className="h-5 w-5 text-[#03524f]" />
           <h3 className="text-lg font-medium text-gray-900">{t('overview.configurationStatus')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${institution.name ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div className={`w-3 h-3 rounded-full ${institution.name ? 'bg-[#03524f]' : 'bg-red-500'}`} />
             <span className="text-sm text-gray-700">{t('overview.institutionSettings')}</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
-              institution.name ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              institution.name ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
             }`}>
               {institution.name ? t('overview.complete') : t('overview.incomplete')}
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${classGroups.length > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div className={`w-3 h-3 rounded-full ${classGroups.length > 0 ? 'bg-[#03524f]' : 'bg-red-500'}`} />
             <span className="text-sm text-gray-700">{t('groups.title')}</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
-              classGroups.length > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              classGroups.length > 0 ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
             }`}>
               {classGroups.length > 0 ? t('overview.complete') : t('overview.incomplete')}
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${subjects.length > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div className={`w-3 h-3 rounded-full ${subjects.length > 0 ? 'bg-[#03524f]' : 'bg-red-500'}`} />
             <span className="text-sm text-gray-700">{t('subjects.title')}</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
-              subjects.length > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              subjects.length > 0 ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
             }`}>
               {subjects.length > 0 ? t('overview.complete') : t('overview.incomplete')}
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${teachers.length > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div className={`w-3 h-3 rounded-full ${teachers.length > 0 ? 'bg-[#03524f]' : 'bg-red-500'}`} />
             <span className="text-sm text-gray-700">{t('teachers.title')}</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
-              teachers.length > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              teachers.length > 0 ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
             }`}>
               {teachers.length > 0 ? t('overview.complete') : t('overview.incomplete')}
             </span>
@@ -394,7 +394,7 @@ const Overview: React.FC<OverviewProps> = ({
       {/* Data Management */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-3 mb-4">
-          <Database className="h-5 w-5 text-blue-600" />
+          <Database className="h-5 w-5 text-[#03524f]" />
           <h3 className="text-lg font-medium text-gray-900">{t('overview.dataManagement')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

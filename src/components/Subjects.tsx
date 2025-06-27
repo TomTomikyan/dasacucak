@@ -120,12 +120,12 @@ const Subjects: React.FC<SubjectsProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <BookOpen className="h-6 w-6 text-blue-600" />
+          <BookOpen className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">{t('subjects.title')}</h2>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
           {t('subjects.addSubject')}
@@ -134,12 +134,12 @@ const Subjects: React.FC<SubjectsProps> = ({
 
       {/* Auto-assignment info */}
       {teachers.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-blue-600" />
+            <CheckCircle className="h-5 w-5 text-[#03524f]" />
             <div>
-              <h3 className="text-sm font-medium text-blue-900">{t('subjects.autoAssignment')}</h3>
-              <p className="text-sm text-blue-700 mt-1">
+              <h3 className="text-sm font-medium text-[#03524f]">{t('subjects.autoAssignment')}</h3>
+              <p className="text-sm text-[#03524f] opacity-80 mt-1">
                 {t('subjects.autoAssignmentDesc')}
               </p>
             </div>
@@ -173,7 +173,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     placeholder={t('subjects.subjectNamePlaceholder')}
                   />
                 </div>
@@ -188,7 +188,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                           value="theory"
                           checked={formData.type === 'theory'}
                           onChange={(e) => setFormData({ ...formData, type: e.target.value as 'theory' | 'lab' })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300"
                         />
                         <span className="ml-2 text-sm text-gray-700">{t('subjects.theory')}</span>
                       </label>
@@ -198,7 +198,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                           value="lab"
                           checked={formData.type === 'lab'}
                           onChange={(e) => setFormData({ ...formData, type: e.target.value as 'theory' | 'lab' })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300"
                         />
                         <span className="ml-2 text-sm text-gray-700">{t('subjects.laboratory')}</span>
                       </label>
@@ -216,7 +216,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                       max="6"
                       value={formData.course}
                       onChange={(e) => setFormData({ ...formData, course: parseInt(e.target.value) || 1 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                       placeholder={getCourseText(formData.course)}
                     />
                   </div>
@@ -224,8 +224,8 @@ const Subjects: React.FC<SubjectsProps> = ({
 
                 {/* Auto-assignment preview */}
                 {!editingSubject && formData.name && (
-                  <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                    <h4 className="text-sm font-medium text-green-900 mb-2">
+                  <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-md p-3">
+                    <h4 className="text-sm font-medium text-[#03524f] mb-2">
                       <CheckCircle className="inline h-4 w-4 mr-1" />
                       {t('subjects.autoAssignmentPreview')}
                     </h4>
@@ -233,19 +233,19 @@ const Subjects: React.FC<SubjectsProps> = ({
                       const availableTeachers = getAvailableTeachersForSubject(formData.name);
                       return availableTeachers.length > 0 ? (
                         <div>
-                          <p className="text-sm text-green-700 mb-2">
+                          <p className="text-sm text-[#03524f] mb-2">
                             {t('subjects.autoAssignedTeachers')}
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {availableTeachers.map(teacher => (
-                              <span key={teacher.id} className="inline-flex px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                              <span key={teacher.id} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
                                 {teacher.firstName} {teacher.lastName}
                               </span>
                             ))}
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-green-700">
+                        <p className="text-sm text-[#03524f]">
                           {t('subjects.noTeachersForSubject', { subject: formData.name })}
                         </p>
                       );
@@ -266,12 +266,12 @@ const Subjects: React.FC<SubjectsProps> = ({
                             type="checkbox"
                             checked={formData.teacherIds.includes(teacher.id)}
                             onChange={(e) => handleTeacherSelection(teacher.id, e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                           />
                           <span className="ml-2 text-sm text-gray-700">
                             {teacher.firstName} {teacher.lastName}
                             {teacher.subjects.includes(formData.name) && (
-                              <span className="ml-1 text-xs text-green-600">({t('subjects.teachesThisSubject')})</span>
+                              <span className="ml-1 text-xs text-[#03524f]">({t('subjects.teachesThisSubject')})</span>
                             )}
                           </span>
                         </label>
@@ -294,7 +294,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {editingSubject ? (
                     <>
@@ -356,26 +356,26 @@ const Subjects: React.FC<SubjectsProps> = ({
                     <tr key={subject.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                          <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
                             {subject.type === 'lab' ? (
-                              <Monitor className="h-4 w-4 text-blue-600" />
+                              <Monitor className="h-4 w-4 text-[#03524f]" />
                             ) : (
-                              <BookOpen className="h-4 w-4 text-blue-600" />
+                              <BookOpen className="h-4 w-4 text-[#03524f]" />
                             )}
                           </div>
                           <div>
                             <span className="font-medium text-gray-900">{subject.name}</span>
                             {subject.teacherIds.length > 0 && (
                               <div className="flex items-center mt-1">
-                                <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-                                <span className="text-xs text-green-600">{t('subjects.autoAssigned')}</span>
+                                <CheckCircle className="h-3 w-3 text-[#03524f] mr-1" />
+                                <span className="text-xs text-[#03524f]">{t('subjects.autoAssigned')}</span>
                               </div>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-[#03524f] bg-opacity-10 text-[#03524f] rounded-full">
                           <GraduationCap className="h-3 w-3 mr-1" />
                           {getCourseText(subject.course)}
                         </span>
@@ -383,7 +383,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           subject.type === 'theory' 
-                            ? 'bg-blue-100 text-blue-800' 
+                            ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
                             : 'bg-green-100 text-green-800'
                         }`}>
                           {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')}
@@ -419,7 +419,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                         <div className="flex space-x-2">
                           <button
                             onClick={() => startEditing(subject)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                            className="text-[#03524f] hover:text-[#024239] transition-colors"
                             title={t('common.edit')}
                           >
                             <Edit className="h-4 w-4" />

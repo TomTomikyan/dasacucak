@@ -239,12 +239,12 @@ const Teachers: React.FC<TeachersProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <GraduationCap className="h-6 w-6 text-blue-600" />
+          <GraduationCap className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">{t('teachers.title')}</h2>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
           {t('teachers.addTeacher')}
@@ -279,7 +279,7 @@ const Teachers: React.FC<TeachersProps> = ({
                       required
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                       placeholder={t('teachers.firstNamePlaceholder')}
                     />
                   </div>
@@ -291,7 +291,7 @@ const Teachers: React.FC<TeachersProps> = ({
                       required
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                       placeholder={t('teachers.lastNamePlaceholder')}
                     />
                   </div>
@@ -307,7 +307,7 @@ const Teachers: React.FC<TeachersProps> = ({
                     <select
                       value={formData.homeClassroom}
                       onChange={(e) => setFormData({ ...formData, homeClassroom: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     >
                       <option value="">{t('groups.noAssignedClassroom')}</option>
                       {getAvailableClassrooms(editingTeacher?.id).map((classroom) => (
@@ -346,7 +346,7 @@ const Teachers: React.FC<TeachersProps> = ({
                               type="checkbox"
                               checked={formData.subjects.includes(subject.name)}
                               onChange={(e) => handleSubjectSelection(subject.name, e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                             />
                             <span className="ml-2 text-sm text-gray-700">{subject.name}</span>
                           </label>
@@ -376,7 +376,7 @@ const Teachers: React.FC<TeachersProps> = ({
                                 type="checkbox"
                                 checked={formData.assignedClassGroups.includes(group.id)}
                                 onChange={(e) => handleGroupSelection(group.id, e.target.checked)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                               />
                               <div className="ml-3">
                                 <span className="text-sm font-medium text-gray-900">{group.name}</span>
@@ -401,7 +401,7 @@ const Teachers: React.FC<TeachersProps> = ({
                         </p>
                       </div>
                     ) : formData.assignedClassGroups.length > 0 ? (
-                      <p className="mt-1 text-sm text-green-600">
+                      <p className="mt-1 text-sm text-[#03524f]">
                         {t('teachers.groupsSelected', { count: formData.assignedClassGroups.length })}
                       </p>
                     ) : (
@@ -441,7 +441,7 @@ const Teachers: React.FC<TeachersProps> = ({
                                 type="checkbox"
                                 checked={formData.availableHours[day]?.includes(hour) || false}
                                 onChange={(e) => handleAvailableHourToggle(day, hour, e.target.checked)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
                               />
                               <span className="ml-1 text-xs text-gray-600">{hour}</span>
                             </label>
@@ -470,7 +470,7 @@ const Teachers: React.FC<TeachersProps> = ({
                 <button
                   type="submit"
                   disabled={classGroups.length === 0}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingTeacher ? (
                     <>
@@ -533,8 +533,8 @@ const Teachers: React.FC<TeachersProps> = ({
                     <tr key={teacher.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                            <span className="text-sm font-medium text-blue-600">
+                          <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                            <span className="text-sm font-medium text-[#03524f]">
                               {teacher.firstName[0]}{teacher.lastName[0]}
                             </span>
                           </div>
@@ -549,7 +549,7 @@ const Teachers: React.FC<TeachersProps> = ({
                         <div className="flex flex-wrap gap-1">
                           {/* 🔥 FIXED: Display current subject names instead of stored names */}
                           {currentSubjectNames.slice(0, 2).map((subjectName, index) => (
-                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
                               {subjectName}
                             </span>
                           ))}
@@ -600,7 +600,7 @@ const Teachers: React.FC<TeachersProps> = ({
                         <div className="flex space-x-2">
                           <button
                             onClick={() => startEditing(teacher)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                            className="text-[#03524f] hover:text-[#024239] transition-colors"
                             title={t('common.edit')}
                           >
                             <Edit className="h-4 w-4" />
