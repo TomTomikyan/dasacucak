@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Save, Building2, Clock, Calendar, Plus, Minus, X, BookOpen, Upload, Trash2, CheckCircle } from 'lucide-react';
+import { Save, Building2, Clock, Calendar, Plus, Minus, X, BookOpen, Upload, Trash2, CheckCircle, FileText } from 'lucide-react';
 import { Institution } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -30,6 +30,7 @@ const Setup: React.FC<SetupProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const workingDaysOptions = [
@@ -123,21 +124,62 @@ const Setup: React.FC<SetupProps> = ({
     fileInputRef.current?.click();
   };
 
-  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileImport = async (file: File) => {
+    if (!file.name.endsWith('.json')) {
+      showToast.showError('Неверный формат файла', 'Пожалуйста, выберите JSON файл');
+      return;
+    }
 
     setIsImporting(true);
     try {
       await importConfiguration(file);
+      showToast.showSuccess('Импорт успешен', 'Конфигурация была успешно импортирована');
     } catch (error) {
       console.error('Import error:', error);
+      showToast.showError('Ошибка импорта', 'Не удалось импортировать конфигурацию');
     } finally {
       setIsImporting(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
+  };
+
+  const handleFileInputChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    await handleFileImport(file);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag and Drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const jsonFile = files.find(file => file.name.endsWith('.json'));
+
+    if (!jsonFile) {
+      showToast.showError('Неверный формат файла', 'Пожалуйста, перетащите JSON файл');
+      return;
+    }
+
+    await handleFileImport(jsonFile);
   };
 
   const handleClearData = () => {
@@ -176,7 +218,27 @@ const Setup: React.FC<SetupProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div 
+        className={`bg-white rounded-lg shadow-sm border-2 transition-all duration-200 ${
+          isDragOver 
+            ? 'border-blue-400 border-dashed bg-blue-50' 
+            : 'border-gray-200'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 bg-blue-100 bg-opacity-90 rounded-lg flex items-center justify-center z-10 pointer-events-none">
+            <div className="text-center">
+              <FileText className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+              <p className="text-xl font-semibold text-blue-800">Отпустите файл для импорта</p>
+              <p className="text-blue-600 mt-2">Поддерживаются только JSON файлы</p>
+            </div>
+          </div>
+        )}
+
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -468,7 +530,7 @@ const Setup: React.FC<SetupProps> = ({
         ref={fileInputRef}
         type="file"
         accept=".json"
-        onChange={handleFileImport}
+        onChange={handleFileInputChange}
         className="hidden"
       />
 
