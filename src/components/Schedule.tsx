@@ -828,7 +828,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - ENHANCED WITH BETTER DRAG AND DROP FEEDBACK - NO HOVER EFFECTS */}
+      {/* Schedule Grid - COMPLETELY NO HOVER EFFECTS */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -862,7 +862,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                 {getOrderedWorkingDays().map(day => (
                   <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
-                      <tr key={`${day}-${time.lesson}`}>
+                      <tr key={`${day}-${time.lesson}`} className="bg-white">
                         {/* Day name - only show on first lesson of the day */}
                         {timeIndex === 0 && (
                           <td 
@@ -886,7 +886,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                           </Tooltip>
                         </td>
 
-                        {/* Schedule slots for each group - NO HOVER EFFECTS */}
+                        {/* Schedule slots for each group - COMPLETELY NO HOVER EFFECTS */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
                           const slot = filteredSchedule.find(s => 
                             s.day === day && 
@@ -918,7 +918,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, slot)}
                                     onDragEnd={handleDragEnd}
-                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move transition-all duration-200 group relative"
+                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move transition-all duration-200 relative"
                                   >
                                     <div className="space-y-1">
                                       <div className="font-medium text-[#03524f] text-xs truncate">
