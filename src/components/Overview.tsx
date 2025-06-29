@@ -331,10 +331,7 @@ const Overview: React.FC<OverviewProps> = ({
               <div className="flex items-center space-x-3">
                 <div className="w-24 bg-gray-200 rounded-full h-2">
                   <div 
-                    className={`h-2 rounded-full transition-all duration-500 ${
-                      scheduleCompleteness >= 80 ? 'bg-green-500' : 
-                      scheduleCompleteness >= 50 ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
+                    className="h-2 rounded-full transition-all duration-500 bg-green-500"
                     style={{ width: `${Math.min(scheduleCompleteness, 100)}%` }}
                   />
                 </div>
