@@ -361,6 +361,9 @@ const Setup: React.FC<SetupProps> = ({
                     checked={institution.workingDays.includes(day.key)}
                     onChange={(e) => handleWorkingDaysChange(day.key, e.target.checked)}
                     className="h-4 w-4 text-[#03524f] focus:ring-[#03524f] border-gray-300 rounded"
+                    style={{
+                      accentColor: '#03524f'
+                    }}
                   />
                   <span className="ml-2 text-sm text-gray-700">{day.label}</span>
                 </label>
