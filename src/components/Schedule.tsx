@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2, ChevronDown, ChevronUp, Eye, EyeOff, Move, ArrowRightLeft } from 'lucide-react';
 import { ScheduleSlot, Institution, ClassGroup, Subject, Teacher, Classroom } from '../types';
 import { ScheduleGenerator } from '../utils/scheduleGenerator';
 import { ICSExporter, ICSEvent } from '../utils/icsExport';
@@ -21,6 +21,84 @@ interface ScheduleProps {
   };
 }
 
+// Enhanced Tooltip component with side positioning
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Calculate tooltip dimensions (approximate)
+    const tooltipWidth = 320; // Max width
+    const tooltipHeight = 200; // Approximate height
+    
+    let x = rect.right + 10; // Default: show to the right
+    let y = rect.top + rect.height / 2; // Center vertically
+    
+    // Check if tooltip would go off the right edge
+    if (x + tooltipWidth > viewportWidth) {
+      x = rect.left - tooltipWidth - 10; // Show to the left instead
+    }
+    
+    // Check if tooltip would go off the bottom edge
+    if (y + tooltipHeight / 2 > viewportHeight) {
+      y = viewportHeight - tooltipHeight - 10;
+    }
+    
+    // Check if tooltip would go off the top edge
+    if (y - tooltipHeight / 2 < 10) {
+      y = 10 + tooltipHeight / 2;
+    }
+    
+    setPosition({ x, y });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-4 py-3 text-sm text-white bg-[#03524f] rounded-lg shadow-xl pointer-events-none border border-[#024239]"
+          style={{
+            left: position.x,
+            top: position.y - 100, // Offset to center vertically
+            maxWidth: '320px',
+            whiteSpace: 'pre-wrap',
+            transform: 'translateY(-50%)', // Center vertically
+            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(3, 82, 79, 0.95)'
+          }}
+        >
+          {content}
+          {/* Arrow pointing to the element */}
+          <div 
+            className="absolute top-1/2 w-0 h-0 border-t-4 border-b-4 border-transparent transform -translate-y-1/2"
+            style={{
+              left: position.x > window.innerWidth / 2 ? '100%' : '-8px', // Arrow on left if tooltip is on right side
+              borderRightColor: position.x > window.innerWidth / 2 ? 'transparent' : 'rgba(3, 82, 79, 0.95)',
+              borderLeftColor: position.x > window.innerWidth / 2 ? 'rgba(3, 82, 79, 0.95)' : 'transparent',
+              borderRightWidth: position.x > window.innerWidth / 2 ? '0' : '8px',
+              borderLeftWidth: position.x > window.innerWidth / 2 ? '8px' : '0'
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Schedule: React.FC<ScheduleProps> = ({
   schedule,
   setSchedule,
@@ -38,7 +116,12 @@ const Schedule: React.FC<ScheduleProps> = ({
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [generationLogs, setGenerationLogs] = useState<string[]>([]);
   const [showLogs, setShowLogs] = useState(false);
-  const [logsExpanded, setLogsExpanded] = useState(true); // New state for collapsible logs
+  const [logsExpanded, setLogsExpanded] = useState(true);
+
+  // 🔥 NEW: Drag and Drop states
+  const [draggedSlot, setDraggedSlot] = useState<ScheduleSlot | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<{ day: string; lesson: number; groupId: string } | null>(null);
+  const [isDropValid, setIsDropValid] = useState(false);
 
   // 🔥 NEW: Get properly ordered working days (Monday first)
   const getOrderedWorkingDays = (): string[] => {
@@ -73,14 +156,285 @@ const Schedule: React.FC<ScheduleProps> = ({
     return subjectId || t('common.unknown');
   };
 
+  const getSubjectDetails = (subjectId: string) => {
+    const subject = subjects.find(s => s.id === subjectId) || subjects.find(s => s.name === subjectId);
+    if (!subject) return getSubjectName(subjectId);
+    
+    const typeText = subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory');
+    const courseText = t(`courses.${subject.course}`);
+    return `${subject.name}\n${typeText}\n${courseText}`;
+  };
+
   const getTeacherName = (teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId);
     return teacher ? `${teacher.firstName} ${teacher.lastName}` : t('common.unknown');
   };
 
+  const getTeacherDetails = (teacherId: string) => {
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (!teacher) return t('common.unknown');
+    
+    const subjectsList = teacher.subjects.length > 0 
+      ? teacher.subjects.join(', ') 
+      : 'Առարկաներ չեն նշանակված';
+    
+    return `${teacher.firstName} ${teacher.lastName}\nԱռարկաներ: ${subjectsList}`;
+  };
+
   const getClassroomName = (classroomId: string) => {
     const classroom = classrooms.find(c => c.id === classroomId);
     return classroom ? classroom.number : t('common.unknown');
+  };
+
+  const getClassroomDetails = (classroomId: string) => {
+    const classroom = classrooms.find(c => c.id === classroomId);
+    if (!classroom) return t('common.unknown');
+    
+    const typeText = classroom.type === 'theory' 
+      ? t('classrooms.theoryClassroom')
+      : classroom.type === 'lab'
+      ? t('subjects.laboratory')
+      : t('classrooms.teacherLab');
+    
+    const computerText = classroom.hasComputers ? 'Ունի համակարգիչներ' : 'Համակարգիչներ չկան';
+    
+    return `Դասարան ${classroom.number}\n${t('common.floor')} ${classroom.floor}\n${typeText}\n${computerText}\n${t('common.capacity')}: ${classroom.capacity}`;
+  };
+
+  const getGroupDetails = (groupId: string) => {
+    const group = classGroups.find(g => g.id === groupId);
+    if (!group) return '';
+    
+    const courseText = t(`courses.${group.course || 1}`);
+    return `${group.name}\n${courseText}\n${group.specialization || 'Ընդհանուր'}\n${group.studentsCount} ուսանող`;
+  };
+
+  // Get full lesson details for tooltip
+  const getLessonTooltip = (slot: ScheduleSlot) => {
+    const subject = getSubjectDetails(slot.subjectId);
+    const teacher = getTeacherDetails(slot.teacherId);
+    const classroom = getClassroomDetails(slot.classroomId);
+    const group = getGroupDetails(slot.classGroupId);
+    
+    return `📚 ${subject}\n\n👨‍🏫 ${teacher}\n\n🏫 ${classroom}\n\n👥 ${group}\n\n⏰ ${slot.startTime} - ${slot.endTime}`;
+  };
+
+  // 🔥 NEW: Drag and Drop handlers
+  const handleDragStart = (e: React.DragEvent, slot: ScheduleSlot) => {
+    setDraggedSlot(slot);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', slot.id);
+    
+    // Add visual feedback to the dragged element
+    const target = e.target as HTMLElement;
+    target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    target.style.opacity = '1';
+    setDraggedSlot(null);
+    setDragOverCell(null);
+    setIsDropValid(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent, day: string, lesson: number, groupId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (!draggedSlot) return;
+    
+    // Only allow moves within the same group
+    const isValidMove = draggedSlot.classGroupId === groupId;
+    setIsDropValid(isValidMove);
+    setDragOverCell({ day, lesson, groupId });
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're actually leaving the cell (not moving to a child element)
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    const currentTarget = e.currentTarget as HTMLElement;
+    
+    if (!currentTarget.contains(relatedTarget)) {
+      setDragOverCell(null);
+      setIsDropValid(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDay: string, targetLesson: number, targetGroupId: string) => {
+    e.preventDefault();
+    
+    if (!draggedSlot) return;
+    
+    // Validate: only allow moves within the same group
+    if (draggedSlot.classGroupId !== targetGroupId) {
+      showToast.showError(
+        t('schedule.cannotMoveBetweenGroups'),
+        t('schedule.cannotMoveBetweenGroups', { 
+          sourceGroup: getGroupName(draggedSlot.classGroupId), 
+          targetGroup: getGroupName(targetGroupId) 
+        })
+      );
+      setDraggedSlot(null);
+      setDragOverCell(null);
+      setIsDropValid(false);
+      return;
+    }
+
+    // Check if there's already a lesson at the target position
+    const existingSlot = schedule.find(s => 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson && 
+      s.classGroupId === targetGroupId
+    );
+
+    if (existingSlot && existingSlot.id !== draggedSlot.id) {
+      // Swap lessons
+      handleSwapLessons(draggedSlot, existingSlot);
+    } else {
+      // Move lesson to empty slot
+      handleMoveLesson(draggedSlot, targetDay, targetLesson);
+    }
+
+    setDraggedSlot(null);
+    setDragOverCell(null);
+    setIsDropValid(false);
+  };
+
+  const handleMoveLesson = (slot: ScheduleSlot, newDay: string, newLesson: number) => {
+    // Check for conflicts
+    const conflicts = validateMove(slot, newDay, newLesson);
+    
+    if (conflicts.length > 0) {
+      showToast.showError(
+        t('schedule.conflictsDetected'),
+        conflicts.join('\n')
+      );
+      return;
+    }
+
+    // Calculate new times
+    const { startTime, endTime } = calculateLessonTime(newLesson);
+
+    // Update the schedule
+    const updatedSchedule = schedule.map(s => 
+      s.id === slot.id 
+        ? { ...s, day: newDay, lessonNumber: newLesson, startTime, endTime }
+        : s
+    );
+
+    setSchedule(updatedSchedule);
+    showToast.showSuccess(
+      t('schedule.lessonMoved'),
+      t('schedule.lessonMovedDesc')
+    );
+  };
+
+  const handleSwapLessons = (slot1: ScheduleSlot, slot2: ScheduleSlot) => {
+    // Validate swap
+    const conflicts1 = validateMove(slot1, slot2.day, slot2.lessonNumber, slot2.id);
+    const conflicts2 = validateMove(slot2, slot1.day, slot1.lessonNumber, slot1.id);
+    
+    if (conflicts1.length > 0 || conflicts2.length > 0) {
+      showToast.showError(
+        t('schedule.cannotSwap'),
+        [...conflicts1, ...conflicts2].join('\n')
+      );
+      return;
+    }
+
+    // Calculate new times for both lessons
+    const { startTime: startTime1, endTime: endTime1 } = calculateLessonTime(slot2.lessonNumber);
+    const { startTime: startTime2, endTime: endTime2 } = calculateLessonTime(slot1.lessonNumber);
+
+    // Swap the lessons
+    const updatedSchedule = schedule.map(s => {
+      if (s.id === slot1.id) {
+        return { 
+          ...s, 
+          day: slot2.day, 
+          lessonNumber: slot2.lessonNumber, 
+          startTime: startTime1, 
+          endTime: endTime1 
+        };
+      }
+      if (s.id === slot2.id) {
+        return { 
+          ...s, 
+          day: slot1.day, 
+          lessonNumber: slot1.lessonNumber, 
+          startTime: startTime2, 
+          endTime: endTime2 
+        };
+      }
+      return s;
+    });
+
+    setSchedule(updatedSchedule);
+    showToast.showSuccess(
+      t('schedule.lessonsSwapped'),
+      t('schedule.lessonsSwappedDesc')
+    );
+  };
+
+  const validateMove = (slot: ScheduleSlot, newDay: string, newLesson: number, excludeSlotId?: string): string[] => {
+    const conflicts: string[] = [];
+
+    // Check teacher availability
+    const teacher = teachers.find(t => t.id === slot.teacherId);
+    if (teacher && (!teacher.availableHours[newDay] || !teacher.availableHours[newDay].includes(newLesson))) {
+      conflicts.push(`Ուսուցիչ ${getTeacherName(slot.teacherId)} հասանելի չէ ${t(`days.${newDay.toLowerCase()}`)} օրվա ${newLesson}-րդ դասին`);
+    }
+
+    // Check teacher conflicts
+    const teacherConflict = schedule.find(s => 
+      s.id !== slot.id && 
+      s.id !== excludeSlotId &&
+      s.teacherId === slot.teacherId && 
+      s.day === newDay && 
+      s.lessonNumber === newLesson
+    );
+    if (teacherConflict) {
+      conflicts.push(`Ուսուցիչ ${getTeacherName(slot.teacherId)} արդեն զբաղված է այս ժամին`);
+    }
+
+    // Check classroom conflicts
+    const classroomConflict = schedule.find(s => 
+      s.id !== slot.id && 
+      s.id !== excludeSlotId &&
+      s.classroomId === slot.classroomId && 
+      s.day === newDay && 
+      s.lessonNumber === newLesson
+    );
+    if (classroomConflict) {
+      conflicts.push(`Դասարան ${getClassroomName(slot.classroomId)} արդեն զբաղված է այս ժամին`);
+    }
+
+    return conflicts;
+  };
+
+  const calculateLessonTime = (lessonNumber: number): { startTime: string; endTime: string } => {
+    const [startHour, startMinute] = institution.startTime.split(':').map(Number);
+    let currentMinutes = startHour * 60 + startMinute;
+
+    // Add time for previous lessons and breaks
+    for (let i = 1; i < lessonNumber; i++) {
+      currentMinutes += institution.lessonDuration;
+      if (i < institution.lessonsPerDay && institution.breakDurations[i - 1]) {
+        currentMinutes += institution.breakDurations[i - 1];
+      }
+    }
+
+    const startTime = formatTime(currentMinutes);
+    const endTime = formatTime(currentMinutes + institution.lessonDuration);
+
+    return { startTime, endTime };
+  };
+
+  const formatTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
 
   // Generate schedule
@@ -208,37 +562,6 @@ const Schedule: React.FC<ScheduleProps> = ({
   const requirements = checkRequirements();
   const canGenerate = requirements.length === 0;
 
-  // Create schedule grid - CORRECT STRUCTURE: Days as rows, Groups as columns
-  const createScheduleGrid = () => {
-    const grid: { [key: string]: ScheduleSlot | null } = {};
-    
-    // Get groups to display (filtered or all)
-    const groupsToShow = selectedGroup === 'all' 
-      ? classGroups 
-      : classGroups.filter(g => g.id === selectedGroup);
-
-    // 🔥 Use properly ordered working days
-    const orderedWorkingDays = getOrderedWorkingDays();
-
-    orderedWorkingDays.forEach(day => {
-      for (let lesson = 1; lesson <= institution.lessonsPerDay; lesson++) {
-        groupsToShow.forEach(group => {
-          const key = `${day}-${lesson}-${group.id}`;
-          const slot = filteredSchedule.find(s => 
-            s.day === day && 
-            s.lessonNumber === lesson && 
-            s.classGroupId === group.id
-          );
-          grid[key] = slot || null;
-        });
-      }
-    });
-
-    return grid;
-  };
-
-  const scheduleGrid = createScheduleGrid();
-
   // Calculate lesson times
   const calculateLessonTimes = () => {
     const times: { lesson: number; startTime: string; endTime: string }[] = [];
@@ -330,6 +653,35 @@ const Schedule: React.FC<ScheduleProps> = ({
                     <li key={index}>{req}</li>
                   ))}
                 </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 NEW: Drag and Drop Instructions */}
+      {schedule.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Move className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-blue-800">{t('schedule.dragDropInstructions')}</h3>
+              <div className="mt-2 text-sm text-blue-700 space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Move className="h-4 w-4" />
+                  <span>{t('schedule.moveWithinGroup')}</span>
+                  <span className="text-blue-600">{t('schedule.moveWithinGroupDesc')}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <ArrowRightLeft className="h-4 w-4" />
+                  <span>{t('schedule.swapLessonsDesc')}</span>
+                  <span className="text-blue-600">{t('schedule.swapLessonsDescText')}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="font-medium">{t('schedule.restriction')}</span>
+                  <span className="text-blue-600">{t('schedule.restrictionDesc')}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -439,7 +791,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - FIXED HIERARCHY: Groups as proper column headers */}
+      {/* Schedule Grid - ENHANCED WITH DRAG AND DROP */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -454,21 +806,22 @@ const Schedule: React.FC<ScheduleProps> = ({
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                     {t('common.time')}
                   </th>
-                  {/* Group column headers - FIXED: Groups as main headers */}
+                  {/* Group column headers */}
                   {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
                     <th key={group.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
-                      <div className="flex flex-col items-center">
-                        <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
-                        <div className="text-xs text-gray-400 mt-1 normal-case">
-                          {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
+                      <Tooltip content={getGroupDetails(group.id)}>
+                        <div className="flex flex-col items-center cursor-help">
+                          <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
+                          <div className="text-xs text-gray-400 mt-1 normal-case">
+                            {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
+                          </div>
                         </div>
-                      </div>
+                      </Tooltip>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {/* 🔥 Use properly ordered working days */}
                 {getOrderedWorkingDays().map(day => (
                   <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
@@ -487,14 +840,16 @@ const Schedule: React.FC<ScheduleProps> = ({
 
                         {/* Lesson time */}
                         <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 text-center">
-                          <div>
-                            <div className="font-medium text-[#03524f]">{time.lesson}</div>
-                            <div className="text-xs">{time.startTime}</div>
-                            <div className="text-xs">{time.endTime}</div>
-                          </div>
+                          <Tooltip content={`${time.lesson}-րդ դաս\n${time.startTime} - ${time.endTime}\nՏևողություն: ${institution.lessonDuration} րոպե`}>
+                            <div className="cursor-help">
+                              <div className="font-medium text-[#03524f]">{time.lesson}</div>
+                              <div className="text-xs">{time.startTime}</div>
+                              <div className="text-xs">{time.endTime}</div>
+                            </div>
+                          </Tooltip>
                         </td>
 
-                        {/* Schedule slots for each group */}
+                        {/* Schedule slots for each group - ENHANCED WITH DRAG AND DROP */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
                           const slot = filteredSchedule.find(s => 
                             s.day === day && 
@@ -502,27 +857,67 @@ const Schedule: React.FC<ScheduleProps> = ({
                             s.classGroupId === group.id
                           );
 
+                          const isDragOver = dragOverCell?.day === day && 
+                                           dragOverCell?.lesson === time.lesson && 
+                                           dragOverCell?.groupId === group.id;
+
                           return (
-                            <td key={group.id} className="px-2 py-2">
+                            <td 
+                              key={group.id} 
+                              className={`px-2 py-2 transition-all duration-200 ${
+                                isDragOver 
+                                  ? isDropValid 
+                                    ? 'bg-green-100 border-2 border-green-400 border-dashed' 
+                                    : 'bg-red-100 border-2 border-red-400 border-dashed'
+                                  : ''
+                              }`}
+                              onDragOver={(e) => handleDragOver(e, day, time.lesson, group.id)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, day, time.lesson, group.id)}
+                            >
                               {slot ? (
-                                <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] hover:bg-[#03524f] hover:bg-opacity-20 hover:border-opacity-30 transition-all duration-200 hover:shadow-md">
-                                  <div className="space-y-1">
-                                    <div className="font-medium text-[#03524f] text-xs truncate">
-                                      {getSubjectName(slot.subjectId)}
+                                <Tooltip content={getLessonTooltip(slot)}>
+                                  <div 
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, slot)}
+                                    onDragEnd={handleDragEnd}
+                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move hover:bg-[#03524f] hover:bg-opacity-20 hover:border-opacity-30 transition-all duration-200 hover:shadow-md group"
+                                  >
+                                    <div className="space-y-1">
+                                      <div className="font-medium text-[#03524f] text-xs truncate">
+                                        {getSubjectName(slot.subjectId)}
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center text-xs text-gray-600">
-                                      <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="truncate">{getTeacherName(slot.teacherId)}</span>
-                                    </div>
-                                    <div className="flex items-center text-xs text-gray-600">
-                                      <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                    {/* Drag indicator */}
+                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Move className="h-3 w-3 text-[#03524f]" />
                                     </div>
                                   </div>
-                                </div>
+                                </Tooltip>
                               ) : (
-                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[70px] flex items-center justify-center hover:border-gray-300 transition-colors">
-                                  <span className="text-xs text-gray-400">Դատարկ</span>
+                                <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex items-center justify-center transition-colors ${
+                                  isDragOver && isDropValid
+                                    ? 'border-green-400 bg-green-50'
+                                    : isDragOver && !isDropValid
+                                    ? 'border-red-400 bg-red-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                  <span className="text-xs text-gray-400">
+                                    {isDragOver 
+                                      ? isDropValid 
+                                        ? t('schedule.drop') 
+                                        : t('schedule.cannotSwap')
+                                      : 'Դատարկ'
+                                    }
+                                  </span>
                                 </div>
                               )}
                             </td>
