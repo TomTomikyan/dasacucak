@@ -11,6 +11,49 @@ interface SubjectsProps {
   teachers: Teacher[];
 }
 
+// Tooltip component
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: position.x,
+            top: position.y,
+            maxWidth: '300px',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {content}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Subjects: React.FC<SubjectsProps> = ({
   subjects,
   addSubject,
@@ -113,6 +156,51 @@ const Subjects: React.FC<SubjectsProps> = ({
   // Get teachers who can teach this subject (based on their subjects list)
   const getAvailableTeachersForSubject = (subjectName: string) => {
     return teachers.filter(teacher => teacher.subjects.includes(subjectName));
+  };
+
+  // Get detailed tooltip content for each cell
+  const getSubjectTooltip = (subject: Subject) => {
+    const typeText = subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory');
+    const courseText = getCourseText(subject.course);
+    const assignedGroups = getAssignedGroups(subject.id);
+    const totalHours = getTotalHoursForSubject(subject.id);
+    
+    let tooltip = `📚 ${subject.name}\n`;
+    tooltip += `📖 ${typeText}\n`;
+    tooltip += `🎓 ${courseText}\n`;
+    tooltip += `👥 ${assignedGroups.length} խումբ\n`;
+    tooltip += `⏰ ${totalHours}ժ/տարի`;
+    
+    if (assignedGroups.length > 0) {
+      tooltip += `\n\nԽմբեր:\n${assignedGroups.map(g => `• ${g.name}`).join('\n')}`;
+    }
+    
+    return tooltip;
+  };
+
+  const getTeachersTooltip = (teacherIds: string[]) => {
+    if (teacherIds.length === 0) {
+      return 'Ուսուցիչներ չեն նշանակված';
+    }
+    
+    const teacherNames = teacherIds.map(id => getTeacherName(id));
+    return `👨‍🏫 Ուսուցիչներ:\n${teacherNames.map(name => `• ${name}`).join('\n')}`;
+  };
+
+  const getGroupsTooltip = (subjectId: string) => {
+    const assignedGroups = getAssignedGroups(subjectId);
+    if (assignedGroups.length === 0) {
+      return 'Խմբեր չեն նշանակված';
+    }
+    
+    let tooltip = `👥 Նշանակված խմբեր (${assignedGroups.length}):\n`;
+    assignedGroups.forEach(group => {
+      const hours = group.subjectHours[subjectId] || 0;
+      const courseText = getCourseText(group.course || 1);
+      tooltip += `• ${group.name} (${courseText}) - ${hours}ժ/տարի\n`;
+    });
+    
+    return tooltip.trim();
   };
 
   return (
@@ -340,65 +428,77 @@ const Subjects: React.FC<SubjectsProps> = ({
                   return (
                     <tr key={subject.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
-                            {subject.type === 'lab' ? (
-                              <Monitor className="h-4 w-4 text-[#03524f]" />
-                            ) : (
-                              <BookOpen className="h-4 w-4 text-[#03524f]" />
-                            )}
+                        <Tooltip content={getSubjectTooltip(subject)}>
+                          <div className="flex items-center cursor-help">
+                            <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                              {subject.type === 'lab' ? (
+                                <Monitor className="h-4 w-4 text-[#03524f]" />
+                              ) : (
+                                <BookOpen className="h-4 w-4 text-[#03524f]" />
+                              )}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900">{subject.name}</span>
+                              {subject.teacherIds.length > 0 && (
+                                <div className="flex items-center mt-1">
+                                  <CheckCircle className="h-3 w-3 text-[#03524f] mr-1" />
+                                  <span className="text-xs text-[#03524f]">{t('subjects.autoAssigned')}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-medium text-gray-900">{subject.name}</span>
-                            {subject.teacherIds.length > 0 && (
-                              <div className="flex items-center mt-1">
-                                <CheckCircle className="h-3 w-3 text-[#03524f] mr-1" />
-                                <span className="text-xs text-[#03524f]">{t('subjects.autoAssigned')}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-[#03524f] bg-opacity-10 text-[#03524f] rounded-full">
-                          <GraduationCap className="h-3 w-3 mr-1" />
-                          {getCourseText(subject.course)}
-                        </span>
+                        <Tooltip content={`${getCourseText(subject.course)}\nԱռարկա նախատեսված է ${subject.course}-րդ կուրսի համար`}>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-[#03524f] bg-opacity-10 text-[#03524f] rounded-full cursor-help">
+                            <GraduationCap className="h-3 w-3 mr-1" />
+                            {getCourseText(subject.course)}
+                          </span>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          subject.type === 'theory' 
-                            ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')}
-                        </span>
+                        <Tooltip content={subject.type === 'theory' ? 'Տեսական առարկա\nԴասավանդվում է սովորական դասարանում' : 'Լաբորատոր առարկա\nԴասավանդվում է լաբորատորիայում'}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full cursor-help ${
+                            subject.type === 'theory' 
+                              ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')}
+                          </span>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex flex-wrap gap-1">
-                          {subject.teacherIds.slice(0, 2).map(teacherId => (
-                            <span key={teacherId} className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                              {getTeacherName(teacherId)}
-                            </span>
-                          ))}
-                          {subject.teacherIds.length > 2 && (
-                            <span className="text-xs text-gray-500">
-                              +{subject.teacherIds.length - 2} {t('common.more')}
-                            </span>
-                          )}
-                          {subject.teacherIds.length === 0 && (
-                            <span className="text-xs text-gray-400 italic">{t('subjects.noTeachersAssigned')}</span>
-                          )}
-                        </div>
+                        <Tooltip content={getTeachersTooltip(subject.teacherIds)}>
+                          <div className="flex flex-wrap gap-1 cursor-help">
+                            {subject.teacherIds.slice(0, 2).map(teacherId => (
+                              <span key={teacherId} className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                                {getTeacherName(teacherId)}
+                              </span>
+                            ))}
+                            {subject.teacherIds.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{subject.teacherIds.length - 2} {t('common.more')}
+                              </span>
+                            )}
+                            {subject.teacherIds.length === 0 && (
+                              <span className="text-xs text-gray-400 italic">{t('subjects.noTeachersAssigned')}</span>
+                            )}
+                          </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-1 text-gray-400" />
-                          {assignedGroups.length} {t('subjects.groups')}
-                        </div>
+                        <Tooltip content={getGroupsTooltip(subject.id)}>
+                          <div className="flex items-center cursor-help">
+                            <Users className="h-4 w-4 mr-1 text-gray-400" />
+                            {assignedGroups.length} {t('subjects.groups')}
+                          </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="font-medium">{totalHours}ժ/{t('common.year')}</span>
+                        <Tooltip content={`Ընդամենը ${totalHours} ժամ տարեկան\nԲաշխված բոլոր խմբերի միջև`}>
+                          <span className="font-medium cursor-help">{totalHours}ժ/{t('common.year')}</span>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
