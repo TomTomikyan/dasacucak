@@ -269,21 +269,6 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
-          {schedule.length > 0 && (
-            <button
-              onClick={handleExportSchedule}
-              disabled={isExporting}
-              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
-            >
-              {isExporting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-2" />
-              )}
-              {isExporting ? t('schedule.exporting') : t('schedule.export')}
-            </button>
-          )}
-          
           <button
             onClick={() => handleGenerateSchedule(schedule.length > 0)}
             disabled={!canGenerate || isGenerating}
@@ -303,6 +288,21 @@ const Schedule: React.FC<ScheduleProps> = ({
                 : t('schedule.generate')
             }
           </button>
+          
+          {schedule.length > 0 && (
+            <button
+              onClick={handleExportSchedule}
+              disabled={isExporting}
+              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isExporting ? t('schedule.exporting') : t('schedule.export')}
+            </button>
+          )}
         </div>
       </div>
 
