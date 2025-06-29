@@ -47,6 +47,14 @@ export class ScheduleGenerator {
     return shuffled;
   }
 
+  // 🔥 NEW: Get properly ordered working days (Monday first)
+  private getOrderedWorkingDays(): string[] {
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    // Filter and sort working days according to proper week order
+    return dayOrder.filter(day => this.institution.workingDays.includes(day));
+  }
+
   async generateSchedule(logCallback?: (message: string) => void): Promise<GenerationResult> {
     const log = (message: string) => {
       console.log(message);
@@ -431,7 +439,10 @@ export class ScheduleGenerator {
       potentialSlots: 0
     };
     
-    for (const day of this.institution.workingDays) {
+    // 🔥 Use properly ordered working days
+    const orderedWorkingDays = this.getOrderedWorkingDays();
+    
+    for (const day of orderedWorkingDays) {
       for (let lessonNumber = 1; lessonNumber <= this.institution.lessonsPerDay; lessonNumber++) {
         conflictSummary.totalSlotsChecked++;
         
@@ -532,8 +543,9 @@ export class ScheduleGenerator {
   private findAvailableSlots(requirement: LessonRequirement): ScheduleSlot[] {
     const availableSlots: ScheduleSlot[] = [];
 
-    // 🎲 Randomize the order of days and lessons
-    const randomizedDays = this.shuffleArray(this.institution.workingDays);
+    // 🔥 Use properly ordered working days (Monday first)
+    const orderedWorkingDays = this.getOrderedWorkingDays();
+    const randomizedDays = this.shuffleArray(orderedWorkingDays);
     const randomizedLessons = this.shuffleArray(
       Array.from({ length: this.institution.lessonsPerDay }, (_, i) => i + 1)
     );
@@ -719,9 +731,12 @@ export class ScheduleGenerator {
   private scoreSlot(slot: ScheduleSlot, requirement: LessonRequirement): number {
     let score = 0;
 
+    // 🔥 Use properly ordered working days for scoring
+    const orderedWorkingDays = this.getOrderedWorkingDays();
+    const dayIndex = orderedWorkingDays.indexOf(slot.day);
+    
     // Prefer earlier in the week for important subjects
-    const dayIndex = this.institution.workingDays.indexOf(slot.day);
-    score += (this.institution.workingDays.length - dayIndex) * 2;
+    score += (orderedWorkingDays.length - dayIndex) * 2;
 
     // Prefer middle lessons (not too early, not too late)
     const middleLesson = Math.ceil(this.institution.lessonsPerDay / 2);
@@ -863,11 +878,14 @@ export class ScheduleGenerator {
   private optimizeScheduleDistribution(log: (message: string) => void): void {
     log('🔧 Optimizing schedule distribution...');
 
+    // 🔥 Use properly ordered working days
+    const orderedWorkingDays = this.getOrderedWorkingDays();
+
     // Check for groups with uneven daily distribution
     this.classGroups.forEach(group => {
       const dailyLessons = new Map<string, number>();
       
-      this.institution.workingDays.forEach(day => {
+      orderedWorkingDays.forEach(day => {
         const lessonsOnDay = this.schedule.filter(s => 
           s.classGroupId === group.id && s.day === day
         ).length;
