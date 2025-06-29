@@ -8,13 +8,14 @@ import {
   MapPin, 
   GraduationCap, 
   Calendar,
-  Clock,
   CheckCircle,
   AlertTriangle,
-  BarChart3,
+  XCircle,
   TrendingUp,
-  Settings,
-  Database
+  Activity,
+  Upload,
+  Trash2,
+  BarChart3
 } from 'lucide-react';
 import { 
   Institution, 
@@ -39,6 +40,8 @@ interface OverviewProps {
   setTeachers: (teachers: Teacher[]) => void;
   schedule: ScheduleSlot[];
   exportConfiguration: () => void;
+  importConfiguration: (file: File) => Promise<void>;
+  clearAllData: () => void;
   showToast: {
     showSuccess: (title: string, message: string, duration?: number) => void;
     showError: (title: string, message: string, duration?: number) => void;
@@ -55,30 +58,21 @@ const Overview: React.FC<OverviewProps> = ({
   teachers,
   schedule,
   exportConfiguration,
+  importConfiguration,
+  clearAllData,
   showToast,
 }) => {
   const { t } = useLocalization();
 
-  // Calculate statistics
-  const stats = {
+  // Calculate key metrics
+  const metrics = {
     totalGroups: classGroups.length,
     totalSubjects: subjects.length,
     totalTeachers: teachers.length,
     totalClassrooms: classrooms.length,
     totalLessons: schedule.length,
-    theorySubjects: subjects.filter(s => s.type === 'theory').length,
-    labSubjects: subjects.filter(s => s.type === 'lab').length,
-    theoryClassrooms: classrooms.filter(c => c.type === 'theory').length,
-    laboratories: classrooms.filter(c => c.type === 'lab').length,
-    teacherLabs: classrooms.filter(c => c.type === 'teacher_lab').length,
     averageStudentsPerGroup: classGroups.length > 0 
       ? Math.round(classGroups.reduce((sum, g) => sum + g.studentsCount, 0) / classGroups.length)
-      : 0,
-    averageSubjectsPerGroup: classGroups.length > 0
-      ? Math.round(classGroups.reduce((sum, g) => sum + Object.keys(g.subjectHours || {}).length, 0) / classGroups.length)
-      : 0,
-    averageGroupsPerTeacher: teachers.length > 0
-      ? Math.round(teachers.reduce((sum, t) => sum + t.assignedClassGroups.length, 0) / teachers.length)
       : 0,
   };
 
@@ -93,324 +87,318 @@ const Overview: React.FC<OverviewProps> = ({
     ? Math.round((schedule.length / potentialLessons) * 100)
     : 0;
 
-  // System health checks
-  const warnings = [];
-  const recommendations = [];
+  // System health assessment
+  const healthChecks = {
+    hasInstitution: !!institution.name,
+    hasGroups: classGroups.length > 0,
+    hasSubjects: subjects.length > 0,
+    hasTeachers: teachers.length > 0,
+    hasClassrooms: classrooms.length > 0,
+    hasGroupSubjects: classGroups.some(g => Object.keys(g.subjectHours || {}).length > 0),
+    hasSubjectTeachers: subjects.some(s => s.teacherIds.length > 0),
+    hasSchedule: schedule.length > 0,
+  };
 
-  if (classGroups.length === 0) warnings.push(t('overview.noGroups'));
-  if (subjects.length === 0) warnings.push(t('overview.noSubjects'));
-  if (teachers.length === 0) warnings.push(t('overview.noTeachers'));
-  if (classrooms.length === 0) warnings.push(t('overview.noClassrooms'));
+  const healthScore = Object.values(healthChecks).filter(Boolean).length;
+  const totalChecks = Object.keys(healthChecks).length;
+  const healthPercentage = Math.round((healthScore / totalChecks) * 100);
 
-  const subjectsWithoutTeachers = subjects.filter(s => s.teacherIds.length === 0);
-  if (subjectsWithoutTeachers.length > 0) {
-    warnings.push(t('toast.noTeachersAssignedDesc'));
-  }
+  const getHealthStatus = () => {
+    if (healthPercentage >= 80) return { status: 'excellent', color: 'text-green-600', bgColor: 'bg-green-100', icon: CheckCircle };
+    if (healthPercentage >= 60) return { status: 'good', color: 'text-yellow-600', bgColor: 'bg-yellow-100', icon: AlertTriangle };
+    return { status: 'critical', color: 'text-red-600', bgColor: 'bg-red-100', icon: XCircle };
+  };
 
-  const groupsWithoutSubjects = classGroups.filter(g => Object.keys(g.subjectHours || {}).length === 0);
-  if (groupsWithoutSubjects.length > 0) {
-    warnings.push(t('toast.noSubjectsAssignedDesc'));
-  }
+  const healthStatus = getHealthStatus();
+  const HealthIcon = healthStatus.icon;
 
-  if (scheduleCompleteness < 80 && schedule.length > 0) {
-    recommendations.push(t('overview.improveScheduleCompleteness'));
-  }
+  // Key issues
+  const issues = [];
+  if (!healthChecks.hasInstitution) issues.push(t('overview.issues.noInstitution'));
+  if (!healthChecks.hasGroups) issues.push(t('overview.issues.noGroups'));
+  if (!healthChecks.hasSubjects) issues.push(t('overview.issues.noSubjects'));
+  if (!healthChecks.hasTeachers) issues.push(t('overview.issues.noTeachers'));
+  if (!healthChecks.hasClassrooms) issues.push(t('overview.issues.noClassrooms'));
+  if (!healthChecks.hasGroupSubjects) issues.push(t('overview.issues.noGroupSubjects'));
+  if (!healthChecks.hasSubjectTeachers) issues.push(t('overview.issues.noSubjectTeachers'));
 
-  if (stats.averageGroupsPerTeacher > 5) {
-    recommendations.push(t('overview.considerMoreTeachers'));
-  }
+  // Handle file import
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleExport = () => {
+    if (!file.name.endsWith('.json')) {
+      showToast.showError(t('toast.invalidFileFormat'), t('toast.selectJsonFile'));
+      return;
+    }
+
     try {
-      exportConfiguration();
-      showToast.showSuccess(
-        t('toast.exportSuccessful'),
-        t('toast.exportSuccessfulDesc')
-      );
+      await importConfiguration(file);
+      showToast.showSuccess(t('toast.importSuccessful'), t('toast.importSuccessfulDesc'));
     } catch (error) {
-      showToast.showError(
-        t('toast.exportFailed'),
-        t('toast.exportFailedDesc')
-      );
+      showToast.showError(t('toast.importFailed'), t('toast.importFailedDesc'));
+    }
+
+    // Clear the input
+    event.target.value = '';
+  };
+
+  const handleClearData = () => {
+    if (confirm(t('overview.confirmClearAll'))) {
+      clearAllData();
+      showToast.showSuccess(t('toast.dataCleared'), t('toast.dataClearedDesc'));
     }
   };
 
-  const StatCard: React.FC<{
+  const MetricCard: React.FC<{
     title: string;
     value: number | string;
     icon: React.ReactNode;
-    color: string;
     subtitle?: string;
-  }> = ({ title, value, icon, color, subtitle }) => (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${color} mr-4`}>
-          {icon}
+    trend?: 'up' | 'down' | 'stable';
+  }> = ({ title, value, icon, subtitle, trend }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="p-3 rounded-lg bg-[#03524f] bg-opacity-10">
+            {icon}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
-        </div>
+        {trend && (
+          <div className={`p-2 rounded-full ${
+            trend === 'up' ? 'bg-green-100' : 
+            trend === 'down' ? 'bg-red-100' : 'bg-gray-100'
+          }`}>
+            <TrendingUp className={`h-4 w-4 ${
+              trend === 'up' ? 'text-green-600' : 
+              trend === 'down' ? 'text-red-600 transform rotate-180' : 'text-gray-600'
+            }`} />
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Eye className="h-6 w-6 text-[#03524f]" />
+          <Eye className="h-8 w-8 text-[#03524f]" />
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{t('overview.title')}</h2>
-            <p className="text-sm text-gray-500">{t('overview.subtitle')}</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('overview.title')}</h1>
+            <p className="text-gray-600">{institution.name || t('overview.noInstitutionName')}</p>
           </div>
         </div>
-        <button
-          onClick={handleExport}
-          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          {t('overview.exportConfig')}
-        </button>
-      </div>
-
-      {/* Institution Info */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <Building2 className="h-5 w-5 text-[#03524f]" />
-          <h3 className="text-lg font-medium text-gray-900">{t('overview.institutionInfo')}</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">{t('setup.collegeName')}</p>
-            <p className="font-medium text-gray-900">{institution.name || t('common.notSet')}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">{t('overview.workingDaysCount')}</p>
-            <p className="font-medium text-gray-900">{institution.workingDays.length} {t('common.days')}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">{t('overview.lessonsPerDay')}</p>
-            <p className="font-medium text-gray-900">{institution.lessonsPerDay} {t('common.lessons')}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">{t('overview.lessonDuration')}</p>
-            <p className="font-medium text-gray-900">{institution.lessonDuration} րոպե</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">{t('overview.academicWeeks')}</p>
-            <p className="font-medium text-gray-900">{institution.academicWeeks} շաբաթ</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">{t('overview.specializations')}</p>
-            <p className="font-medium text-gray-900">{institution.specializations.length}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">{t('setup.startTime')}</p>
-            <p className="font-medium text-gray-900">{institution.startTime}</p>
-          </div>
+        
+        <div className="flex items-center space-x-3">
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleFileImport}
+            className="hidden"
+            id="import-file"
+          />
+          <label
+            htmlFor="import-file"
+            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {t('overview.import')}
+          </label>
+          
+          <button
+            onClick={handleClearData}
+            className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {t('overview.clearAll')}
+          </button>
+          
+          <button
+            onClick={exportConfiguration}
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-lg hover:bg-[#024239] transition-colors"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {t('overview.export')}
+          </button>
         </div>
       </div>
 
-      {/* Main Statistics */}
+      {/* System Health Card */}
+      <div className={`rounded-xl border-2 p-6 ${healthStatus.bgColor} ${healthStatus.color.replace('text-', 'border-')}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <HealthIcon className={`h-8 w-8 ${healthStatus.color}`} />
+            <div>
+              <h2 className={`text-xl font-bold ${healthStatus.color}`}>
+                {t(`overview.health.${healthStatus.status}`)}
+              </h2>
+              <p className={`text-sm ${healthStatus.color} opacity-80`}>
+                {t('overview.systemHealth')}: {healthScore}/{totalChecks} {t('overview.checksCompleted')}
+              </p>
+            </div>
+          </div>
+          
+          <div className="text-right">
+            <div className={`text-3xl font-bold ${healthStatus.color}`}>
+              {healthPercentage}%
+            </div>
+            <div className="w-32 bg-white bg-opacity-50 rounded-full h-2 mt-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  healthPercentage >= 80 ? 'bg-green-600' : 
+                  healthPercentage >= 60 ? 'bg-yellow-600' : 'bg-red-600'
+                }`}
+                style={{ width: `${healthPercentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {issues.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-current border-opacity-20">
+            <p className={`text-sm font-medium ${healthStatus.color} mb-2`}>
+              {t('overview.keyIssues')}:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {issues.slice(0, 4).map((issue, index) => (
+                <div key={index} className={`text-sm ${healthStatus.color} opacity-80`}>
+                  • {issue}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={t('overview.totalGroups')}
-          value={stats.totalGroups}
-          icon={<Users className="h-6 w-6 text-white" />}
-          color="bg-[#03524f]"
-          subtitle={`${stats.averageStudentsPerGroup} ${t('common.students')}/խումբ`}
+        <MetricCard
+          title={t('overview.groups')}
+          value={metrics.totalGroups}
+          icon={<Users className="h-6 w-6 text-[#03524f]" />}
+          subtitle={`${metrics.averageStudentsPerGroup} ${t('overview.avgStudents')}`}
+          trend={metrics.totalGroups > 0 ? 'up' : undefined}
         />
-        <StatCard
-          title={t('overview.totalSubjects')}
-          value={stats.totalSubjects}
-          icon={<BookOpen className="h-6 w-6 text-white" />}
-          color="bg-[#03524f]"
-          subtitle={`${stats.theorySubjects} տեսական, ${stats.labSubjects} լաբ`}
+        
+        <MetricCard
+          title={t('overview.subjects')}
+          value={metrics.totalSubjects}
+          icon={<BookOpen className="h-6 w-6 text-[#03524f]" />}
+          subtitle={`${subjects.filter(s => s.type === 'lab').length} ${t('overview.laboratories')}`}
+          trend={metrics.totalSubjects > 0 ? 'up' : undefined}
         />
-        <StatCard
-          title={t('overview.totalTeachers')}
-          value={stats.totalTeachers}
-          icon={<GraduationCap className="h-6 w-6 text-white" />}
-          color="bg-[#03524f]"
-          subtitle={`${stats.averageGroupsPerTeacher} խումբ/ուսուցիչ`}
+        
+        <MetricCard
+          title={t('overview.teachers')}
+          value={metrics.totalTeachers}
+          icon={<GraduationCap className="h-6 w-6 text-[#03524f]" />}
+          subtitle={`${teachers.filter(t => t.homeClassroom).length} ${t('overview.withOwnLabs')}`}
+          trend={metrics.totalTeachers > 0 ? 'up' : undefined}
         />
-        <StatCard
-          title={t('overview.totalClassrooms')}
-          value={stats.totalClassrooms}
-          icon={<MapPin className="h-6 w-6 text-white" />}
-          color="bg-[#03524f]"
-          subtitle={`${stats.theoryClassrooms} տեսական, ${stats.laboratories} լաբ`}
+        
+        <MetricCard
+          title={t('overview.classrooms')}
+          value={metrics.totalClassrooms}
+          icon={<MapPin className="h-6 w-6 text-[#03524f]" />}
+          subtitle={`${classrooms.filter(c => c.type === 'lab').length} ${t('overview.labRooms')}`}
+          trend={metrics.totalClassrooms > 0 ? 'up' : undefined}
         />
       </div>
 
-      {/* Schedule Statistics */}
+      {/* Schedule Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <Calendar className="h-5 w-5 text-[#03524f]" />
-            <h3 className="text-lg font-medium text-gray-900">{t('overview.scheduleInfo')}</h3>
+            <Calendar className="h-6 w-6 text-[#03524f]" />
+            <h3 className="text-lg font-semibold text-gray-900">{t('overview.scheduleStatus')}</h3>
           </div>
+          
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('overview.scheduledLessons')}</span>
-              <span className="font-medium text-gray-900">{stats.totalLessons}</span>
+              <span className="text-gray-600">{t('overview.scheduledLessons')}</span>
+              <span className="text-2xl font-bold text-gray-900">{metrics.totalLessons}</span>
             </div>
+            
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('overview.scheduleCompleteness')}</span>
-              <div className="flex items-center space-x-2">
+              <span className="text-gray-600">{t('overview.completeness')}</span>
+              <div className="flex items-center space-x-3">
                 <div className="w-24 bg-gray-200 rounded-full h-2">
                   <div 
-                    className={`h-2 rounded-full ${
+                    className={`h-2 rounded-full transition-all duration-500 ${
                       scheduleCompleteness >= 80 ? 'bg-[#03524f]' : 
                       scheduleCompleteness >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
                     style={{ width: `${Math.min(scheduleCompleteness, 100)}%` }}
                   />
                 </div>
-                <span className="font-medium text-gray-900">{scheduleCompleteness}%</span>
+                <span className="text-lg font-bold text-gray-900">{scheduleCompleteness}%</span>
               </div>
             </div>
+            
+            {scheduleCompleteness < 100 && potentialLessons > 0 && (
+              <div className="text-sm text-gray-500">
+                {potentialLessons - metrics.totalLessons} {t('overview.lessonsRemaining')}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <BarChart3 className="h-5 w-5 text-[#03524f]" />
-            <h3 className="text-lg font-medium text-gray-900">{t('overview.dataStatistics')}</h3>
+            <Activity className="h-6 w-6 text-[#03524f]" />
+            <h3 className="text-lg font-semibold text-gray-900">{t('overview.quickStats')}</h3>
           </div>
-          <div className="space-y-4">
+          
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('overview.averageSubjectsPerGroup')}</span>
-              <span className="font-medium text-gray-900">{stats.averageSubjectsPerGroup}</span>
+              <span className="text-gray-600">{t('overview.workingDays')}</span>
+              <span className="font-medium">{institution.workingDays.length} {t('overview.days')}</span>
             </div>
+            
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('classrooms.teacherLab')}</span>
-              <span className="font-medium text-gray-900">{stats.teacherLabs}</span>
+              <span className="text-gray-600">{t('overview.dailyLessons')}</span>
+              <span className="font-medium">{institution.lessonsPerDay}</span>
             </div>
+            
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('overview.laboratories')}</span>
-              <span className="font-medium text-gray-900">{stats.laboratories}</span>
+              <span className="text-gray-600">{t('overview.lessonDuration')}</span>
+              <span className="font-medium">{institution.lessonDuration} {t('overview.minutes')}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">{t('overview.specializations')}</span>
+              <span className="font-medium">{institution.specializations.length}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* System Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            <h3 className="text-lg font-medium text-gray-900">{t('overview.warnings')}</h3>
-          </div>
-          {warnings.length === 0 ? (
-            <div className="flex items-center space-x-2 text-[#03524f]">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">{t('overview.noWarnings')}</span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {warnings.map((warning, index) => (
-                <div key={index} className="flex items-start space-x-2 text-yellow-700">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{warning}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <TrendingUp className="h-5 w-5 text-[#03524f]" />
-            <h3 className="text-lg font-medium text-gray-900">{t('overview.recommendations')}</h3>
-          </div>
-          {recommendations.length === 0 ? (
-            <div className="flex items-center space-x-2 text-[#03524f]">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">{t('overview.noRecommendations')}</span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {recommendations.map((recommendation, index) => (
-                <div key={index} className="flex items-start space-x-2 text-[#03524f]">
-                  <TrendingUp className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{recommendation}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Configuration Status */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <Settings className="h-5 w-5 text-[#03524f]" />
-          <h3 className="text-lg font-medium text-gray-900">{t('overview.configurationStatus')}</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${institution.name ? 'bg-[#03524f]' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-700">{t('overview.institutionSettings')}</span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              institution.name ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
-            }`}>
-              {institution.name ? t('overview.complete') : t('overview.incomplete')}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${classGroups.length > 0 ? 'bg-[#03524f]' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-700">{t('groups.title')}</span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              classGroups.length > 0 ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
-            }`}>
-              {classGroups.length > 0 ? t('overview.complete') : t('overview.incomplete')}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${subjects.length > 0 ? 'bg-[#03524f]' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-700">{t('subjects.title')}</span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              subjects.length > 0 ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
-            }`}>
-              {subjects.length > 0 ? t('overview.complete') : t('overview.incomplete')}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${teachers.length > 0 ? 'bg-[#03524f]' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-700">{t('teachers.title')}</span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              teachers.length > 0 ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' : 'bg-red-100 text-red-800'
-            }`}>
-              {teachers.length > 0 ? t('overview.complete') : t('overview.incomplete')}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Data Management */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <Database className="h-5 w-5 text-[#03524f]" />
-          <h3 className="text-lg font-medium text-gray-900">{t('overview.dataManagement')}</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Quick Actions */}
+      <div className="bg-gradient-to-r from-[#03524f] to-[#024239] rounded-xl p-6 text-white">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 mb-1">{t('overview.lastModified')}</p>
-            <p className="font-medium text-gray-900">{new Date().toLocaleDateString('hy-AM')}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">{t('overview.version')}</p>
-            <p className="font-medium text-gray-900">1.0.0</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">{t('common.total')} {t('overview.dataStatistics')}</p>
-            <p className="font-medium text-gray-900">
-              {stats.totalGroups + stats.totalSubjects + stats.totalTeachers + stats.totalClassrooms} {t('common.items')}
+            <h3 className="text-xl font-bold mb-2">{t('overview.readyToStart')}</h3>
+            <p className="text-white text-opacity-90">
+              {healthPercentage >= 80 
+                ? t('overview.systemReady')
+                : t('overview.completeSetup')
+              }
             </p>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-center">
+              <BarChart3 className="h-8 w-8 mx-auto mb-2 text-white text-opacity-80" />
+              <div className="text-2xl font-bold">{healthPercentage}%</div>
+              <div className="text-xs text-white text-opacity-80">{t('overview.complete')}</div>
+            </div>
           </div>
         </div>
       </div>

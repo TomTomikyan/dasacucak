@@ -235,39 +235,65 @@ export const armenianTranslations = {
   overview: {
     title: 'Ընդհանուր տեսք',
     subtitle: 'Ձեր ժամանակացույցի համակարգի ամբողջական վիճակը',
-    exportConfig: 'Արտահանել կարգավորումները',
-    institutionInfo: 'Հաստատության տեղեկություններ',
-    workingDaysCount: 'Աշխատանքային օրեր',
-    lessonsPerDay: 'Դասեր օրական',
-    lessonDuration: 'Դասի տևողությունը',
-    academicWeeks: 'Ուսումնական շաբաթներ',
-    specializations: 'Մասնագիտացումներ',
-    totalGroups: 'Ընդամենը խմբեր',
-    totalSubjects: 'Ընդամենը առարկաներ',
-    totalTeachers: 'Ընդամենը ուսուցիչներ',
-    totalClassrooms: 'Ընդամենը դասարաններ',
-    scheduleInfo: 'Ժամանակացույցի տեղեկություններ',
+    noInstitutionName: 'Հաստատության անունը նշանակված չէ',
+    systemHealth: 'Համակարգի առողջություն',
+    checksCompleted: 'ստուգում ավարտված',
+    keyIssues: 'Հիմնական խնդիրներ',
+    
+    // Health statuses
+    health: {
+      excellent: 'Գերազանց',
+      good: 'Լավ',
+      critical: 'Կրիտիկական',
+    },
+    
+    // Issues
+    issues: {
+      noInstitution: 'Հաստատության տվյալները չեն լրացված',
+      noGroups: 'Խմբեր չեն ստեղծված',
+      noSubjects: 'Առարկաներ չեն ավելացված',
+      noTeachers: 'Ուսուցիչներ չեն ավելացված',
+      noClassrooms: 'Դասարաններ չեն ստեղծված',
+      noGroupSubjects: 'Խմբերին առարկաներ չեն նշանակված',
+      noSubjectTeachers: 'Առարկաներին ուսուցիչներ չեն նշանակված',
+    },
+    
+    // Metrics
+    groups: 'Խմբեր',
+    subjects: 'Առարկաներ',
+    teachers: 'Ուսուցիչներ',
+    classrooms: 'Դասարաններ',
+    avgStudents: 'միջին ուսանողներ',
+    laboratories: 'լաբորատորիաներ',
+    withOwnLabs: 'սեփական լաբ',
+    labRooms: 'լաբ դասարաններ',
+    
+    // Schedule
+    scheduleStatus: 'Ժամանակացույցի կարգավիճակ',
     scheduledLessons: 'Նշանակված դասեր',
-    scheduleCompleteness: 'Ժամանակացույցի լրացվածություն',
-    dataStatistics: 'Տվյալների վիճակագրություն',
-    averageSubjectsPerGroup: 'Միջին առարկաներ խմբում',
-    laboratories: 'Լաբորատորիաներ',
-    warnings: 'Զգուշացումներ',
-    recommendations: 'Առաջարկություններ',
-    noWarnings: 'Զգուշացումներ չկան - ամեն ինչ կարգին է!',
-    noRecommendations: 'Առաջարկություններ չկան - համակարգը օպտիմալ է!',
-    configurationStatus: 'Կարգավորման կարգավիճակ',
+    completeness: 'Լրացվածություն',
+    lessonsRemaining: 'դաս մնացել է',
+    
+    // Quick stats
+    quickStats: 'Արագ վիճակագրություն',
+    workingDays: 'Աշխատանքային օրեր',
+    days: 'օր',
+    dailyLessons: 'Օրական դասեր',
+    lessonDuration: 'Դասի տևողությունը',
+    minutes: 'րոպե',
+    specializations: 'Մասնագիտացումներ',
+    
+    // Actions
+    import: 'Ներմուծել',
+    export: 'Արտահանել',
+    clearAll: 'Մաքրել բոլորը',
+    confirmClearAll: 'Վստա՞հ եք, որ ցանկանում եք մաքրել բոլոր տվյալները:',
+    
+    // Ready section
+    readyToStart: 'Պատրա՞ստ եք սկսելու',
+    systemReady: 'Ձեր համակարգը պատրաստ է ժամանակացույց ստեղծելու համար',
+    completeSetup: 'Ավարտեք կարգավորումները՝ սկսելու համար',
     complete: 'Ավարտված',
-    incomplete: 'Անավարտ',
-    dataManagement: 'Տվյալների կառավարում',
-    lastModified: 'Վերջին փոփոխությունը',
-    version: 'Տարբերակ',
-    noGroups: 'Խմբեր չեն կարգավորված',
-    noSubjects: 'Առարկաներ չեն կարգավորված',
-    noTeachers: 'Ուսուցիչներ չեն կարգավորված',
-    noClassrooms: 'Դասարաններ չեն կարգավորված',
-    improveScheduleCompleteness: 'Բարելավեք ժամանակացույցի լրացվածությունը՝ ավելի շատ դասեր ավելացնելով',
-    considerMoreTeachers: 'Մտածեք ավելի շատ ուսուցիչներ ավելացնելու մասին՝ բեռը բաշխելու համար',
   },
 
   // Schedule page
@@ -400,6 +426,14 @@ export const armenianTranslations = {
     exportSuccessfulDesc: 'Կարգավորումները հաջողությամբ արտահանվեցին',
     exportFailed: 'Արտահանումը ձախողվեց',
     exportFailedDesc: 'Չհաջողվեց արտահանել կարգավորումները',
+    importSuccessful: 'Ներմուծումը հաջողվեց',
+    importSuccessfulDesc: 'Կարգավորումները հաջողությամբ ներմուծվեցին',
+    importFailed: 'Ներմուծումը ձախողվեց',
+    importFailedDesc: 'Չհաջողվեց ներմուծել կարգավորումները',
+    invalidFileFormat: 'Սխալ ֆայլի ֆորմատ',
+    selectJsonFile: 'Ընտրեք JSON ֆայլ',
+    dataCleared: 'Տվյալները մաքրվեցին',
+    dataClearedDesc: 'Բոլոր տվյալները հաջողությամբ մաքրվեցին',
     icsExportSuccessfulDesc: 'Ժամանակացույցը հաջողությամբ արտահանվեց .ics ֆայլի տեսքով',
     icsExportFailedDesc: 'Չհաջողվեց արտահանել ժամանակացույցը .ics ֆայլի տեսքով',
     

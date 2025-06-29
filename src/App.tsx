@@ -151,6 +151,8 @@ function App() {
             setTeachers={setTeachers}
             schedule={schedule}
             exportConfiguration={handleExportConfiguration}
+            importConfiguration={handleImportConfiguration}
+            clearAllData={handleClearAllData}
             showToast={{ showSuccess, showError, showWarning, showInfo }}
           />
         );
