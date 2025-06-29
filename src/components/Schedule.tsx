@@ -686,45 +686,6 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* 🔥 ENHANCED: Drag and Drop Instructions with better visual design */}
-      {schedule.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Move className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('schedule.dragDropInstructions')}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
-                  <Move className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="font-medium text-blue-900 text-sm">{t('schedule.moveWithinGroup')}</div>
-                    <div className="text-blue-700 text-xs mt-1">{t('schedule.moveWithinGroupDesc')}</div>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
-                  <ArrowRightLeft className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="font-medium text-blue-900 text-sm">{t('schedule.swapLessonsDesc')}</div>
-                    <div className="text-blue-700 text-xs mt-1">{t('schedule.swapLessonsDescText')}</div>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="font-medium text-amber-900 text-sm">{t('schedule.restriction')}</div>
-                    <div className="text-amber-700 text-xs mt-1">{t('schedule.restrictionDesc')}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Generation Logs - COLLAPSIBLE */}
       {showLogs && generationLogs.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
