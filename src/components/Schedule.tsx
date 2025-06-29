@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { ScheduleSlot, Institution, ClassGroup, Subject, Teacher, Classroom } from '../types';
 import { ScheduleGenerator } from '../utils/scheduleGenerator';
 import { ICSExporter, ICSEvent } from '../utils/icsExport';
@@ -81,6 +81,7 @@ const Schedule: React.FC<ScheduleProps> = ({
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [generationLogs, setGenerationLogs] = useState<string[]>([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [logsExpanded, setLogsExpanded] = useState(true); // New state for collapsible logs
 
   // Filter schedule by selected group
   const filteredSchedule = selectedGroup === 'all' 
@@ -180,6 +181,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     setIsGenerating(true);
     setGenerationLogs([]);
     setShowLogs(true);
+    setLogsExpanded(true); // Auto-expand when generation starts
 
     try {
       const generator = new ScheduleGenerator(
@@ -419,23 +421,82 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Generation Logs */}
+      {/* Generation Logs - COLLAPSIBLE */}
       {showLogs && generationLogs.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gray-900">Ստեղծման գործընթաց</h3>
-            <button
-              onClick={() => setShowLogs(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ×
-            </button>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {/* Collapsible Header */}
+          <div 
+            className="flex items-center justify-between p-4 bg-[#03524f] bg-opacity-5 border-b border-[#03524f] border-opacity-10 cursor-pointer hover:bg-[#03524f] hover:bg-opacity-10 transition-colors"
+            onClick={() => setLogsExpanded(!logsExpanded)}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 text-[#03524f] animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-[#03524f]" />
+                )}
+                <h3 className="text-sm font-medium text-[#03524f]">
+                  {isGenerating ? 'Ստեղծման գործընթաց...' : 'Ստեղծման գործընթաց ավարտված'}
+                </h3>
+              </div>
+              <div className="text-xs text-[#03524f] bg-[#03524f] bg-opacity-10 px-2 py-1 rounded-full">
+                {generationLogs.length} գրառում
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLogs(false);
+                }}
+                className="text-[#03524f] hover:text-[#024239] transition-colors p-1"
+                title="Փակել"
+              >
+                <EyeOff className="h-4 w-4" />
+              </button>
+              <div className="text-[#03524f] transition-transform duration-200" style={{ transform: logsExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                <ChevronDown className="h-4 w-4" />
+              </div>
+            </div>
           </div>
-          <div className="max-h-40 overflow-y-auto bg-gray-50 rounded-md p-3">
-            <div className="space-y-1 text-xs font-mono">
-              {generationLogs.map((log, index) => (
-                <div key={index} className="text-gray-700">{log}</div>
-              ))}
+          
+          {/* Collapsible Content */}
+          <div className={`transition-all duration-300 ease-in-out ${logsExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+            <div className="p-4">
+              <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-md p-3 border border-gray-200">
+                <div className="space-y-1 text-xs font-mono">
+                  {generationLogs.map((log, index) => (
+                    <div 
+                      key={index} 
+                      className={`text-gray-700 py-1 px-2 rounded transition-colors ${
+                        log.includes('✅') ? 'bg-green-50 text-green-700' :
+                        log.includes('❌') ? 'bg-red-50 text-red-700' :
+                        log.includes('⚠️') ? 'bg-yellow-50 text-yellow-700' :
+                        log.includes('🚀') || log.includes('🎲') ? 'bg-blue-50 text-blue-700' :
+                        ''
+                      }`}
+                    >
+                      {log}
+                    </div>
+                  ))}
+                  {isGenerating && (
+                    <div className="flex items-center space-x-2 py-2 px-2 bg-blue-50 text-blue-700 rounded">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Գործընթացը շարունակվում է...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Summary when collapsed */}
+              {!isGenerating && (
+                <div className="mt-3 text-xs text-gray-500 flex items-center justify-between">
+                  <span>Ավարտված: {new Date().toLocaleTimeString('hy-AM')}</span>
+                  <span>Ընդամենը {generationLogs.filter(log => log.includes('✅')).length} հաջող գործողություն</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
