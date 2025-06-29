@@ -633,7 +633,7 @@ const Schedule: React.FC<ScheduleProps> = ({
           <button
             onClick={() => handleGenerateSchedule(schedule.length > 0)}
             disabled={!canGenerate || isGenerating}
-            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] disabled:opacity-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors"
           >
             {isGenerating ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -654,7 +654,7 @@ const Schedule: React.FC<ScheduleProps> = ({
             <button
               onClick={handleExportSchedule}
               disabled={isExporting}
-              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors"
             >
               {isExporting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -730,7 +730,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Collapsible Header */}
           <div 
-            className="flex items-center justify-between p-4 bg-[#03524f] bg-opacity-5 border-b border-[#03524f] border-opacity-10 cursor-pointer hover:bg-[#03524f] hover:bg-opacity-10 transition-colors"
+            className="flex items-center justify-between p-4 bg-[#03524f] bg-opacity-5 border-b border-[#03524f] border-opacity-10 cursor-pointer transition-colors"
             onClick={() => setLogsExpanded(!logsExpanded)}
           >
             <div className="flex items-center space-x-3">
@@ -755,7 +755,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                   e.stopPropagation();
                   setShowLogs(false);
                 }}
-                className="text-[#03524f] hover:text-[#024239] transition-colors p-1"
+                className="text-[#03524f] transition-colors p-1"
                 title="Փակել"
               >
                 <EyeOff className="h-4 w-4" />
@@ -999,7 +999,7 @@ const Schedule: React.FC<ScheduleProps> = ({
             <button
               onClick={() => handleGenerateSchedule(false)}
               disabled={isGenerating}
-              className="inline-flex items-center px-6 py-3 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] disabled:opacity-50 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-[#03524f] text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors"
             >
               {isGenerating ? (
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -1036,13 +1036,13 @@ const Schedule: React.FC<ScheduleProps> = ({
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowRegenerateConfirm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   onClick={confirmRegenerate}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md"
                 >
                   {t('schedule.yesRegenerate')}
                 </button>
