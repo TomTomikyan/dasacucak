@@ -189,22 +189,59 @@ const Schedule: React.FC<ScheduleProps> = ({
   const requirements = checkRequirements();
   const canGenerate = requirements.length === 0;
 
-  // Create schedule grid
+  // Create schedule grid - NEW STRUCTURE: Groups as rows, Days as columns
   const createScheduleGrid = () => {
-    const grid: { [key: string]: ScheduleSlot | null } = {};
+    const grid: { [key: string]: ScheduleSlot[] } = {};
     
-    institution.workingDays.forEach(day => {
-      for (let lesson = 1; lesson <= institution.lessonsPerDay; lesson++) {
-        const key = `${day}-${lesson}`;
-        const slot = filteredSchedule.find(s => s.day === day && s.lessonNumber === lesson);
-        grid[key] = slot || null;
-      }
+    // Get groups to display (filtered or all)
+    const groupsToShow = selectedGroup === 'all' 
+      ? classGroups 
+      : classGroups.filter(g => g.id === selectedGroup);
+
+    groupsToShow.forEach(group => {
+      institution.workingDays.forEach(day => {
+        for (let lesson = 1; lesson <= institution.lessonsPerDay; lesson++) {
+          const key = `${group.id}-${day}-${lesson}`;
+          const slot = filteredSchedule.find(s => 
+            s.classGroupId === group.id && 
+            s.day === day && 
+            s.lessonNumber === lesson
+          );
+          if (slot) {
+            if (!grid[key]) grid[key] = [];
+            grid[key].push(slot);
+          }
+        }
+      });
     });
 
     return grid;
   };
 
   const scheduleGrid = createScheduleGrid();
+
+  // Calculate lesson times
+  const calculateLessonTimes = () => {
+    const times: { lesson: number; startTime: string; endTime: string }[] = [];
+    const [startHour, startMinute] = institution.startTime.split(':').map(Number);
+    let currentMinutes = startHour * 60 + startMinute;
+
+    for (let i = 1; i <= institution.lessonsPerDay; i++) {
+      const startTime = `${Math.floor(currentMinutes / 60).toString().padStart(2, '0')}:${(currentMinutes % 60).toString().padStart(2, '0')}`;
+      currentMinutes += institution.lessonDuration;
+      const endTime = `${Math.floor(currentMinutes / 60).toString().padStart(2, '0')}:${(currentMinutes % 60).toString().padStart(2, '0')}`;
+      
+      times.push({ lesson: i, startTime, endTime });
+
+      if (i < institution.lessonsPerDay && institution.breakDurations[i - 1]) {
+        currentMinutes += institution.breakDurations[i - 1];
+      }
+    }
+
+    return times;
+  };
+
+  const lessonTimes = calculateLessonTimes();
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -324,80 +361,95 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid */}
+      {/* Schedule Grid - NEW STRUCTURE */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                    {t('common.time')}
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                    {t('groups.title')}
                   </th>
                   {institution.workingDays.map(day => (
-                    <th key={day} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={day} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
                       {t(`days.${day.toLowerCase()}`)}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {Array.from({ length: institution.lessonsPerDay }, (_, i) => i + 1).map(lessonNumber => {
-                  // Calculate lesson time
-                  const [startHour, startMinute] = institution.startTime.split(':').map(Number);
-                  let currentMinutes = startHour * 60 + startMinute;
-                  
-                  for (let j = 1; j < lessonNumber; j++) {
-                    currentMinutes += institution.lessonDuration;
-                    if (j < institution.lessonsPerDay && institution.breakDurations[j - 1]) {
-                      currentMinutes += institution.breakDurations[j - 1];
-                    }
-                  }
-                  
-                  const startTime = `${Math.floor(currentMinutes / 60).toString().padStart(2, '0')}:${(currentMinutes % 60).toString().padStart(2, '0')}`;
-                  const endTime = `${Math.floor((currentMinutes + institution.lessonDuration) / 60).toString().padStart(2, '0')}:${((currentMinutes + institution.lessonDuration) % 60).toString().padStart(2, '0')}`;
-
-                  return (
-                    <tr key={lessonNumber} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{lessonNumber}</div>
-                        <div className="text-xs text-gray-500">{startTime} - {endTime}</div>
-                      </td>
-                      {institution.workingDays.map(day => {
-                        const slot = scheduleGrid[`${day}-${lessonNumber}`];
-                        return (
-                          <td key={`${day}-${lessonNumber}`} className="px-2 py-2">
-                            {slot ? (
-                              <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-3 min-h-[80px]">
-                                <div className="space-y-1">
-                                  <div className="font-medium text-[#03524f] text-sm truncate">
-                                    {getSubjectName(slot.subjectId)}
-                                  </div>
-                                  <div className="flex items-center text-xs text-gray-600">
-                                    <Users className="h-3 w-3 mr-1" />
-                                    <span className="truncate">{getGroupName(slot.classGroupId)}</span>
-                                  </div>
-                                  <div className="flex items-center text-xs text-gray-600">
-                                    <GraduationCap className="h-3 w-3 mr-1" />
-                                    <span className="truncate">{getTeacherName(slot.teacherId)}</span>
-                                  </div>
-                                  <div className="flex items-center text-xs text-gray-600">
-                                    <MapPin className="h-3 w-3 mr-1" />
-                                    <span className="truncate">{getClassroomName(slot.classroomId)}</span>
-                                  </div>
+                {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
+                  <React.Fragment key={group.id}>
+                    {lessonTimes.map((time, timeIndex) => (
+                      <tr key={`${group.id}-${time.lesson}`} className="hover:bg-gray-50">
+                        {timeIndex === 0 && (
+                          <td 
+                            rowSpan={institution.lessonsPerDay} 
+                            className="px-4 py-4 whitespace-nowrap border-r border-gray-200 bg-gray-50"
+                          >
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                                <Users className="h-5 w-5 text-[#03524f]" />
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">{group.name}</div>
+                                <div className="text-xs text-gray-500">
+                                  {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուսանող
                                 </div>
                               </div>
-                            ) : (
-                              <div className="border-2 border-dashed border-gray-200 rounded-lg p-3 min-h-[80px] flex items-center justify-center">
-                                <span className="text-xs text-gray-400">Դատարկ</span>
-                              </div>
-                            )}
+                            </div>
                           </td>
-                        );
-                      })}
+                        )}
+                        
+                        {/* Time column for each lesson */}
+                        <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 w-20">
+                          <div className="text-center">
+                            <div className="font-medium">{time.lesson}</div>
+                            <div>{time.startTime}</div>
+                            <div>{time.endTime}</div>
+                          </div>
+                        </td>
+
+                        {institution.workingDays.map(day => {
+                          const key = `${group.id}-${day}-${time.lesson}`;
+                          const slots = scheduleGrid[key] || [];
+                          const slot = slots[0]; // Take first slot if multiple
+
+                          return (
+                            <td key={`${day}-${time.lesson}`} className="px-2 py-2">
+                              {slot ? (
+                                <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px]">
+                                  <div className="space-y-1">
+                                    <div className="font-medium text-[#03524f] text-xs truncate">
+                                      {getSubjectName(slot.subjectId)}
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-600">
+                                      <GraduationCap className="h-3 w-3 mr-1" />
+                                      <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-600">
+                                      <MapPin className="h-3 w-3 mr-1" />
+                                      <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[70px] flex items-center justify-center">
+                                  <span className="text-xs text-gray-400">Դատարկ</span>
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    {/* Add separator between groups */}
+                    <tr className="bg-gray-100">
+                      <td colSpan={institution.workingDays.length + 2} className="h-1"></td>
                     </tr>
-                  );
-                })}
+                  </React.Fragment>
+                ))}
               </tbody>
             </table>
           </div>
