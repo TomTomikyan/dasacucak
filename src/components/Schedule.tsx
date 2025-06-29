@@ -828,7 +828,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - 🔥 COMPLETELY REMOVED ALL HOVER EFFECTS */}
+      {/* Schedule Grid - NO HOVER EFFECTS */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -886,7 +886,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                           </Tooltip>
                         </td>
 
-                        {/* Schedule slots for each group - 🔥 NO HOVER EFFECTS AT ALL */}
+                        {/* Schedule slots for each group - NO HOVER EFFECTS */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
                           const slot = filteredSchedule.find(s => 
                             s.day === day && 
