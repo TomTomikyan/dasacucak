@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Eye, 
   Download, 
@@ -15,7 +15,12 @@ import {
   Activity,
   Upload,
   Trash2,
-  BarChart3
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  Target,
+  Plus
 } from 'lucide-react';
 import { 
   Institution, 
@@ -63,6 +68,7 @@ const Overview: React.FC<OverviewProps> = ({
   showToast,
 }) => {
   const { t } = useLocalization();
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   // Calculate key metrics
   const metrics = {
@@ -121,6 +127,95 @@ const Overview: React.FC<OverviewProps> = ({
   if (!healthChecks.hasClassrooms) issues.push(t('overview.issues.noClassrooms'));
   if (!healthChecks.hasGroupSubjects) issues.push(t('overview.issues.noGroupSubjects'));
   if (!healthChecks.hasSubjectTeachers) issues.push(t('overview.issues.noSubjectTeachers'));
+
+  // Detailed analysis for schedule improvement
+  const getScheduleAnalysis = () => {
+    const analysis = {
+      missingLabClassrooms: [] as string[],
+      subjectsWithoutTeachers: [] as string[],
+      teachersWithoutAvailability: [] as string[],
+      groupsWithoutSubjects: [] as string[],
+      labSubjectsNeedingSpecializedRooms: [] as string[],
+      recommendations: [] as string[]
+    };
+
+    // Check for lab subjects without specialized classrooms
+    const labSubjects = subjects.filter(s => s.type === 'lab');
+    labSubjects.forEach(subject => {
+      const hasSpecializedRoom = classrooms.some(c => 
+        c.type === 'lab' && 
+        c.specialization && 
+        c.specialization.split(', ').includes(subject.id)
+      );
+      
+      const hasGeneralLab = classrooms.some(c => 
+        c.type === 'lab' && 
+        (!c.specialization || c.specialization.trim() === '')
+      );
+
+      if (!hasSpecializedRoom && !hasGeneralLab) {
+        analysis.missingLabClassrooms.push(subject.name);
+      } else if (!hasSpecializedRoom) {
+        analysis.labSubjectsNeedingSpecializedRooms.push(subject.name);
+      }
+    });
+
+    // Check subjects without teachers
+    subjects.forEach(subject => {
+      if (subject.teacherIds.length === 0) {
+        analysis.subjectsWithoutTeachers.push(subject.name);
+      }
+    });
+
+    // Check teachers without availability
+    teachers.forEach(teacher => {
+      const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
+      if (totalHours === 0) {
+        analysis.teachersWithoutAvailability.push(`${teacher.firstName} ${teacher.lastName}`);
+      }
+    });
+
+    // Check groups without subjects
+    classGroups.forEach(group => {
+      if (Object.keys(group.subjectHours || {}).length === 0) {
+        analysis.groupsWithoutSubjects.push(group.name);
+      }
+    });
+
+    // Generate recommendations
+    if (analysis.missingLabClassrooms.length > 0) {
+      analysis.recommendations.push(`Добавьте лабораторные классы для: ${analysis.missingLabClassrooms.join(', ')}`);
+    }
+    
+    if (analysis.subjectsWithoutTeachers.length > 0) {
+      analysis.recommendations.push(`Назначьте учителей для предметов: ${analysis.subjectsWithoutTeachers.join(', ')}`);
+    }
+    
+    if (analysis.teachersWithoutAvailability.length > 0) {
+      analysis.recommendations.push(`Установите доступные часы для учителей: ${analysis.teachersWithoutAvailability.join(', ')}`);
+    }
+    
+    if (analysis.groupsWithoutSubjects.length > 0) {
+      analysis.recommendations.push(`Назначьте предметы для групп: ${analysis.groupsWithoutSubjects.join(', ')}`);
+    }
+
+    if (analysis.labSubjectsNeedingSpecializedRooms.length > 0) {
+      analysis.recommendations.push(`Создайте специализированные лаборатории для: ${analysis.labSubjectsNeedingSpecializedRooms.join(', ')}`);
+    }
+
+    // General recommendations based on completeness
+    if (scheduleCompleteness < 50) {
+      analysis.recommendations.push('Увеличьте количество доступных часов учителей');
+      analysis.recommendations.push('Добавьте больше классных комнат');
+    } else if (scheduleCompleteness < 80) {
+      analysis.recommendations.push('Оптимизируйте распределение учителей по предметам');
+      analysis.recommendations.push('Проверьте конфликты в расписании учителей');
+    }
+
+    return analysis;
+  };
+
+  const scheduleAnalysis = getScheduleAnalysis();
 
   // Handle file import
   const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -347,6 +442,22 @@ const Overview: React.FC<OverviewProps> = ({
                 {potentialLessons - metrics.totalLessons} {t('overview.lessonsRemaining')}
               </div>
             )}
+
+            {/* Improvement Button */}
+            {scheduleCompleteness < 80 && (
+              <button
+                onClick={() => setShowRecommendations(!showRecommendations)}
+                className="w-full mt-4 inline-flex items-center justify-center px-4 py-2 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg hover:bg-yellow-200 transition-colors"
+              >
+                <Target className="h-4 w-4 mr-2" />
+                Как улучшить показатель?
+                {showRecommendations ? (
+                  <ChevronUp className="h-4 w-4 ml-2" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -380,6 +491,46 @@ const Overview: React.FC<OverviewProps> = ({
         </div>
       </div>
 
+      {/* Recommendations Panel */}
+      {showRecommendations && scheduleCompleteness < 80 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <Lightbulb className="h-6 w-6 text-yellow-600" />
+            <h3 className="text-lg font-semibold text-yellow-800">Рекомендации для улучшения расписания</h3>
+          </div>
+          
+          {scheduleAnalysis.recommendations.length > 0 ? (
+            <div className="space-y-3">
+              {scheduleAnalysis.recommendations.map((recommendation, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                  <div className="flex-shrink-0 w-6 h-6 bg-yellow-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm text-yellow-800">{recommendation}</p>
+                </div>
+              ))}
+              
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Plus className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Быстрые действия:</span>
+                </div>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p>• Перейдите в раздел "Учителя" и установите доступные часы</p>
+                  <p>• В разделе "Предметы" назначьте учителей для всех предметов</p>
+                  <p>• В разделе "Классы" добавьте лабораторные помещения</p>
+                  <p>• В разделе "Группы" назначьте предметы с количеством часов</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-yellow-700">
+              Система анализирует возможные улучшения...
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="bg-gradient-to-r from-[#03524f] to-[#024239] rounded-xl p-6 text-white">
         <div className="flex items-center justify-between">
@@ -399,6 +550,14 @@ const Overview: React.FC<OverviewProps> = ({
               <div className="text-2xl font-bold">{healthPercentage}%</div>
               <div className="text-xs text-white text-opacity-80">{t('overview.complete')}</div>
             </div>
+            
+            {scheduleCompleteness > 0 && (
+              <div className="text-center">
+                <Calendar className="h-8 w-8 mx-auto mb-2 text-white text-opacity-80" />
+                <div className="text-2xl font-bold">{scheduleCompleteness}%</div>
+                <div className="text-xs text-white text-opacity-80">Расписание</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
