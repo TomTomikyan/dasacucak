@@ -21,7 +21,7 @@ interface ScheduleProps {
   };
 }
 
-// Enhanced Tooltip component with side positioning
+// Enhanced Tooltip component with smart positioning and no arrow
 const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -31,26 +31,51 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ con
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Calculate tooltip dimensions (approximate)
-    const tooltipWidth = 320; // Max width
+    // Tooltip dimensions
+    const tooltipWidth = 320;
     const tooltipHeight = 200; // Approximate height
+    const offset = 15; // Distance from the element
     
-    let x = rect.right + 10; // Default: show to the right
-    let y = rect.top + rect.height / 2; // Center vertically
+    let x = 0;
+    let y = 0;
     
-    // Check if tooltip would go off the right edge
-    if (x + tooltipWidth > viewportWidth) {
-      x = rect.left - tooltipWidth - 10; // Show to the left instead
+    // Try positioning to the right first
+    if (rect.right + offset + tooltipWidth <= viewportWidth) {
+      x = rect.right + offset;
+    }
+    // If not enough space on the right, try left
+    else if (rect.left - offset - tooltipWidth >= 0) {
+      x = rect.left - offset - tooltipWidth;
+    }
+    // If neither side works, center horizontally but ensure it's visible
+    else {
+      x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
     }
     
-    // Check if tooltip would go off the bottom edge
-    if (y + tooltipHeight / 2 > viewportHeight) {
+    // Vertical positioning - try to center on the element
+    y = rect.top + rect.height / 2 - tooltipHeight / 2;
+    
+    // Ensure tooltip doesn't go above viewport
+    if (y < 10) {
+      y = 10;
+    }
+    // Ensure tooltip doesn't go below viewport
+    else if (y + tooltipHeight > viewportHeight - 10) {
       y = viewportHeight - tooltipHeight - 10;
     }
     
-    // Check if tooltip would go off the top edge
-    if (y - tooltipHeight / 2 < 10) {
-      y = 10 + tooltipHeight / 2;
+    // If tooltip would overlap with the element, adjust position
+    if (x < rect.right + offset && x + tooltipWidth > rect.left - offset) {
+      // If we're overlapping horizontally, position above or below
+      if (rect.top - tooltipHeight - offset >= 10) {
+        // Position above
+        y = rect.top - tooltipHeight - offset;
+        x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
+      } else if (rect.bottom + offset + tooltipHeight <= viewportHeight - 10) {
+        // Position below
+        y = rect.bottom + offset;
+        x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
+      }
     }
     
     setPosition({ x, y });
@@ -73,26 +98,15 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ con
           className="fixed z-50 px-4 py-3 text-sm text-white bg-[#03524f] rounded-lg shadow-xl pointer-events-none border border-[#024239]"
           style={{
             left: position.x,
-            top: position.y - 100, // Offset to center vertically
+            top: position.y,
             maxWidth: '320px',
             whiteSpace: 'pre-wrap',
-            transform: 'translateY(-50%)', // Center vertically
             backdropFilter: 'blur(8px)',
-            backgroundColor: 'rgba(3, 82, 79, 0.95)'
+            backgroundColor: 'rgba(3, 82, 79, 0.95)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}
         >
           {content}
-          {/* Arrow pointing to the element */}
-          <div 
-            className="absolute top-1/2 w-0 h-0 border-t-4 border-b-4 border-transparent transform -translate-y-1/2"
-            style={{
-              left: position.x > window.innerWidth / 2 ? '100%' : '-8px', // Arrow on left if tooltip is on right side
-              borderRightColor: position.x > window.innerWidth / 2 ? 'transparent' : 'rgba(3, 82, 79, 0.95)',
-              borderLeftColor: position.x > window.innerWidth / 2 ? 'rgba(3, 82, 79, 0.95)' : 'transparent',
-              borderRightWidth: position.x > window.innerWidth / 2 ? '0' : '8px',
-              borderLeftWidth: position.x > window.innerWidth / 2 ? '8px' : '0'
-            }}
-          />
         </div>
       )}
     </div>
@@ -134,7 +148,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     if (!group) return '';
     
     const courseText = t(`courses.${group.course || 1}`);
-    return `${group.name}\n${courseText}\n${group.specialization || 'Ընդհանուր'}\n${group.studentsCount} ուսանող`;
+    return `👥 ${group.name}\n🎓 ${courseText}\n📚 ${group.specialization || 'Ընդհանուր'}\n👨‍🎓 ${group.studentsCount} ուսանող`;
   };
 
   const getSubjectName = (subjectId: string) => {
@@ -157,7 +171,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     
     const typeText = subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory');
     const courseText = t(`courses.${subject.course}`);
-    return `${subject.name}\n${typeText}\n${courseText}`;
+    return `📚 ${subject.name}\n📖 ${typeText}\n🎓 ${courseText}`;
   };
 
   const getTeacherName = (teacherId: string) => {
@@ -173,7 +187,7 @@ const Schedule: React.FC<ScheduleProps> = ({
       ? teacher.subjects.join(', ') 
       : 'Առարկաներ չեն նշանակված';
     
-    return `${teacher.firstName} ${teacher.lastName}\nԱռարկաներ: ${subjectsList}`;
+    return `👨‍🏫 ${teacher.firstName} ${teacher.lastName}\n📚 Առարկաներ: ${subjectsList}`;
   };
 
   const getClassroomName = (classroomId: string) => {
@@ -193,7 +207,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     
     const computerText = classroom.hasComputers ? 'Ունի համակարգիչներ' : 'Համակարգիչներ չկան';
     
-    return `Դասարան ${classroom.number}\n${t('common.floor')} ${classroom.floor}\n${typeText}\n${computerText}\n${t('common.capacity')}: ${classroom.capacity}`;
+    return `🏫 Դասարան ${classroom.number}\n🏢 ${t('common.floor')} ${classroom.floor}\n📋 ${typeText}\n💻 ${computerText}\n👥 ${t('common.capacity')}: ${classroom.capacity}`;
   };
 
   // Get full lesson details for tooltip
@@ -203,7 +217,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     const classroom = getClassroomDetails(slot.classroomId);
     const group = getGroupDetails(slot.classGroupId);
     
-    return `📚 ${subject}\n\n👨‍🏫 ${teacher}\n\n🏫 ${classroom}\n\n👥 ${group}\n\n⏰ ${slot.startTime} - ${slot.endTime}`;
+    return `${subject}\n\n${teacher}\n\n${classroom}\n\n${group}\n\n⏰ ${slot.startTime} - ${slot.endTime}`;
   };
 
   // Generate schedule
