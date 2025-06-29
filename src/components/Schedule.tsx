@@ -828,7 +828,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - COMPLETELY NO HOVER EFFECTS */}
+      {/* Schedule Grid - 🔥 COMPLETELY REMOVED ALL HOVER EFFECTS */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -862,7 +862,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                 {getOrderedWorkingDays().map(day => (
                   <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
-                      <tr key={`${day}-${time.lesson}`} className="bg-white">
+                      <tr key={`${day}-${time.lesson}`}>
                         {/* Day name - only show on first lesson of the day */}
                         {timeIndex === 0 && (
                           <td 
@@ -886,7 +886,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                           </Tooltip>
                         </td>
 
-                        {/* Schedule slots for each group - COMPLETELY NO HOVER EFFECTS */}
+                        {/* Schedule slots for each group - 🔥 NO HOVER EFFECTS AT ALL */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
                           const slot = filteredSchedule.find(s => 
                             s.day === day && 
