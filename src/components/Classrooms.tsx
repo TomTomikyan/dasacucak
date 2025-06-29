@@ -298,7 +298,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('classrooms.addClassroom')}
@@ -316,7 +316,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowBulkForm(false)}
-                  className="text-gray-400"
+                  className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -360,13 +360,13 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowBulkForm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {t('common.generate')}
                 </button>
@@ -388,7 +388,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="text-gray-400"
+                  className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -497,7 +497,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                         <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-3 bg-white">
                           <div className="space-y-2">
                             {labSubjects.map((subject) => (
-                              <label key={subject.id} className="flex items-center p-2 rounded-md cursor-pointer">
+                              <label key={subject.id} className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={formData.selectedSubjects.includes(subject.id)}
@@ -543,14 +543,14 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={formData.number && isRoomNumberTaken(formData.number, editingClassroom?.id)}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingClassroom ? (
                     <>
@@ -602,7 +602,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {classrooms.map((classroom) => (
-                  <tr key={classroom.id}>
+                  <tr key={classroom.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Tooltip content={getClassroomTooltip(classroom)}>
                         <div className="flex items-center cursor-help">
@@ -614,7 +614,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <Tooltip content={`${t('common.floor')} ${classroom.floor}\nДասարանը գտնվում է ${classroom.floor}-րդ հարկում`}>
+                      <Tooltip content={`${t('common.floor')} ${classroom.floor}\nДасарանը գտնվում է ${classroom.floor}-րդ հարկում`}>
                         <span className="cursor-help">{t('common.floor')} {classroom.floor}</span>
                       </Tooltip>
                     </td>
@@ -666,14 +666,14 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       <div className="flex space-x-2">
                         <button
                           onClick={() => startEditing(classroom)}
-                          className="text-[#03524f] transition-colors"
+                          className="text-[#03524f] hover:text-[#024239] transition-colors"
                           title={t('common.edit')}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => deleteClassroom(classroom.id)}
-                          className="text-red-600 transition-colors"
+                          className="text-red-600 hover:text-red-900 transition-colors"
                           title={t('common.delete')}
                         >
                           <Trash2 className="h-4 w-4" />

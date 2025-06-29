@@ -106,7 +106,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onRemove }) => {
         <div className="ml-4 flex-shrink-0">
           <button
             onClick={handleRemove}
-            className={`inline-flex ${getTextColor()} transition-opacity`}
+            className={`inline-flex ${getTextColor()} hover:opacity-75 transition-opacity`}
           >
             <X className="h-4 w-4" />
           </button>
