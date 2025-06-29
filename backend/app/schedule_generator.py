@@ -71,7 +71,8 @@ class ScheduleGenerator:
                     scheduled_count += 1
                 else:
                     failed_count += 1
-                    self.log(f'❌ Failed to schedule: {requirement.subject_name} for {requirement.group_name}')
+                    # Enhanced failure analysis
+                    self._analyze_scheduling_failure(requirement)
 
             self.log(f'✅ Scheduling complete: {scheduled_count} scheduled, {failed_count} failed')
 
@@ -219,14 +220,6 @@ class ScheduleGenerator:
         
         if not available_slots:
             self.log(f'⚠️ No available slots for {requirement.subject_name} - {requirement.group_name}')
-            
-            # Check if it's a specialized lab issue
-            if requirement.subject_type == 'lab':
-                specialized_classrooms = self._get_specialized_classrooms_for_subject(requirement.subject_id)
-                if specialized_classrooms:
-                    room_numbers = [c.number for c in specialized_classrooms]
-                    self.log(f'   🔒 Subject requires specialized lab(s): {", ".join(room_numbers)}')
-            
             return False
 
         # Try to find the best slot
@@ -249,6 +242,157 @@ class ScheduleGenerator:
             return True
 
         return False
+
+    def _analyze_scheduling_failure(self, requirement: LessonRequirement):
+        """Enhanced analysis of why a lesson couldn't be scheduled"""
+        self.log(f'❌ Failed to schedule: {requirement.subject_name} for {requirement.group_name}')
+        
+        # 1. Check if teachers are assigned to this subject
+        if not requirement.available_teacher_ids:
+            self.log(f'   🚫 CRITICAL: No teachers assigned to subject "{requirement.subject_name}"')
+            return
+        
+        # 2. Check if assigned teachers exist in the system
+        existing_teachers = []
+        for teacher_id in requirement.available_teacher_ids:
+            teacher = next((t for t in self.teachers if t.id == teacher_id), None)
+            if teacher:
+                existing_teachers.append(teacher)
+            else:
+                self.log(f'   ⚠️ WARNING: Teacher ID {teacher_id} assigned to subject but not found in system')
+        
+        if not existing_teachers:
+            self.log(f'   🚫 CRITICAL: None of the assigned teachers exist in the system')
+            return
+        
+        # 3. Check teacher availability
+        teachers_with_availability = []
+        for teacher in existing_teachers:
+            total_available_hours = sum(len(hours) for hours in teacher.available_hours.values())
+            if total_available_hours > 0:
+                teachers_with_availability.append(teacher)
+            else:
+                self.log(f'   ⚠️ Teacher {teacher.first_name} {teacher.last_name} has no available hours set')
+        
+        if not teachers_with_availability:
+            self.log(f'   🚫 CRITICAL: None of the assigned teachers have any available hours')
+            return
+        
+        # 4. Check classroom availability for this subject type
+        suitable_classrooms = self._get_suitable_classrooms_for_subject_type(requirement.subject_type, requirement.subject_id)
+        if not suitable_classrooms:
+            if requirement.subject_type == 'lab':
+                specialized_labs = self._get_specialized_classrooms_for_subject(requirement.subject_id)
+                if specialized_labs:
+                    self.log(f'   🚫 CRITICAL: Subject requires specialized lab but all {len(specialized_labs)} specialized labs are unavailable')
+                    for lab in specialized_labs:
+                        occupied_slots = [s for s in self.schedule if s.classroom_id == lab.id]
+                        self.log(f'      📍 Lab {lab.number}: {len(occupied_slots)} slots occupied')
+                else:
+                    general_labs = [c for c in self.classrooms if c.type == 'lab' and not c.specialization]
+                    if not general_labs:
+                        self.log(f'   🚫 CRITICAL: No laboratory classrooms available in the system')
+                    else:
+                        self.log(f'   🚫 CRITICAL: All {len(general_labs)} general laboratory classrooms are unavailable')
+            else:
+                theory_classrooms = [c for c in self.classrooms if c.type in ['theory', 'teacher_lab']]
+                if not theory_classrooms:
+                    self.log(f'   🚫 CRITICAL: No theory classrooms available in the system')
+                else:
+                    self.log(f'   🚫 CRITICAL: All {len(theory_classrooms)} theory classrooms are unavailable')
+            return
+        
+        # 5. Check for time slot conflicts
+        self._analyze_time_slot_conflicts(requirement, teachers_with_availability, suitable_classrooms)
+
+    def _get_suitable_classrooms_for_subject_type(self, subject_type: str, subject_id: str) -> List[Classroom]:
+        """Get all classrooms suitable for this subject type"""
+        if subject_type == 'lab':
+            # Check for specialized classrooms first
+            specialized = self._get_specialized_classrooms_for_subject(subject_id)
+            if specialized:
+                return specialized
+            # Fall back to general labs
+            return [c for c in self.classrooms if c.type == 'lab' and not c.specialization]
+        else:
+            # Theory subjects can use theory classrooms and teacher labs
+            return [c for c in self.classrooms if c.type in ['theory', 'teacher_lab']]
+
+    def _analyze_time_slot_conflicts(self, requirement: LessonRequirement, available_teachers: List[Teacher], suitable_classrooms: List[Classroom]):
+        """Analyze specific time slot conflicts"""
+        self.log(f'   🔍 Analyzing time conflicts for {len(available_teachers)} teachers and {len(suitable_classrooms)} classrooms')
+        
+        # Check each day and lesson combination
+        conflict_summary = {
+            'teacher_conflicts': 0,
+            'classroom_conflicts': 0,
+            'group_conflicts': 0,
+            'teacher_unavailable': 0,
+            'total_slots_checked': 0
+        }
+        
+        for day in self.institution.working_days:
+            for lesson_number in range(1, self.institution.lessons_per_day + 1):
+                conflict_summary['total_slots_checked'] += 1
+                
+                # Check if group is already scheduled at this time
+                group_busy = any(s.class_group_id == requirement.group_id and s.day == day and s.lesson_number == lesson_number for s in self.schedule)
+                if group_busy:
+                    conflict_summary['group_conflicts'] += 1
+                    continue
+                
+                # Check teacher availability
+                available_teachers_for_slot = []
+                for teacher in available_teachers:
+                    if day in teacher.available_hours and lesson_number in teacher.available_hours[day]:
+                        # Check if teacher is already scheduled
+                        teacher_busy = any(s.teacher_id == teacher.id and s.day == day and s.lesson_number == lesson_number for s in self.schedule)
+                        if not teacher_busy:
+                            available_teachers_for_slot.append(teacher)
+                        else:
+                            conflict_summary['teacher_conflicts'] += 1
+                    else:
+                        conflict_summary['teacher_unavailable'] += 1
+                
+                if not available_teachers_for_slot:
+                    continue
+                
+                # Check classroom availability
+                available_classrooms_for_slot = []
+                for classroom in suitable_classrooms:
+                    classroom_busy = any(s.classroom_id == classroom.id and s.day == day and s.lesson_number == lesson_number for s in self.schedule)
+                    if not classroom_busy:
+                        # Check teacher lab ownership
+                        if classroom.type == 'teacher_lab':
+                            owner = next((t for t in self.teachers if t.home_classroom == classroom.id), None)
+                            if owner and owner not in available_teachers_for_slot:
+                                continue  # Can't use this teacher lab
+                        available_classrooms_for_slot.append(classroom)
+                    else:
+                        conflict_summary['classroom_conflicts'] += 1
+                
+                if available_classrooms_for_slot:
+                    # We found at least one valid combination, so the issue might be more complex
+                    self.log(f'   ✅ Found potential slot: {day} lesson {lesson_number} with {len(available_teachers_for_slot)} teachers and {len(available_classrooms_for_slot)} classrooms')
+                    return
+        
+        # If we get here, no valid slots were found
+        self.log(f'   📊 Conflict analysis results:')
+        self.log(f'      • Total time slots checked: {conflict_summary["total_slots_checked"]}')
+        self.log(f'      • Group already scheduled: {conflict_summary["group_conflicts"]} slots')
+        self.log(f'      • Teachers already scheduled: {conflict_summary["teacher_conflicts"]} conflicts')
+        self.log(f'      • Teachers not available: {conflict_summary["teacher_unavailable"]} conflicts')
+        self.log(f'      • Classrooms already scheduled: {conflict_summary["classroom_conflicts"]} conflicts')
+        
+        # Provide specific recommendations
+        if conflict_summary['teacher_unavailable'] > conflict_summary['teacher_conflicts']:
+            self.log(f'   💡 RECOMMENDATION: Increase teacher availability hours for this subject')
+        elif conflict_summary['classroom_conflicts'] > conflict_summary['teacher_conflicts']:
+            self.log(f'   💡 RECOMMENDATION: Add more {requirement.subject_type} classrooms or reduce classroom usage')
+        elif conflict_summary['group_conflicts'] > 0:
+            self.log(f'   💡 RECOMMENDATION: The group schedule is too dense, consider reducing total lessons')
+        else:
+            self.log(f'   💡 RECOMMENDATION: Complex scheduling conflict - try adjusting teacher hours or adding resources')
 
     def _find_available_slots(self, requirement: LessonRequirement) -> List[ScheduleSlotSchema]:
         """Find available time slots for a lesson"""
