@@ -21,6 +21,49 @@ interface ScheduleProps {
   };
 }
 
+// Tooltip component
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: position.x,
+            top: position.y,
+            maxWidth: '300px',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {content}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Schedule: React.FC<ScheduleProps> = ({
   schedule,
   setSchedule,
@@ -44,10 +87,18 @@ const Schedule: React.FC<ScheduleProps> = ({
     ? schedule 
     : schedule.filter(slot => slot.classGroupId === selectedGroup);
 
-  // Get entity names
+  // Get entity names and details
   const getGroupName = (groupId: string) => {
     const group = classGroups.find(g => g.id === groupId);
     return group ? group.name : t('common.unknown');
+  };
+
+  const getGroupDetails = (groupId: string) => {
+    const group = classGroups.find(g => g.id === groupId);
+    if (!group) return '';
+    
+    const courseText = t(`courses.${group.course || 1}`);
+    return `${group.name}\n${courseText}\n${group.specialization || 'Ընդհանուր'}\n${group.studentsCount} ուսանող`;
   };
 
   const getSubjectName = (subjectId: string) => {
@@ -64,14 +115,59 @@ const Schedule: React.FC<ScheduleProps> = ({
     return subjectId || t('common.unknown');
   };
 
+  const getSubjectDetails = (subjectId: string) => {
+    const subject = subjects.find(s => s.id === subjectId) || subjects.find(s => s.name === subjectId);
+    if (!subject) return getSubjectName(subjectId);
+    
+    const typeText = subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory');
+    const courseText = t(`courses.${subject.course}`);
+    return `${subject.name}\n${typeText}\n${courseText}`;
+  };
+
   const getTeacherName = (teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId);
     return teacher ? `${teacher.firstName} ${teacher.lastName}` : t('common.unknown');
   };
 
+  const getTeacherDetails = (teacherId: string) => {
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (!teacher) return t('common.unknown');
+    
+    const subjectsList = teacher.subjects.length > 0 
+      ? teacher.subjects.join(', ') 
+      : 'Առարկաներ չեն նշանակված';
+    
+    return `${teacher.firstName} ${teacher.lastName}\nԱռարկաներ: ${subjectsList}`;
+  };
+
   const getClassroomName = (classroomId: string) => {
     const classroom = classrooms.find(c => c.id === classroomId);
     return classroom ? classroom.number : t('common.unknown');
+  };
+
+  const getClassroomDetails = (classroomId: string) => {
+    const classroom = classrooms.find(c => c.id === classroomId);
+    if (!classroom) return t('common.unknown');
+    
+    const typeText = classroom.type === 'theory' 
+      ? t('classrooms.theoryClassroom')
+      : classroom.type === 'lab'
+      ? t('subjects.laboratory')
+      : t('classrooms.teacherLab');
+    
+    const computerText = classroom.hasComputers ? 'Ունի համակարգիչներ' : 'Համակարգիչներ չկան';
+    
+    return `Դասարան ${classroom.number}\n${t('common.floor')} ${classroom.floor}\n${typeText}\n${computerText}\n${t('common.capacity')}: ${classroom.capacity}`;
+  };
+
+  // Get full lesson details for tooltip
+  const getLessonTooltip = (slot: ScheduleSlot) => {
+    const subject = getSubjectDetails(slot.subjectId);
+    const teacher = getTeacherDetails(slot.teacherId);
+    const classroom = getClassroomDetails(slot.classroomId);
+    const group = getGroupDetails(slot.classGroupId);
+    
+    return `📚 ${subject}\n\n👨‍🏫 ${teacher}\n\n🏫 ${classroom}\n\n👥 ${group}\n\n⏰ ${slot.startTime} - ${slot.endTime}`;
   };
 
   // Generate schedule
@@ -385,12 +481,14 @@ const Schedule: React.FC<ScheduleProps> = ({
                   {/* Group column headers - FIXED: Groups as main headers */}
                   {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
                     <th key={group.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
-                      <div className="flex flex-col items-center">
-                        <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
-                        <div className="text-xs text-gray-400 mt-1 normal-case">
-                          {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
+                      <Tooltip content={getGroupDetails(group.id)}>
+                        <div className="flex flex-col items-center cursor-help">
+                          <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
+                          <div className="text-xs text-gray-400 mt-1 normal-case">
+                            {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
+                          </div>
                         </div>
-                      </div>
+                      </Tooltip>
                     </th>
                   ))}
                 </tr>
@@ -414,9 +512,13 @@ const Schedule: React.FC<ScheduleProps> = ({
 
                         {/* Lesson time */}
                         <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 text-center">
-                          <div className="font-medium text-[#03524f]">{time.lesson}</div>
-                          <div className="text-xs">{time.startTime}</div>
-                          <div className="text-xs">{time.endTime}</div>
+                          <Tooltip content={`${time.lesson}-րդ դաս\n${time.startTime} - ${time.endTime}\nՏևողություն: ${institution.lessonDuration} րոպե`}>
+                            <div className="cursor-help">
+                              <div className="font-medium text-[#03524f]">{time.lesson}</div>
+                              <div className="text-xs">{time.startTime}</div>
+                              <div className="text-xs">{time.endTime}</div>
+                            </div>
+                          </Tooltip>
                         </td>
 
                         {/* Schedule slots for each group */}
@@ -430,21 +532,23 @@ const Schedule: React.FC<ScheduleProps> = ({
                           return (
                             <td key={group.id} className="px-2 py-2">
                               {slot ? (
-                                <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px]">
-                                  <div className="space-y-1">
-                                    <div className="font-medium text-[#03524f] text-xs truncate">
-                                      {getSubjectName(slot.subjectId)}
-                                    </div>
-                                    <div className="flex items-center text-xs text-gray-600">
-                                      <GraduationCap className="h-3 w-3 mr-1" />
-                                      <span className="truncate">{getTeacherName(slot.teacherId)}</span>
-                                    </div>
-                                    <div className="flex items-center text-xs text-gray-600">
-                                      <MapPin className="h-3 w-3 mr-1" />
-                                      <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                <Tooltip content={getLessonTooltip(slot)}>
+                                  <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-help hover:bg-[#03524f] hover:bg-opacity-15 transition-colors">
+                                    <div className="space-y-1">
+                                      <div className="font-medium text-[#03524f] text-xs truncate">
+                                        {getSubjectName(slot.subjectId)}
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                </Tooltip>
                               ) : (
                                 <div className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[70px] flex items-center justify-center">
                                   <span className="text-xs text-gray-400">Դատարկ</span>
