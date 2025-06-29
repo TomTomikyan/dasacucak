@@ -405,7 +405,6 @@ const Setup: React.FC<SetupProps> = ({
                   value={institution.lessonsPerDay}
                   onChange={(e) => handleLessonsPerDayChange(parseInt(e.target.value) || 1)}
                   className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
-                  placeholder={getCourseText(formData.course)}
                 />
                 <button
                   type="button"
