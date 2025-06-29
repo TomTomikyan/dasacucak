@@ -93,7 +93,8 @@ export class ScheduleGenerator {
           scheduledCount++;
         } else {
           failedCount++;
-          log(`❌ Failed to schedule: ${requirement.subjectName} for ${requirement.groupName}`);
+          // 🔥 NEW: Detailed failure analysis
+          this.analyzeSchedulingFailure(requirement, log);
         }
       }
 
@@ -123,6 +124,204 @@ export class ScheduleGenerator {
         error: error instanceof Error ? error.message : 'Unknown error' 
       };
     }
+  }
+
+  // 🔥 NEW: Detailed failure analysis
+  private analyzeSchedulingFailure(requirement: LessonRequirement, log: (message: string) => void): void {
+    log(`🔍 Analyzing failure for ${requirement.subjectName} - ${requirement.groupName}:`);
+
+    // Check teacher availability
+    const availableTeachers = requirement.availableTeacherIds.filter(teacherId => {
+      const teacher = this.teachers.find(t => t.id === teacherId);
+      return teacher && Object.keys(teacher.availableHours).some(day => 
+        teacher.availableHours[day].length > 0
+      );
+    });
+
+    if (availableTeachers.length === 0) {
+      log(`   ❌ No teachers available for this subject`);
+      return;
+    }
+
+    log(`   👨‍🏫 Available teachers: ${availableTeachers.length}`);
+
+    // Check classroom availability for this subject type
+    const suitableClassrooms = this.getSuitableClassroomsForAnyTeacher(requirement.subjectType, requirement.subjectId);
+    if (suitableClassrooms.length === 0) {
+      if (requirement.subjectType === 'lab') {
+        const specializedClassrooms = this.getSpecializedClassroomsForSubject(requirement.subjectId);
+        if (specializedClassrooms.length > 0) {
+          log(`   ❌ No specialized classrooms available (requires: ${specializedClassrooms.map(c => c.number).join(', ')})`);
+        } else {
+          log(`   ❌ No general lab classrooms available`);
+        }
+      } else {
+        log(`   ❌ No theory classrooms available`);
+      }
+      return;
+    }
+
+    log(`   🏫 Suitable classrooms: ${suitableClassrooms.length}`);
+
+    // Check time slot conflicts
+    let totalConflicts = 0;
+    let teacherConflicts = 0;
+    let classroomConflicts = 0;
+    let groupConflicts = 0;
+
+    this.institution.workingDays.forEach(day => {
+      for (let lesson = 1; lesson <= this.institution.lessonsPerDay; lesson++) {
+        availableTeachers.forEach(teacherId => {
+          const teacher = this.teachers.find(t => t.id === teacherId);
+          if (!teacher || !teacher.availableHours[day]?.includes(lesson)) {
+            return; // Teacher not available at this time
+          }
+
+          suitableClassrooms.forEach(classroom => {
+            const conflicts = this.getSlotConflicts(requirement.groupId, teacherId, classroom.id, day, lesson);
+            if (conflicts.length > 0) {
+              totalConflicts++;
+              conflicts.forEach(conflict => {
+                if (conflict.includes('teacher')) teacherConflicts++;
+                if (conflict.includes('classroom')) classroomConflicts++;
+                if (conflict.includes('group')) groupConflicts++;
+              });
+            }
+          });
+        });
+      });
+    });
+
+    if (totalConflicts > 0) {
+      log(`   ⚠️ Conflicts found:`);
+      if (groupConflicts > 0) log(`     - Group conflicts: ${groupConflicts}`);
+      if (teacherConflicts > 0) log(`     - Teacher conflicts: ${teacherConflicts}`);
+      if (classroomConflicts > 0) log(`     - Classroom conflicts: ${classroomConflicts}`);
+    }
+
+    // Check teacher lab ownership issues
+    const teacherLabIssues = this.checkTeacherLabIssues(requirement, availableTeachers);
+    if (teacherLabIssues.length > 0) {
+      log(`   🔒 Teacher lab issues:`);
+      teacherLabIssues.forEach(issue => log(`     - ${issue}`));
+    }
+
+    // Suggest solutions
+    this.suggestSolutions(requirement, log);
+  }
+
+  // 🔥 NEW: Get suitable classrooms for any teacher (for analysis)
+  private getSuitableClassroomsForAnyTeacher(subjectType: 'theory' | 'lab', subjectId: string): Classroom[] {
+    if (subjectType === 'lab') {
+      const specializedClassrooms = this.getSpecializedClassroomsForSubject(subjectId);
+      if (specializedClassrooms.length > 0) {
+        return specializedClassrooms;
+      }
+      return this.classrooms.filter(c => 
+        c.type === 'lab' && 
+        (!c.specialization || c.specialization.trim() === '')
+      );
+    } else {
+      return this.classrooms.filter(c => 
+        c.type === 'theory' || c.type === 'teacher_lab'
+      );
+    }
+  }
+
+  // 🔥 NEW: Get detailed conflict information
+  private getSlotConflicts(groupId: string, teacherId: string, classroomId: string, day: string, lessonNumber: number): string[] {
+    const conflicts: string[] = [];
+
+    // Check existing schedule conflicts
+    this.schedule.forEach(slot => {
+      if (slot.day === day && slot.lessonNumber === lessonNumber) {
+        if (slot.classGroupId === groupId) {
+          conflicts.push(`group already has lesson (${this.getSubjectName(slot.subjectId)})`);
+        }
+        if (slot.teacherId === teacherId) {
+          const teacher = this.teachers.find(t => t.id === teacherId);
+          conflicts.push(`teacher ${teacher?.firstName} ${teacher?.lastName} already teaching`);
+        }
+        if (slot.classroomId === classroomId) {
+          const classroom = this.classrooms.find(c => c.id === classroomId);
+          conflicts.push(`classroom ${classroom?.number} already occupied`);
+        }
+      }
+    });
+
+    // Check teacher lab ownership
+    const classroom = this.classrooms.find(c => c.id === classroomId);
+    if (classroom?.type === 'teacher_lab') {
+      const owner = this.teachers.find(t => t.homeClassroom === classroom.id);
+      if (owner && owner.id !== teacherId) {
+        conflicts.push(`teacher lab ${classroom.number} belongs to ${owner.firstName} ${owner.lastName}`);
+      }
+    }
+
+    return conflicts;
+  }
+
+  // 🔥 NEW: Check teacher lab ownership issues
+  private checkTeacherLabIssues(requirement: LessonRequirement, availableTeachers: string[]): string[] {
+    const issues: string[] = [];
+    
+    const teacherLabs = this.classrooms.filter(c => c.type === 'teacher_lab');
+    
+    teacherLabs.forEach(lab => {
+      const owner = this.teachers.find(t => t.homeClassroom === lab.id);
+      if (owner && !availableTeachers.includes(owner.id)) {
+        issues.push(`Lab ${lab.number} owner (${owner.firstName} ${owner.lastName}) not available for this subject`);
+      }
+    });
+
+    return issues;
+  }
+
+  // 🔥 NEW: Suggest solutions
+  private suggestSolutions(requirement: LessonRequirement, log: (message: string) => void): void {
+    log(`   💡 Suggested solutions:`);
+
+    // Check if more teachers needed
+    if (requirement.availableTeacherIds.length < 2) {
+      log(`     - Add more teachers for ${requirement.subjectName}`);
+    }
+
+    // Check if teacher availability needs adjustment
+    const teachersWithLimitedHours = requirement.availableTeacherIds.filter(teacherId => {
+      const teacher = this.teachers.find(t => t.id === teacherId);
+      if (!teacher) return false;
+      const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
+      return totalHours < 10; // Less than 10 hours per week
+    });
+
+    if (teachersWithLimitedHours.length > 0) {
+      log(`     - Increase availability for teachers with limited hours`);
+    }
+
+    // Check if more classrooms needed
+    if (requirement.subjectType === 'lab') {
+      const labCount = this.classrooms.filter(c => c.type === 'lab').length;
+      if (labCount < 3) {
+        log(`     - Add more laboratory classrooms`);
+      }
+    } else {
+      const theoryCount = this.classrooms.filter(c => c.type === 'theory').length;
+      if (theoryCount < 5) {
+        log(`     - Add more theory classrooms`);
+      }
+    }
+
+    // Check if schedule is too dense
+    const groupLessonsPerWeek = this.schedule.filter(s => s.classGroupId === requirement.groupId).length;
+    const maxLessonsPerWeek = this.institution.workingDays.length * this.institution.lessonsPerDay;
+    if (groupLessonsPerWeek > maxLessonsPerWeek * 0.8) {
+      log(`     - Group ${requirement.groupName} schedule is very dense (${groupLessonsPerWeek}/${maxLessonsPerWeek} slots used)`);
+    }
+  }
+
+  private getSubjectName(subjectId: string): string {
+    const subject = this.subjects.find(s => s.id === subjectId);
+    return subject ? subject.name : 'Unknown';
   }
 
   private logClassroomInfo(log: (message: string) => void): void {
@@ -274,20 +473,10 @@ export class ScheduleGenerator {
   }
 
   private async scheduleLesson(requirement: LessonRequirement, log: (message: string) => void): Promise<boolean> {
-    const availableSlots = this.findAvailableSlots(requirement);
+    const availableSlots = this.findAvailableSlots(requirement, log);
     
     if (availableSlots.length === 0) {
       log(`⚠️ No available slots for ${requirement.subjectName} - ${requirement.groupName}`);
-      
-      // Check if it's a specialized lab issue
-      if (requirement.subjectType === 'lab') {
-        const specializedClassrooms = this.getSpecializedClassroomsForSubject(requirement.subjectId);
-        if (specializedClassrooms.length > 0) {
-          const roomNumbers = specializedClassrooms.map(c => c.number).join(', ');
-          log(`   🔒 Subject requires specialized lab(s): ${roomNumbers}`);
-        }
-      }
-      
       return false;
     }
 
@@ -317,7 +506,7 @@ export class ScheduleGenerator {
     return false;
   }
 
-  private findAvailableSlots(requirement: LessonRequirement): ScheduleSlot[] {
+  private findAvailableSlots(requirement: LessonRequirement, log: (message: string) => void): ScheduleSlot[] {
     const availableSlots: ScheduleSlot[] = [];
 
     // 🎲 Randomize the order of days and lessons
@@ -325,6 +514,10 @@ export class ScheduleGenerator {
     const randomizedLessons = this.shuffleArray(
       Array.from({ length: this.institution.lessonsPerDay }, (_, i) => i + 1)
     );
+
+    let teacherAvailabilityIssues = 0;
+    let classroomAvailabilityIssues = 0;
+    let conflictIssues = 0;
 
     randomizedDays.forEach(day => {
       randomizedLessons.forEach(lessonNumber => {
@@ -336,7 +529,10 @@ export class ScheduleGenerator {
           if (!teacher) return;
 
           // Check if teacher is available at this time
-          if (!teacher.availableHours[day]?.includes(lessonNumber)) return;
+          if (!teacher.availableHours[day]?.includes(lessonNumber)) {
+            teacherAvailabilityIssues++;
+            return;
+          }
 
           // Get suitable classrooms for this teacher and subject
           const suitableClassrooms = this.getSuitableClassroomsForTeacher(
@@ -344,6 +540,11 @@ export class ScheduleGenerator {
             requirement.subjectId, 
             teacherId
           );
+
+          if (suitableClassrooms.length === 0) {
+            classroomAvailabilityIssues++;
+            return;
+          }
 
           // 🎲 Randomize classroom order
           const randomizedClassrooms = this.shuffleArray(suitableClassrooms);
@@ -365,11 +566,21 @@ export class ScheduleGenerator {
                 startTime,
                 endTime,
               });
+            } else {
+              conflictIssues++;
             }
           });
         });
       });
     });
+
+    // 🔥 NEW: Log detailed availability issues
+    if (availableSlots.length === 0) {
+      log(`   📊 Availability analysis:`);
+      log(`     - Teacher availability issues: ${teacherAvailabilityIssues}`);
+      log(`     - Classroom availability issues: ${classroomAvailabilityIssues}`);
+      log(`     - Scheduling conflicts: ${conflictIssues}`);
+    }
 
     return availableSlots;
   }
