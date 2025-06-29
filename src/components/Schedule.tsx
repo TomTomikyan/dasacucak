@@ -21,17 +21,39 @@ interface ScheduleProps {
   };
 }
 
-// Tooltip component
+// Enhanced Tooltip component with side positioning
 const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const handleMouseEnter = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    });
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Calculate tooltip dimensions (approximate)
+    const tooltipWidth = 320; // Max width
+    const tooltipHeight = 200; // Approximate height
+    
+    let x = rect.right + 10; // Default: show to the right
+    let y = rect.top + rect.height / 2; // Center vertically
+    
+    // Check if tooltip would go off the right edge
+    if (x + tooltipWidth > viewportWidth) {
+      x = rect.left - tooltipWidth - 10; // Show to the left instead
+    }
+    
+    // Check if tooltip would go off the bottom edge
+    if (y + tooltipHeight / 2 > viewportHeight) {
+      y = viewportHeight - tooltipHeight - 10;
+    }
+    
+    // Check if tooltip would go off the top edge
+    if (y - tooltipHeight / 2 < 10) {
+      y = 10 + tooltipHeight / 2;
+    }
+    
+    setPosition({ x, y });
     setIsVisible(true);
   };
 
@@ -48,16 +70,29 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ con
       {children}
       {isVisible && (
         <div
-          className="fixed z-50 px-3 py-2 text-sm text-white bg-[#03524f] rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          className="fixed z-50 px-4 py-3 text-sm text-white bg-[#03524f] rounded-lg shadow-xl pointer-events-none border border-[#024239]"
           style={{
             left: position.x,
-            top: position.y,
-            maxWidth: '300px',
-            whiteSpace: 'pre-wrap'
+            top: position.y - 100, // Offset to center vertically
+            maxWidth: '320px',
+            whiteSpace: 'pre-wrap',
+            transform: 'translateY(-50%)', // Center vertically
+            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(3, 82, 79, 0.95)'
           }}
         >
           {content}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#03524f]"></div>
+          {/* Arrow pointing to the element */}
+          <div 
+            className="absolute top-1/2 w-0 h-0 border-t-4 border-b-4 border-transparent transform -translate-y-1/2"
+            style={{
+              left: position.x > window.innerWidth / 2 ? '100%' : '-8px', // Arrow on left if tooltip is on right side
+              borderRightColor: position.x > window.innerWidth / 2 ? 'transparent' : 'rgba(3, 82, 79, 0.95)',
+              borderLeftColor: position.x > window.innerWidth / 2 ? 'rgba(3, 82, 79, 0.95)' : 'transparent',
+              borderRightWidth: position.x > window.innerWidth / 2 ? '0' : '8px',
+              borderLeftWidth: position.x > window.innerWidth / 2 ? '8px' : '0'
+            }}
+          />
         </div>
       )}
     </div>
@@ -594,7 +629,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                             <td key={group.id} className="px-2 py-2">
                               {slot ? (
                                 <Tooltip content={getLessonTooltip(slot)}>
-                                  <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-help hover:bg-[#03524f] hover:bg-opacity-15 transition-colors">
+                                  <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-help hover:bg-[#03524f] hover:bg-opacity-20 hover:border-opacity-30 transition-all duration-200 hover:shadow-md">
                                     <div className="space-y-1">
                                       <div className="font-medium text-[#03524f] text-xs truncate">
                                         {getSubjectName(slot.subjectId)}
@@ -611,7 +646,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                   </div>
                                 </Tooltip>
                               ) : (
-                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[70px] flex items-center justify-center">
+                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[70px] flex items-center justify-center hover:border-gray-300 transition-colors">
                                   <span className="text-xs text-gray-400">Դատարկ</span>
                                 </div>
                               )}
