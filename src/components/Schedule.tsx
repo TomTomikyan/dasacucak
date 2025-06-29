@@ -189,30 +189,27 @@ const Schedule: React.FC<ScheduleProps> = ({
   const requirements = checkRequirements();
   const canGenerate = requirements.length === 0;
 
-  // Create schedule grid - NEW STRUCTURE: Groups as rows, Days as columns
+  // Create schedule grid - CORRECT STRUCTURE: Days as rows, Groups as columns
   const createScheduleGrid = () => {
-    const grid: { [key: string]: ScheduleSlot[] } = {};
+    const grid: { [key: string]: ScheduleSlot | null } = {};
     
     // Get groups to display (filtered or all)
     const groupsToShow = selectedGroup === 'all' 
       ? classGroups 
       : classGroups.filter(g => g.id === selectedGroup);
 
-    groupsToShow.forEach(group => {
-      institution.workingDays.forEach(day => {
-        for (let lesson = 1; lesson <= institution.lessonsPerDay; lesson++) {
-          const key = `${group.id}-${day}-${lesson}`;
+    institution.workingDays.forEach(day => {
+      for (let lesson = 1; lesson <= institution.lessonsPerDay; lesson++) {
+        groupsToShow.forEach(group => {
+          const key = `${day}-${lesson}-${group.id}`;
           const slot = filteredSchedule.find(s => 
-            s.classGroupId === group.id && 
             s.day === day && 
-            s.lessonNumber === lesson
+            s.lessonNumber === lesson && 
+            s.classGroupId === group.id
           );
-          if (slot) {
-            if (!grid[key]) grid[key] = [];
-            grid[key].push(slot);
-          }
-        }
-      });
+          grid[key] = slot || null;
+        });
+      }
     });
 
     return grid;
@@ -361,63 +358,59 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - NEW STRUCTURE */}
+      {/* Schedule Grid - CORRECT STRUCTURE: Days as rows, Groups as columns */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                    {t('groups.title')}
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                    {t('common.time')}
                   </th>
-                  {institution.workingDays.map(day => (
-                    <th key={day} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
-                      {t(`days.${day.toLowerCase()}`)}
+                  {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
+                    <th key={group.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
+                      <div className="flex flex-col items-center">
+                        <div className="font-semibold text-[#03524f]">{group.name}</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
+                        </div>
+                      </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
-                  <React.Fragment key={group.id}>
+                {institution.workingDays.map(day => (
+                  <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
-                      <tr key={`${group.id}-${time.lesson}`} className="hover:bg-gray-50">
+                      <tr key={`${day}-${time.lesson}`} className="hover:bg-gray-50">
                         {timeIndex === 0 && (
                           <td 
                             rowSpan={institution.lessonsPerDay} 
                             className="px-4 py-4 whitespace-nowrap border-r border-gray-200 bg-gray-50"
                           >
-                            <div className="flex items-center">
-                              <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
-                                <Users className="h-5 w-5 text-[#03524f]" />
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{group.name}</div>
-                                <div className="text-xs text-gray-500">
-                                  {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուսանող
-                                </div>
+                            <div className="text-center">
+                              <div className="font-semibold text-[#03524f] text-sm">
+                                {t(`days.${day.toLowerCase()}`)}
                               </div>
                             </div>
                           </td>
                         )}
-                        
-                        {/* Time column for each lesson */}
-                        <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 w-20">
-                          <div className="text-center">
-                            <div className="font-medium">{time.lesson}</div>
-                            <div>{time.startTime}</div>
-                            <div>{time.endTime}</div>
-                          </div>
+
+                        {/* Lesson time indicator */}
+                        <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 text-center">
+                          <div className="font-medium">{time.lesson}</div>
+                          <div>{time.startTime}</div>
+                          <div>{time.endTime}</div>
                         </td>
 
-                        {institution.workingDays.map(day => {
-                          const key = `${group.id}-${day}-${time.lesson}`;
-                          const slots = scheduleGrid[key] || [];
-                          const slot = slots[0]; // Take first slot if multiple
+                        {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
+                          const key = `${day}-${time.lesson}-${group.id}`;
+                          const slot = scheduleGrid[key];
 
                           return (
-                            <td key={`${day}-${time.lesson}`} className="px-2 py-2">
+                            <td key={group.id} className="px-2 py-2">
                               {slot ? (
                                 <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px]">
                                   <div className="space-y-1">
@@ -444,9 +437,9 @@ const Schedule: React.FC<ScheduleProps> = ({
                         })}
                       </tr>
                     ))}
-                    {/* Add separator between groups */}
+                    {/* Add separator between days */}
                     <tr className="bg-gray-100">
-                      <td colSpan={institution.workingDays.length + 2} className="h-1"></td>
+                      <td colSpan={(selectedGroup === 'all' ? classGroups.length : 1) + 2} className="h-1"></td>
                     </tr>
                   </React.Fragment>
                 ))}
