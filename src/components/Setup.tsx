@@ -240,18 +240,18 @@ const Setup: React.FC<SetupProps> = ({
         )}
 
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Building2 className="h-6 w-6 text-[#03524f]" />
-              <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <Building2 className="h-6 w-6 text-[#03524f] flex-shrink-0" />
+              <div className="min-w-0 flex-1">
                 <h2 className="text-xl font-semibold text-gray-900">{t('setup.title')}</h2>
-                <p className="text-sm text-gray-500">
-                  {t('setup.subtitle')}
+                <p className="text-sm text-gray-500 truncate">
+                  Կարգավորեք հիմնական պարամետրերը
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               <button
                 onClick={handleImportClick}
                 disabled={isImporting}
