@@ -378,7 +378,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md transition-colors"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('groups.addGroup')}
@@ -396,7 +396,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowBulkForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -407,7 +407,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-3">{t('groups.entryYears')}</label>
                   <div className="grid grid-cols-3 gap-3">
                     {availableYears.map((year) => (
-                      <label key={year} className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
+                      <label key={year} className="flex items-center p-3 border border-gray-200 rounded-md cursor-pointer">
                         <input
                           type="checkbox"
                           checked={bulkData.years.includes(year)}
@@ -425,7 +425,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   {institution.specializations.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
                       {institution.specializations.map((spec) => (
-                        <label key={spec} className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
+                        <label key={spec} className="flex items-center p-3 border border-gray-200 rounded-md cursor-pointer">
                           <input
                             type="checkbox"
                             checked={bulkData.specializations.includes(spec)}
@@ -458,14 +458,14 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowBulkForm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={bulkData.years.length === 0 || bulkData.specializations.length === 0}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('common.generate')}
                 </button>
@@ -487,7 +487,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -657,13 +657,13 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md"
                 >
                   {editingGroup ? (
                     <>
@@ -695,14 +695,14 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 <div className="flex space-x-2">
                   <button
                     onClick={saveSubjectHours}
-                    className="inline-flex items-center px-3 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239]"
+                    className="inline-flex items-center px-3 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md"
                   >
                     <Save className="h-4 w-4 mr-1" />
                     {t('common.save')}
                   </button>
                   <button
                     onClick={cancelEditingSubjects}
-                    className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700"
+                    className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md"
                   >
                     <X className="h-4 w-4 mr-1" />
                     {t('common.cancel')}
@@ -801,7 +801,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {classGroups.map((group) => (
-                  <tr key={group.id} className="hover:bg-gray-50">
+                  <tr key={group.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Tooltip content={getGroupTooltip(group)}>
                         <div className="flex items-center cursor-help">
@@ -870,21 +870,21 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                       <div className="flex space-x-2">
                         <button
                           onClick={() => startEditingGroup(group)}
-                          className="text-[#03524f] hover:text-[#024239] transition-colors"
+                          className="text-[#03524f] transition-colors"
                           title={t('common.edit')}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => startEditingSubjects(group.id)}
-                          className="text-green-600 hover:text-green-900 transition-colors"
+                          className="text-green-600 transition-colors"
                           title={t('groups.editSubjects')}
                         >
                           <BookOpen className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => deleteClassGroup(group.id)}
-                          className="text-red-600 hover:text-red-900 transition-colors"
+                          className="text-red-600 transition-colors"
                           title={t('common.delete')}
                         >
                           <Trash2 className="h-4 w-4" />

@@ -213,7 +213,7 @@ const Subjects: React.FC<SubjectsProps> = ({
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
           {t('subjects.addSubject')}
@@ -232,7 +232,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -361,13 +361,13 @@ const Subjects: React.FC<SubjectsProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md"
                 >
                   {editingSubject ? (
                     <>
@@ -426,7 +426,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                   const totalHours = getTotalHoursForSubject(subject.id);
                   
                   return (
-                    <tr key={subject.id} className="hover:bg-gray-50">
+                    <tr key={subject.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Tooltip content={getSubjectTooltip(subject)}>
                           <div className="flex items-center cursor-help">
@@ -504,14 +504,14 @@ const Subjects: React.FC<SubjectsProps> = ({
                         <div className="flex space-x-2">
                           <button
                             onClick={() => startEditing(subject)}
-                            className="text-[#03524f] hover:text-[#024239] transition-colors"
+                            className="text-[#03524f] transition-colors"
                             title={t('common.edit')}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteSubject(subject.id)}
-                            className="text-red-600 hover:text-red-900 transition-colors"
+                            className="text-red-600 transition-colors"
                             title={t('common.delete')}
                           >
                             <Trash2 className="h-4 w-4" />

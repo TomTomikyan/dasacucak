@@ -48,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab.id
                       ? 'border-[#03524f] text-[#03524f]'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                 href="https://bolt.new" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-[#03524f] hover:text-[#024239] font-medium transition-colors"
+                className="text-[#03524f] font-medium transition-colors"
               >
                 Bolt.new
               </a>

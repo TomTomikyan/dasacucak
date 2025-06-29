@@ -135,7 +135,7 @@ const Overview: React.FC<OverviewProps> = ({
     subtitle?: string;
     trend?: 'up' | 'down' | 'stable';
   }> = ({ title, value, icon, subtitle, trend }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-shadow">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="p-3 rounded-lg bg-[#03524f] bg-opacity-10">
@@ -177,7 +177,7 @@ const Overview: React.FC<OverviewProps> = ({
         <div className="flex items-center space-x-3">
           <button
             onClick={handleClearData}
-            className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
             {t('overview.clearAll')}
@@ -185,7 +185,7 @@ const Overview: React.FC<OverviewProps> = ({
           
           <button
             onClick={exportConfiguration}
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Download className="h-4 w-4 mr-2" />
             {t('overview.export')}

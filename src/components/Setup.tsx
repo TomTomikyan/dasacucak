@@ -255,7 +255,7 @@ const Setup: React.FC<SetupProps> = ({
               <button
                 onClick={handleImportClick}
                 disabled={isImporting}
-                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#03524f] border border-[#03524f] rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#03524f] border border-[#03524f] rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {isImporting ? t('setup.importing') : t('setup.importConfig')}
@@ -263,7 +263,7 @@ const Setup: React.FC<SetupProps> = ({
               
               <button
                 onClick={() => setShowClearConfirm(true)}
-                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-md hover:bg-red-700 transition-colors"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-md transition-colors"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 {t('setup.clearAll')}
@@ -307,7 +307,7 @@ const Setup: React.FC<SetupProps> = ({
                 type="button"
                 onClick={handleAddSpecialization}
                 disabled={!newSpecialization.trim() || institution.specializations.includes(newSpecialization.trim())}
-                className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 {t('setup.addSpecialization')}
@@ -326,7 +326,7 @@ const Setup: React.FC<SetupProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveSpecialization(specialization)}
-                        className="ml-2 text-[#03524f] hover:text-[#024239] transition-colors"
+                        className="ml-2 text-[#03524f] transition-colors"
                         title={t('setup.removeSpecialization')}
                       >
                         <X className="h-4 w-4" />
@@ -394,7 +394,7 @@ const Setup: React.FC<SetupProps> = ({
                 <button
                   type="button"
                   onClick={() => handleLessonsPerDayChange(Math.max(1, institution.lessonsPerDay - 1))}
-                  className="p-1 rounded-md border border-gray-300 hover:bg-gray-50"
+                  className="p-1 rounded-md border border-gray-300"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -405,11 +405,12 @@ const Setup: React.FC<SetupProps> = ({
                   value={institution.lessonsPerDay}
                   onChange={(e) => handleLessonsPerDayChange(parseInt(e.target.value) || 1)}
                   className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                  placeholder={getCourseText(formData.course)}
                 />
                 <button
                   type="button"
                   onClick={() => handleLessonsPerDayChange(Math.min(8, institution.lessonsPerDay + 1))}
-                  className="p-1 rounded-md border border-gray-300 hover:bg-gray-50"
+                  className="p-1 rounded-md border border-gray-300"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -505,7 +506,7 @@ const Setup: React.FC<SetupProps> = ({
             <button 
               onClick={handleSaveConfiguration}
               disabled={saveStatus === 'saving'}
-              className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#03524f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#03524f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saveStatus === 'saving' ? (
                 <>
@@ -565,13 +566,13 @@ const Setup: React.FC<SetupProps> = ({
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowClearConfirm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleClearData}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md"
                 >
                   {t('setup.clearAllData')}
                 </button>
