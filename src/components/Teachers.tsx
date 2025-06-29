@@ -322,7 +322,7 @@ const Teachers: React.FC<TeachersProps> = ({
                       onChange={(e) => setFormData({ ...formData, homeClassroom: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     >
-                      <option value="">{t('groups.noAssignedClassroom')}</option>
+                      <option value="">չունի</option>
                       {getAvailableClassrooms(editingTeacher?.id).map((classroom) => (
                         <option key={classroom.id} value={classroom.id}>
                           {classroom.number} - {t('common.floor')} {classroom.floor} ({t('classrooms.teacherLab')}, {t('common.capacity')}: {classroom.capacity})
