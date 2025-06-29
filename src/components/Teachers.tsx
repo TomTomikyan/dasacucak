@@ -598,7 +598,7 @@ const Teachers: React.FC<TeachersProps> = ({
                             <span>{getClassroomName(teacher.homeClassroom)}</span>
                           </div>
                         ) : (
-                          <span className="text-gray-400 italic">{t('groups.noAssignedRoom')}</span>
+                          <span className="text-gray-400 italic">չունի</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
