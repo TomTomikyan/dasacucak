@@ -50,9 +50,22 @@ const Schedule: React.FC<ScheduleProps> = ({
     return group ? group.name : t('common.unknown');
   };
 
+  // 🔥 FIXED: Enhanced subject name lookup to handle updated subject names
   const getSubjectName = (subjectId: string) => {
     const subject = subjects.find(s => s.id === subjectId);
-    return subject ? subject.name : t('common.unknown');
+    if (subject) {
+      return subject.name; // Return current subject name
+    }
+    
+    // If subject not found by ID, it might have been deleted or renamed
+    // Try to find by checking if the subjectId might be an old name
+    const subjectByName = subjects.find(s => s.name === subjectId);
+    if (subjectByName) {
+      return subjectByName.name;
+    }
+    
+    // Last resort: return the ID itself (might be the old name)
+    return subjectId || t('common.unknown');
   };
 
   const getTeacherName = (teacherId: string) => {
@@ -64,6 +77,47 @@ const Schedule: React.FC<ScheduleProps> = ({
     const classroom = classrooms.find(c => c.id === classroomId);
     return classroom ? classroom.number : t('common.unknown');
   };
+
+  // 🔥 NEW: Function to update schedule with current subject names
+  const updateScheduleSubjectNames = () => {
+    const updatedSchedule = schedule.map(slot => {
+      const subject = subjects.find(s => s.id === slot.subjectId);
+      if (subject) {
+        return slot; // Subject found, no update needed
+      }
+      
+      // Try to find subject by name (in case the ID changed)
+      const subjectByName = subjects.find(s => s.name === slot.subjectId);
+      if (subjectByName) {
+        return {
+          ...slot,
+          subjectId: subjectByName.id // Update to use correct ID
+        };
+      }
+      
+      return slot; // Keep as is if no match found
+    });
+    
+    // Only update if there are actual changes
+    const hasChanges = updatedSchedule.some((slot, index) => 
+      slot.subjectId !== schedule[index].subjectId
+    );
+    
+    if (hasChanges) {
+      setSchedule(updatedSchedule);
+      showToast.showInfo(
+        'Расписание обновлено',
+        'Названия предметов в расписании обновлены в соответствии с текущими данными'
+      );
+    }
+  };
+
+  // Auto-update schedule when subjects change
+  useEffect(() => {
+    if (schedule.length > 0 && subjects.length > 0) {
+      updateScheduleSubjectNames();
+    }
+  }, [subjects]); // Only run when subjects change
 
   // Generate schedule
   const handleGenerateSchedule = async (regenerate = false) => {
@@ -259,18 +313,29 @@ const Schedule: React.FC<ScheduleProps> = ({
         
         <div className="flex items-center space-x-3">
           {schedule.length > 0 && (
-            <button
-              onClick={handleExportSchedule}
-              disabled={isExporting}
-              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
-            >
-              {isExporting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-2" />
-              )}
-              {isExporting ? t('schedule.exporting') : t('schedule.export')}
-            </button>
+            <>
+              <button
+                onClick={updateScheduleSubjectNames}
+                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                title="Обновить названия предметов в расписании"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Обновить названия
+              </button>
+              
+              <button
+                onClick={handleExportSchedule}
+                disabled={isExporting}
+                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
+              >
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {isExporting ? t('schedule.exporting') : t('schedule.export')}
+              </button>
+            </>
           )}
           
           <button
