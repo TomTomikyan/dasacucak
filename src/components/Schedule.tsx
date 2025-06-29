@@ -358,21 +358,27 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - CORRECT STRUCTURE: Days as rows, Groups as columns */}
+      {/* Schedule Grid - FIXED HIERARCHY: Groups as proper column headers */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                  {/* Day column header */}
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                    {t('common.day')}
+                  </th>
+                  {/* Time column header */}
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                     {t('common.time')}
                   </th>
+                  {/* Group column headers - FIXED: Groups as main headers */}
                   {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
                     <th key={group.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
                       <div className="flex flex-col items-center">
-                        <div className="font-semibold text-[#03524f]">{group.name}</div>
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
+                        <div className="text-xs text-gray-400 mt-1 normal-case">
                           {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
                         </div>
                       </div>
@@ -385,29 +391,32 @@ const Schedule: React.FC<ScheduleProps> = ({
                   <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
                       <tr key={`${day}-${time.lesson}`} className="hover:bg-gray-50">
+                        {/* Day name - only show on first lesson of the day */}
                         {timeIndex === 0 && (
                           <td 
                             rowSpan={institution.lessonsPerDay} 
-                            className="px-4 py-4 whitespace-nowrap border-r border-gray-200 bg-gray-50"
+                            className="px-4 py-4 whitespace-nowrap border-r border-gray-200 bg-gray-50 text-center"
                           >
-                            <div className="text-center">
-                              <div className="font-semibold text-[#03524f] text-sm">
-                                {t(`days.${day.toLowerCase()}`)}
-                              </div>
+                            <div className="font-semibold text-[#03524f] text-sm transform -rotate-90 whitespace-nowrap">
+                              {t(`days.${day.toLowerCase()}`)}
                             </div>
                           </td>
                         )}
 
-                        {/* Lesson time indicator */}
+                        {/* Lesson time */}
                         <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 text-center">
-                          <div className="font-medium">{time.lesson}</div>
-                          <div>{time.startTime}</div>
-                          <div>{time.endTime}</div>
+                          <div className="font-medium text-[#03524f]">{time.lesson}</div>
+                          <div className="text-xs">{time.startTime}</div>
+                          <div className="text-xs">{time.endTime}</div>
                         </td>
 
+                        {/* Schedule slots for each group */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
-                          const key = `${day}-${time.lesson}-${group.id}`;
-                          const slot = scheduleGrid[key];
+                          const slot = filteredSchedule.find(s => 
+                            s.day === day && 
+                            s.lessonNumber === time.lesson && 
+                            s.classGroupId === group.id
+                          );
 
                           return (
                             <td key={group.id} className="px-2 py-2">
@@ -438,9 +447,11 @@ const Schedule: React.FC<ScheduleProps> = ({
                       </tr>
                     ))}
                     {/* Add separator between days */}
-                    <tr className="bg-gray-100">
-                      <td colSpan={(selectedGroup === 'all' ? classGroups.length : 1) + 2} className="h-1"></td>
-                    </tr>
+                    {day !== institution.workingDays[institution.workingDays.length - 1] && (
+                      <tr className="bg-gray-100">
+                        <td colSpan={(selectedGroup === 'all' ? classGroups.length : 1) + 2} className="h-1"></td>
+                      </tr>
+                    )}
                   </React.Fragment>
                 ))}
               </tbody>
