@@ -754,13 +754,13 @@ export class ScheduleGenerator {
       }
     }
 
-    // 🔥 NEW: Enhanced consecutive lesson logic
-    const consecutiveBonus = this.calculateConsecutiveLessonBonus(slot, requirement);
-    score += consecutiveBonus;
+    // 🔥 NEW: Enhanced same subject distribution logic
+    const sameSubjectDistributionScore = this.calculateSameSubjectDistributionScore(slot, requirement);
+    score += sameSubjectDistributionScore;
 
-    // 🔥 NEW: Same subject distribution penalty
-    const sameSubjectPenalty = this.calculateSameSubjectDistributionPenalty(slot, requirement);
-    score -= sameSubjectPenalty;
+    // 🔥 NEW: Consecutive lesson logic for same teacher
+    const consecutiveTeacherScore = this.calculateConsecutiveTeacherScore(slot, requirement);
+    score += consecutiveTeacherScore;
 
     // 🎲 Add small random factor to break ties
     score += this.seededRandom() * 5;
@@ -768,46 +768,9 @@ export class ScheduleGenerator {
     return score;
   }
 
-  // 🔥 NEW: Calculate bonus for consecutive lessons
-  private calculateConsecutiveLessonBonus(slot: ScheduleSlot, requirement: LessonRequirement): number {
-    let bonus = 0;
-
-    // Find existing lessons for this group and teacher on the same day
-    const sameDayLessons = this.schedule.filter(s => 
-      s.classGroupId === slot.classGroupId && 
-      s.teacherId === slot.teacherId && 
-      s.day === slot.day
-    );
-
-    if (sameDayLessons.length > 0) {
-      // Check if any lesson is adjacent (consecutive)
-      const hasAdjacentLesson = sameDayLessons.some(lesson => 
-        Math.abs(lesson.lessonNumber - slot.lessonNumber) === 1
-      );
-
-      if (hasAdjacentLesson) {
-        // Check if it's the same subject
-        const adjacentSameSubject = sameDayLessons.some(lesson => 
-          lesson.subjectId === slot.subjectId && 
-          Math.abs(lesson.lessonNumber - slot.lessonNumber) === 1
-        );
-
-        if (adjacentSameSubject) {
-          // Same subject consecutive lessons - HUGE bonus
-          bonus += 80;
-        } else {
-          // Different subject but same teacher consecutive - moderate bonus
-          bonus += 30;
-        }
-      }
-    }
-
-    return bonus;
-  }
-
-  // 🔥 NEW: Calculate penalty for same subject on same day
-  private calculateSameSubjectDistributionPenalty(slot: ScheduleSlot, requirement: LessonRequirement): number {
-    let penalty = 0;
+  // 🔥 NEW: Calculate score for same subject distribution
+  private calculateSameSubjectDistributionScore(slot: ScheduleSlot, requirement: LessonRequirement): number {
+    let score = 0;
 
     // Count how many lessons of the same subject this group already has on this day
     const sameSubjectSameDay = this.schedule.filter(s => 
@@ -816,27 +779,61 @@ export class ScheduleGenerator {
       s.day === slot.day
     ).length;
 
-    if (sameSubjectSameDay > 0) {
-      // Check if these are consecutive lessons
-      const consecutiveLessons = this.schedule.filter(s => 
+    // 🔥 MAIN RULE: Prefer different days for same subject
+    if (sameSubjectSameDay === 0) {
+      // No lessons of this subject on this day - HUGE bonus
+      score += 200;
+    } else if (sameSubjectSameDay === 1) {
+      // Already 1 lesson of this subject on this day
+      // Check if they would be consecutive
+      const existingLesson = this.schedule.find(s => 
         s.classGroupId === slot.classGroupId && 
         s.subjectId === slot.subjectId && 
-        s.day === slot.day &&
-        Math.abs(s.lessonNumber - slot.lessonNumber) === 1
+        s.day === slot.day
+      );
+      
+      if (existingLesson && Math.abs(existingLesson.lessonNumber - slot.lessonNumber) === 1) {
+        // Would be consecutive - this is acceptable
+        score += 50;
+      } else {
+        // Would NOT be consecutive - heavy penalty
+        score -= 150;
+      }
+    } else {
+      // Already 2+ lessons of this subject on this day - very heavy penalty
+      score -= 300;
+    }
+
+    return score;
+  }
+
+  // 🔥 NEW: Calculate score for consecutive lessons with same teacher
+  private calculateConsecutiveTeacherScore(slot: ScheduleSlot, requirement: LessonRequirement): number {
+    let score = 0;
+
+    // Find existing lessons for this group and teacher on the same day
+    const sameDayTeacherLessons = this.schedule.filter(s => 
+      s.classGroupId === slot.classGroupId && 
+      s.teacherId === slot.teacherId && 
+      s.day === slot.day
+    );
+
+    if (sameDayTeacherLessons.length > 0) {
+      // Check if any lesson is adjacent (consecutive)
+      const hasAdjacentLesson = sameDayTeacherLessons.some(lesson => 
+        Math.abs(lesson.lessonNumber - slot.lessonNumber) === 1
       );
 
-      if (consecutiveLessons.length === 0) {
-        // Same subject on same day but NOT consecutive - apply penalty
-        penalty += sameSubjectSameDay * 40; // Penalty increases with more lessons
+      if (hasAdjacentLesson) {
+        // Same teacher consecutive lessons - moderate bonus
+        score += 30;
+      } else {
+        // Same teacher but not consecutive - small penalty
+        score -= 10;
       }
     }
 
-    // Additional penalty if this would create a third lesson of same subject on same day
-    if (sameSubjectSameDay >= 2) {
-      penalty += 100; // Heavy penalty for 3+ lessons of same subject on same day
-    }
-
-    return penalty;
+    return score;
   }
 
   private calculateLessonTime(lessonNumber: number): { startTime: string; endTime: string } {
@@ -885,8 +882,8 @@ export class ScheduleGenerator {
       }
     });
 
-    // 🔥 NEW: Analyze consecutive lessons
-    this.analyzeConsecutiveLessons(log);
+    // 🔥 NEW: Analyze same subject distribution
+    this.analyzeSameSubjectDistribution(log);
 
     // Log home classroom usage
     const groupsWithHomeRooms = this.classGroups.filter(g => g.homeRoom);
@@ -952,83 +949,96 @@ export class ScheduleGenerator {
     log('✅ Distribution optimization complete');
   }
 
-  // 🔥 NEW: Analyze consecutive lessons
-  private analyzeConsecutiveLessons(log: (message: string) => void): void {
-    log('🔗 Analyzing consecutive lessons...');
+  // 🔥 NEW: Analyze same subject distribution across days
+  private analyzeSameSubjectDistribution(log: (message: string) => void): void {
+    log('📅 Analyzing same subject distribution across days...');
 
-    const consecutiveStats = {
-      sameTeacherConsecutive: 0,
-      sameSubjectConsecutive: 0,
-      sameSubjectNonConsecutive: 0,
-      totalConsecutivePairs: 0
+    const distributionStats = {
+      perfectDistribution: 0, // All lessons on different days
+      acceptableDistribution: 0, // Max 2 consecutive lessons per day
+      problematicDistribution: 0, // Non-consecutive same subject on same day
+      overloadedDays: 0 // 3+ lessons of same subject on same day
     };
 
     this.classGroups.forEach(group => {
-      this.institution.workingDays.forEach(day => {
-        const dayLessons = this.schedule
-          .filter(s => s.classGroupId === group.id && s.day === day)
-          .sort((a, b) => a.lessonNumber - b.lessonNumber);
+      // Group lessons by subject
+      const subjectLessons = new Map<string, ScheduleSlot[]>();
+      this.schedule
+        .filter(s => s.classGroupId === group.id)
+        .forEach(lesson => {
+          if (!subjectLessons.has(lesson.subjectId)) {
+            subjectLessons.set(lesson.subjectId, []);
+          }
+          subjectLessons.get(lesson.subjectId)!.push(lesson);
+        });
 
-        for (let i = 0; i < dayLessons.length - 1; i++) {
-          const currentLesson = dayLessons[i];
-          const nextLesson = dayLessons[i + 1];
+      subjectLessons.forEach((lessons, subjectId) => {
+        if (lessons.length <= 1) return; // Skip subjects with only 1 lesson
 
-          // Check if lessons are consecutive
-          if (nextLesson.lessonNumber === currentLesson.lessonNumber + 1) {
-            consecutiveStats.totalConsecutivePairs++;
+        const subject = this.subjects.find(s => s.id === subjectId);
+        const subjectName = subject?.name || subjectId;
 
-            // Same teacher consecutive
-            if (currentLesson.teacherId === nextLesson.teacherId) {
-              consecutiveStats.sameTeacherConsecutive++;
+        // Group lessons by day
+        const dayGroups = new Map<string, ScheduleSlot[]>();
+        lessons.forEach(lesson => {
+          if (!dayGroups.has(lesson.day)) {
+            dayGroups.set(lesson.day, []);
+          }
+          dayGroups.get(lesson.day)!.push(lesson);
+        });
 
-              // Same subject consecutive
-              if (currentLesson.subjectId === nextLesson.subjectId) {
-                consecutiveStats.sameSubjectConsecutive++;
+        // Analyze distribution
+        const daysWithLessons = dayGroups.size;
+        const totalLessons = lessons.length;
+
+        if (daysWithLessons === totalLessons) {
+          // Perfect: all lessons on different days
+          distributionStats.perfectDistribution++;
+          log(`   ✅ Perfect distribution: ${subjectName} for ${group.name} - all ${totalLessons} lessons on different days`);
+        } else {
+          // Check each day with multiple lessons
+          let hasProblems = false;
+          dayGroups.forEach((dayLessons, day) => {
+            if (dayLessons.length > 1) {
+              // Sort lessons by lesson number
+              const sortedLessons = dayLessons.sort((a, b) => a.lessonNumber - b.lessonNumber);
+              
+              if (dayLessons.length > 2) {
+                // 3+ lessons on same day
+                distributionStats.overloadedDays++;
+                log(`   ❌ Overloaded day: ${subjectName} for ${group.name} - ${dayLessons.length} lessons on ${day}`);
+                hasProblems = true;
+              } else {
+                // Exactly 2 lessons - check if consecutive
+                const areConsecutive = sortedLessons[1].lessonNumber === sortedLessons[0].lessonNumber + 1;
+                if (areConsecutive) {
+                  log(`   ✅ Acceptable: ${subjectName} for ${group.name} - 2 consecutive lessons on ${day}`);
+                } else {
+                  distributionStats.problematicDistribution++;
+                  log(`   ⚠️ Problematic: ${subjectName} for ${group.name} - 2 non-consecutive lessons on ${day} (lessons ${sortedLessons[0].lessonNumber} and ${sortedLessons[1].lessonNumber})`);
+                  hasProblems = true;
+                }
               }
             }
+          });
+
+          if (!hasProblems) {
+            distributionStats.acceptableDistribution++;
           }
         }
-
-        // Check for same subject non-consecutive on same day
-        const subjectGroups = new Map<string, ScheduleSlot[]>();
-        dayLessons.forEach(lesson => {
-          if (!subjectGroups.has(lesson.subjectId)) {
-            subjectGroups.set(lesson.subjectId, []);
-          }
-          subjectGroups.get(lesson.subjectId)!.push(lesson);
-        });
-
-        subjectGroups.forEach((lessons, subjectId) => {
-          if (lessons.length > 1) {
-            // Check if all lessons are consecutive
-            const sortedLessons = lessons.sort((a, b) => a.lessonNumber - b.lessonNumber);
-            let allConsecutive = true;
-            for (let i = 0; i < sortedLessons.length - 1; i++) {
-              if (sortedLessons[i + 1].lessonNumber !== sortedLessons[i].lessonNumber + 1) {
-                allConsecutive = false;
-                break;
-              }
-            }
-            if (!allConsecutive) {
-              consecutiveStats.sameSubjectNonConsecutive++;
-              const subject = this.subjects.find(s => s.id === subjectId);
-              log(`   ⚠️ Non-consecutive same subject: ${subject?.name || subjectId} for ${group.name} on ${day}`);
-            }
-          }
-        });
       });
     });
 
-    log(`📊 Consecutive lesson statistics:`);
-    log(`   • Total consecutive lesson pairs: ${consecutiveStats.totalConsecutivePairs}`);
-    log(`   • Same teacher consecutive: ${consecutiveStats.sameTeacherConsecutive}`);
-    log(`   • Same subject consecutive: ${consecutiveStats.sameSubjectConsecutive}`);
-    log(`   • Same subject non-consecutive (problematic): ${consecutiveStats.sameSubjectNonConsecutive}`);
+    log(`📊 Same subject distribution statistics:`);
+    log(`   • Perfect distribution (all different days): ${distributionStats.perfectDistribution} subjects`);
+    log(`   • Acceptable distribution (max 2 consecutive per day): ${distributionStats.acceptableDistribution} subjects`);
+    log(`   • Problematic distribution (non-consecutive same day): ${distributionStats.problematicDistribution} subjects`);
+    log(`   • Overloaded days (3+ lessons same day): ${distributionStats.overloadedDays} subjects`);
 
-    if (consecutiveStats.sameSubjectNonConsecutive > 0) {
-      log(`   💡 RECOMMENDATION: Consider adjusting schedule to make same-subject lessons consecutive`);
+    if (distributionStats.problematicDistribution > 0 || distributionStats.overloadedDays > 0) {
+      log(`   💡 RECOMMENDATION: Consider adjusting schedule to improve same-subject distribution`);
     } else {
-      log(`   ✅ All same-subject lessons are properly consecutive or distributed`);
+      log(`   ✅ Excellent same-subject distribution across all groups!`);
     }
   }
 }
