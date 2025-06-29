@@ -132,21 +132,6 @@ const Subjects: React.FC<SubjectsProps> = ({
         </button>
       </div>
 
-      {/* Auto-assignment info */}
-      {teachers.length > 0 && (
-        <div className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-[#03524f]" />
-            <div>
-              <h3 className="text-sm font-medium text-[#03524f]">{t('subjects.autoAssignment')}</h3>
-              <p className="text-sm text-[#03524f] opacity-80 mt-1">
-                {t('subjects.autoAssignmentDesc')}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Add/Edit Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
