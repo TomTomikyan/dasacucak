@@ -161,12 +161,12 @@ const UndoToast: React.FC<UndoToastProps> = ({ action, onRemove }) => {
           <div className="ml-4 flex space-x-2">
             <button
               onClick={handleUndo}
-              className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-md ${
+              className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 action.type === 'delete' 
-                  ? 'bg-red-100 text-red-800'
+                  ? 'bg-red-100 text-red-800 hover:bg-red-200'
                   : action.type === 'create'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-blue-100 text-blue-800'
+                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                  : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
               }`}
             >
               <Undo2 className="h-3 w-3 mr-1" />
@@ -174,7 +174,7 @@ const UndoToast: React.FC<UndoToastProps> = ({ action, onRemove }) => {
             </button>
             <button
               onClick={handleRemove}
-              className={`inline-flex ${getTextColor()}`}
+              className={`inline-flex ${getTextColor()} hover:opacity-75 transition-opacity`}
             >
               <X className="h-4 w-4" />
             </button>
