@@ -81,7 +81,7 @@ const Teachers: React.FC<TeachersProps> = ({
     return t(`courses.${courseNumber}`);
   };
 
-  // 🔥 NEW: Function to get current subject names based on teacher's subject list
+  // 🔥 FIXED: Function to get current subject names based on teacher's subject list
   // This ensures that if a subject name changes, it's reflected in the teacher's display
   const getTeacherSubjectNames = (teacherSubjects: string[]) => {
     return teacherSubjects.map(subjectName => {
@@ -89,7 +89,37 @@ const Teachers: React.FC<TeachersProps> = ({
       const currentSubject = subjects.find(s => s.name === subjectName);
       // If found, return the current name; otherwise, return the stored name
       return currentSubject ? currentSubject.name : subjectName;
-    });
+    }).filter(Boolean); // Remove any empty/null values
+  };
+
+  // 🔥 NEW: Function to check if a subject name exists in current subjects
+  const isValidSubjectName = (subjectName: string) => {
+    return subjects.some(s => s.name === subjectName);
+  };
+
+  // 🔥 NEW: Function to clean up teacher subjects (remove non-existent subjects)
+  const cleanupTeacherSubjects = (teacherId: string) => {
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (!teacher) return;
+
+    const validSubjects = teacher.subjects.filter(subjectName => 
+      isValidSubjectName(subjectName)
+    );
+
+    if (validSubjects.length !== teacher.subjects.length) {
+      const updatedTeachers = teachers.map(t => 
+        t.id === teacherId 
+          ? { ...t, subjects: validSubjects }
+          : t
+      );
+      setTeachers(updatedTeachers);
+      
+      const removedCount = teacher.subjects.length - validSubjects.length;
+      showToast.showInfo(
+        'Предметы обновлены',
+        `Удалено ${removedCount} несуществующих предметов у преподавателя ${teacher.firstName} ${teacher.lastName}`
+      );
+    }
   };
 
   const startEditing = (teacher: Teacher) => {
@@ -242,13 +272,26 @@ const Teachers: React.FC<TeachersProps> = ({
           <GraduationCap className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">{t('teachers.title')}</h2>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {t('teachers.addTeacher')}
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => {
+              // Clean up all teachers' subjects
+              teachers.forEach(teacher => cleanupTeacherSubjects(teacher.id));
+            }}
+            className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+            title="Очистить несуществующие предметы у всех преподавателей"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Обновить предметы
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {t('teachers.addTeacher')}
+          </button>
+        </div>
       </div>
 
       {/* Add/Edit Form Modal */}
@@ -528,6 +571,7 @@ const Teachers: React.FC<TeachersProps> = ({
                   const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
                   // 🔥 FIXED: Use the function to get current subject names
                   const currentSubjectNames = getTeacherSubjectNames(teacher.subjects);
+                  const hasInvalidSubjects = teacher.subjects.some(subjectName => !isValidSubjectName(subjectName));
                   
                   return (
                     <tr key={teacher.id} className="hover:bg-gray-50">
@@ -542,6 +586,15 @@ const Teachers: React.FC<TeachersProps> = ({
                             <div className="font-medium text-gray-900">
                               {teacher.firstName} {teacher.lastName}
                             </div>
+                            {hasInvalidSubjects && (
+                              <button
+                                onClick={() => cleanupTeacherSubjects(teacher.id)}
+                                className="text-xs text-red-600 hover:text-red-800 underline"
+                                title="Очистить несуществующие предметы"
+                              >
+                                Обновить предметы
+                              </button>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -549,13 +602,22 @@ const Teachers: React.FC<TeachersProps> = ({
                         <div className="flex flex-wrap gap-1">
                           {/* 🔥 FIXED: Display current subject names instead of stored names */}
                           {currentSubjectNames.slice(0, 2).map((subjectName, index) => (
-                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
+                            <span key={index} className={`inline-flex px-2 py-1 text-xs rounded ${
+                              isValidSubjectName(subjectName)
+                                ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
                               {subjectName}
                             </span>
                           ))}
                           {currentSubjectNames.length > 2 && (
                             <span className="text-xs text-gray-500">
                               +{currentSubjectNames.length - 2} {t('common.more')}
+                            </span>
+                          )}
+                          {hasInvalidSubjects && (
+                            <span className="inline-flex px-2 py-1 text-xs bg-red-100 text-red-700 rounded">
+                              Есть удаленные предметы
                             </span>
                           )}
                         </div>
