@@ -33,48 +33,100 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ con
     
     // Tooltip dimensions
     const tooltipWidth = 320;
-    const tooltipHeight = 200; // Approximate height
-    const offset = 15; // Distance from the element
+    const tooltipHeight = 200;
+    const offset = 15;
+    const margin = 10; // Minimum margin from viewport edges
     
     let x = 0;
     let y = 0;
+    let positioned = false;
     
-    // Try positioning to the right first
-    if (rect.right + offset + tooltipWidth <= viewportWidth) {
+    // Strategy 1: Try positioning to the right
+    if (!positioned && rect.right + offset + tooltipWidth + margin <= viewportWidth) {
       x = rect.right + offset;
+      y = rect.top + rect.height / 2 - tooltipHeight / 2;
+      
+      // Adjust Y if it goes outside viewport
+      if (y < margin) {
+        y = margin;
+      } else if (y + tooltipHeight + margin > viewportHeight) {
+        y = viewportHeight - tooltipHeight - margin;
+      }
+      
+      positioned = true;
     }
-    // If not enough space on the right, try left
-    else if (rect.left - offset - tooltipWidth >= 0) {
+    
+    // Strategy 2: Try positioning to the left
+    if (!positioned && rect.left - offset - tooltipWidth - margin >= 0) {
       x = rect.left - offset - tooltipWidth;
-    }
-    // If neither side works, center horizontally but ensure it's visible
-    else {
-      x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
-    }
-    
-    // Vertical positioning - try to center on the element
-    y = rect.top + rect.height / 2 - tooltipHeight / 2;
-    
-    // Ensure tooltip doesn't go above viewport
-    if (y < 10) {
-      y = 10;
-    }
-    // Ensure tooltip doesn't go below viewport
-    else if (y + tooltipHeight > viewportHeight - 10) {
-      y = viewportHeight - tooltipHeight - 10;
+      y = rect.top + rect.height / 2 - tooltipHeight / 2;
+      
+      // Adjust Y if it goes outside viewport
+      if (y < margin) {
+        y = margin;
+      } else if (y + tooltipHeight + margin > viewportHeight) {
+        y = viewportHeight - tooltipHeight - margin;
+      }
+      
+      positioned = true;
     }
     
-    // If tooltip would overlap with the element, adjust position
-    if (x < rect.right + offset && x + tooltipWidth > rect.left - offset) {
-      // If we're overlapping horizontally, position above or below
-      if (rect.top - tooltipHeight - offset >= 10) {
-        // Position above
-        y = rect.top - tooltipHeight - offset;
-        x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
-      } else if (rect.bottom + offset + tooltipHeight <= viewportHeight - 10) {
-        // Position below
-        y = rect.bottom + offset;
-        x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
+    // Strategy 3: Try positioning above
+    if (!positioned && rect.top - offset - tooltipHeight - margin >= 0) {
+      y = rect.top - offset - tooltipHeight;
+      x = rect.left + rect.width / 2 - tooltipWidth / 2;
+      
+      // Adjust X if it goes outside viewport
+      if (x < margin) {
+        x = margin;
+      } else if (x + tooltipWidth + margin > viewportWidth) {
+        x = viewportWidth - tooltipWidth - margin;
+      }
+      
+      positioned = true;
+    }
+    
+    // Strategy 4: Try positioning below
+    if (!positioned && rect.bottom + offset + tooltipHeight + margin <= viewportHeight) {
+      y = rect.bottom + offset;
+      x = rect.left + rect.width / 2 - tooltipWidth / 2;
+      
+      // Adjust X if it goes outside viewport
+      if (x < margin) {
+        x = margin;
+      } else if (x + tooltipWidth + margin > viewportWidth) {
+        x = viewportWidth - tooltipWidth - margin;
+      }
+      
+      positioned = true;
+    }
+    
+    // Strategy 5: Force positioning (fallback) - position where there's most space
+    if (!positioned) {
+      // Find the quadrant with most space
+      const spaceRight = viewportWidth - rect.right;
+      const spaceLeft = rect.left;
+      const spaceTop = rect.top;
+      const spaceBottom = viewportHeight - rect.bottom;
+      
+      const maxSpace = Math.max(spaceRight, spaceLeft, spaceTop, spaceBottom);
+      
+      if (maxSpace === spaceRight) {
+        // Position to the right, but constrain within viewport
+        x = Math.min(rect.right + offset, viewportWidth - tooltipWidth - margin);
+        y = Math.max(margin, Math.min(rect.top, viewportHeight - tooltipHeight - margin));
+      } else if (maxSpace === spaceLeft) {
+        // Position to the left, but constrain within viewport
+        x = Math.max(margin, rect.left - tooltipWidth - offset);
+        y = Math.max(margin, Math.min(rect.top, viewportHeight - tooltipHeight - margin));
+      } else if (maxSpace === spaceTop) {
+        // Position above, but constrain within viewport
+        y = Math.max(margin, rect.top - tooltipHeight - offset);
+        x = Math.max(margin, Math.min(rect.left, viewportWidth - tooltipWidth - margin));
+      } else {
+        // Position below, but constrain within viewport
+        y = Math.min(rect.bottom + offset, viewportHeight - tooltipHeight - margin);
+        x = Math.max(margin, Math.min(rect.left, viewportWidth - tooltipWidth - margin));
       }
     }
     
