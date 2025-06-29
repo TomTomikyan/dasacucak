@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2, ChevronDown, ChevronUp, Eye, EyeOff, Move, ArrowRightLeft } from 'lucide-react';
+import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2, ChevronDown, ChevronUp, Eye, EyeOff, Move, ArrowRightLeft, X } from 'lucide-react';
 import { ScheduleSlot, Institution, ClassGroup, Subject, Teacher, Classroom } from '../types';
 import { ScheduleGenerator } from '../utils/scheduleGenerator';
 import { ICSExporter, ICSEvent } from '../utils/icsExport';
@@ -118,10 +118,11 @@ const Schedule: React.FC<ScheduleProps> = ({
   const [showLogs, setShowLogs] = useState(false);
   const [logsExpanded, setLogsExpanded] = useState(true);
 
-  // 🔥 NEW: Drag and Drop states
+  // 🔥 ENHANCED: Drag and Drop states with better validation
   const [draggedSlot, setDraggedSlot] = useState<ScheduleSlot | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ day: string; lesson: number; groupId: string } | null>(null);
   const [isDropValid, setIsDropValid] = useState(false);
+  const [dragValidationMessage, setDragValidationMessage] = useState<string>('');
 
   // 🔥 NEW: Get properly ordered working days (Monday first)
   const getOrderedWorkingDays = (): string[] => {
@@ -219,7 +220,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     return `📚 ${subject}\n\n👨‍🏫 ${teacher}\n\n🏫 ${classroom}\n\n👥 ${group}\n\n⏰ ${slot.startTime} - ${slot.endTime}`;
   };
 
-  // 🔥 NEW: Drag and Drop handlers
+  // 🔥 ENHANCED: Drag and Drop handlers with better validation
   const handleDragStart = (e: React.DragEvent, slot: ScheduleSlot) => {
     setDraggedSlot(slot);
     e.dataTransfer.effectAllowed = 'move';
@@ -236,6 +237,90 @@ const Schedule: React.FC<ScheduleProps> = ({
     setDraggedSlot(null);
     setDragOverCell(null);
     setIsDropValid(false);
+    setDragValidationMessage('');
+  };
+
+  // 🔥 ENHANCED: Better validation logic
+  const validateDragOperation = (targetDay: string, targetLesson: number, targetGroupId: string): { valid: boolean; message: string } => {
+    if (!draggedSlot) return { valid: false, message: 'Ոչ մի դաս չի ընտրված' };
+
+    // 1. Check if trying to move between different groups
+    if (draggedSlot.classGroupId !== targetGroupId) {
+      const sourceGroupName = getGroupName(draggedSlot.classGroupId);
+      const targetGroupName = getGroupName(targetGroupId);
+      return { 
+        valid: false, 
+        message: `Չի կարող տեղափոխել ${sourceGroupName}-ից ${targetGroupName}` 
+      };
+    }
+
+    // 2. Check if trying to move to the same position
+    if (draggedSlot.day === targetDay && draggedSlot.lessonNumber === targetLesson) {
+      return { valid: true, message: 'Նույն դիրքը' };
+    }
+
+    // 3. Check teacher availability
+    const teacher = teachers.find(t => t.id === draggedSlot.teacherId);
+    if (teacher && (!teacher.availableHours[targetDay] || !teacher.availableHours[targetDay].includes(targetLesson))) {
+      return { 
+        valid: false, 
+        message: `Ուսուցիչ ${getTeacherName(draggedSlot.teacherId)} հասանելի չէ ${t(`days.${targetDay.toLowerCase()}`)} օրվա ${targetLesson}-րդ դասին` 
+      };
+    }
+
+    // 4. Check for teacher conflicts (excluding current slot and target slot if swapping)
+    const existingSlot = schedule.find(s => 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson && 
+      s.classGroupId === targetGroupId
+    );
+
+    const teacherConflict = schedule.find(s => 
+      s.id !== draggedSlot.id && 
+      s.id !== existingSlot?.id &&
+      s.teacherId === draggedSlot.teacherId && 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson
+    );
+
+    if (teacherConflict) {
+      return { 
+        valid: false, 
+        message: `Ուսուցիչ ${getTeacherName(draggedSlot.teacherId)} արդեն զբաղված է այս ժամին` 
+      };
+    }
+
+    // 5. Check for classroom conflicts
+    const classroomConflict = schedule.find(s => 
+      s.id !== draggedSlot.id && 
+      s.id !== existingSlot?.id &&
+      s.classroomId === draggedSlot.classroomId && 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson
+    );
+
+    if (classroomConflict) {
+      return { 
+        valid: false, 
+        message: `Դասարան ${getClassroomName(draggedSlot.classroomId)} արդեն զբաղված է այս ժամին` 
+      };
+    }
+
+    // 6. If there's an existing slot, validate the swap
+    if (existingSlot) {
+      // Check if the existing slot's teacher is available at the dragged slot's original time
+      const existingTeacher = teachers.find(t => t.id === existingSlot.teacherId);
+      if (existingTeacher && (!existingTeacher.availableHours[draggedSlot.day] || !existingTeacher.availableHours[draggedSlot.day].includes(draggedSlot.lessonNumber))) {
+        return { 
+          valid: false, 
+          message: `Փոխանակումը անհնար է: Ուսուցիչ ${getTeacherName(existingSlot.teacherId)} հասանելի չէ ${t(`days.${draggedSlot.day.toLowerCase()}`)} օրվա ${draggedSlot.lessonNumber}-րդ դասին` 
+        };
+      }
+
+      return { valid: true, message: `Փոխանակել ${getSubjectName(existingSlot.subjectId)}-ի հետ` };
+    }
+
+    return { valid: true, message: 'Տեղափոխել դատարկ վանդակ' };
   };
 
   const handleDragOver = (e: React.DragEvent, day: string, lesson: number, groupId: string) => {
@@ -244,9 +329,9 @@ const Schedule: React.FC<ScheduleProps> = ({
     
     if (!draggedSlot) return;
     
-    // Only allow moves within the same group
-    const isValidMove = draggedSlot.classGroupId === groupId;
-    setIsDropValid(isValidMove);
+    const validation = validateDragOperation(day, lesson, groupId);
+    setIsDropValid(validation.valid);
+    setDragValidationMessage(validation.message);
     setDragOverCell({ day, lesson, groupId });
   };
 
@@ -258,6 +343,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     if (!currentTarget.contains(relatedTarget)) {
       setDragOverCell(null);
       setIsDropValid(false);
+      setDragValidationMessage('');
     }
   };
 
@@ -266,18 +352,17 @@ const Schedule: React.FC<ScheduleProps> = ({
     
     if (!draggedSlot) return;
     
-    // Validate: only allow moves within the same group
-    if (draggedSlot.classGroupId !== targetGroupId) {
+    const validation = validateDragOperation(targetDay, targetLesson, targetGroupId);
+    
+    if (!validation.valid) {
       showToast.showError(
-        t('schedule.cannotMoveBetweenGroups'),
-        t('schedule.cannotMoveBetweenGroups', { 
-          sourceGroup: getGroupName(draggedSlot.classGroupId), 
-          targetGroup: getGroupName(targetGroupId) 
-        })
+        t('schedule.cannotSwap'),
+        validation.message
       );
       setDraggedSlot(null);
       setDragOverCell(null);
       setIsDropValid(false);
+      setDragValidationMessage('');
       return;
     }
 
@@ -299,20 +384,10 @@ const Schedule: React.FC<ScheduleProps> = ({
     setDraggedSlot(null);
     setDragOverCell(null);
     setIsDropValid(false);
+    setDragValidationMessage('');
   };
 
   const handleMoveLesson = (slot: ScheduleSlot, newDay: string, newLesson: number) => {
-    // Check for conflicts
-    const conflicts = validateMove(slot, newDay, newLesson);
-    
-    if (conflicts.length > 0) {
-      showToast.showError(
-        t('schedule.conflictsDetected'),
-        conflicts.join('\n')
-      );
-      return;
-    }
-
     // Calculate new times
     const { startTime, endTime } = calculateLessonTime(newLesson);
 
@@ -331,18 +406,6 @@ const Schedule: React.FC<ScheduleProps> = ({
   };
 
   const handleSwapLessons = (slot1: ScheduleSlot, slot2: ScheduleSlot) => {
-    // Validate swap
-    const conflicts1 = validateMove(slot1, slot2.day, slot2.lessonNumber, slot2.id);
-    const conflicts2 = validateMove(slot2, slot1.day, slot1.lessonNumber, slot1.id);
-    
-    if (conflicts1.length > 0 || conflicts2.length > 0) {
-      showToast.showError(
-        t('schedule.cannotSwap'),
-        [...conflicts1, ...conflicts2].join('\n')
-      );
-      return;
-    }
-
     // Calculate new times for both lessons
     const { startTime: startTime1, endTime: endTime1 } = calculateLessonTime(slot2.lessonNumber);
     const { startTime: startTime2, endTime: endTime2 } = calculateLessonTime(slot1.lessonNumber);
@@ -375,42 +438,6 @@ const Schedule: React.FC<ScheduleProps> = ({
       t('schedule.lessonsSwapped'),
       t('schedule.lessonsSwappedDesc')
     );
-  };
-
-  const validateMove = (slot: ScheduleSlot, newDay: string, newLesson: number, excludeSlotId?: string): string[] => {
-    const conflicts: string[] = [];
-
-    // Check teacher availability
-    const teacher = teachers.find(t => t.id === slot.teacherId);
-    if (teacher && (!teacher.availableHours[newDay] || !teacher.availableHours[newDay].includes(newLesson))) {
-      conflicts.push(`Ուսուցիչ ${getTeacherName(slot.teacherId)} հասանելի չէ ${t(`days.${newDay.toLowerCase()}`)} օրվա ${newLesson}-րդ դասին`);
-    }
-
-    // Check teacher conflicts
-    const teacherConflict = schedule.find(s => 
-      s.id !== slot.id && 
-      s.id !== excludeSlotId &&
-      s.teacherId === slot.teacherId && 
-      s.day === newDay && 
-      s.lessonNumber === newLesson
-    );
-    if (teacherConflict) {
-      conflicts.push(`Ուսուցիչ ${getTeacherName(slot.teacherId)} արդեն զբաղված է այս ժամին`);
-    }
-
-    // Check classroom conflicts
-    const classroomConflict = schedule.find(s => 
-      s.id !== slot.id && 
-      s.id !== excludeSlotId &&
-      s.classroomId === slot.classroomId && 
-      s.day === newDay && 
-      s.lessonNumber === newLesson
-    );
-    if (classroomConflict) {
-      conflicts.push(`Դասարան ${getClassroomName(slot.classroomId)} արդեն զբաղված է այս ժամին`);
-    }
-
-    return conflicts;
   };
 
   const calculateLessonTime = (lessonNumber: number): { startTime: string; endTime: string } => {
@@ -659,28 +686,38 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* 🔥 NEW: Drag and Drop Instructions */}
+      {/* 🔥 ENHANCED: Drag and Drop Instructions with better visual design */}
       {schedule.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <Move className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-blue-800">{t('schedule.dragDropInstructions')}</h3>
-              <div className="mt-2 text-sm text-blue-700 space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Move className="h-4 w-4" />
-                  <span>{t('schedule.moveWithinGroup')}</span>
-                  <span className="text-blue-600">{t('schedule.moveWithinGroupDesc')}</span>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Move className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('schedule.dragDropInstructions')}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                  <Move className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-blue-900 text-sm">{t('schedule.moveWithinGroup')}</div>
+                    <div className="text-blue-700 text-xs mt-1">{t('schedule.moveWithinGroupDesc')}</div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <ArrowRightLeft className="h-4 w-4" />
-                  <span>{t('schedule.swapLessonsDesc')}</span>
-                  <span className="text-blue-600">{t('schedule.swapLessonsDescText')}</span>
+                <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                  <ArrowRightLeft className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-blue-900 text-sm">{t('schedule.swapLessonsDesc')}</div>
+                    <div className="text-blue-700 text-xs mt-1">{t('schedule.swapLessonsDescText')}</div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="font-medium">{t('schedule.restriction')}</span>
-                  <span className="text-blue-600">{t('schedule.restrictionDesc')}</span>
+                <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-amber-900 text-sm">{t('schedule.restriction')}</div>
+                    <div className="text-amber-700 text-xs mt-1">{t('schedule.restrictionDesc')}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -791,7 +828,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - ENHANCED WITH DRAG AND DROP */}
+      {/* Schedule Grid - ENHANCED WITH BETTER DRAG AND DROP FEEDBACK */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -849,7 +886,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                           </Tooltip>
                         </td>
 
-                        {/* Schedule slots for each group - ENHANCED WITH DRAG AND DROP */}
+                        {/* Schedule slots for each group - ENHANCED WITH BETTER VISUAL FEEDBACK */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
                           const slot = filteredSchedule.find(s => 
                             s.day === day && 
@@ -864,7 +901,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                           return (
                             <td 
                               key={group.id} 
-                              className={`px-2 py-2 transition-all duration-200 ${
+                              className={`px-2 py-2 transition-all duration-200 relative ${
                                 isDragOver 
                                   ? isDropValid 
                                     ? 'bg-green-100 border-2 border-green-400 border-dashed' 
@@ -881,7 +918,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, slot)}
                                     onDragEnd={handleDragEnd}
-                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move hover:bg-[#03524f] hover:bg-opacity-20 hover:border-opacity-30 transition-all duration-200 hover:shadow-md group"
+                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move hover:bg-[#03524f] hover:bg-opacity-20 hover:border-opacity-30 transition-all duration-200 hover:shadow-md group relative"
                                   >
                                     <div className="space-y-1">
                                       <div className="font-medium text-[#03524f] text-xs truncate">
@@ -903,21 +940,37 @@ const Schedule: React.FC<ScheduleProps> = ({
                                   </div>
                                 </Tooltip>
                               ) : (
-                                <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex items-center justify-center transition-colors ${
+                                <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex flex-col items-center justify-center transition-all duration-200 ${
                                   isDragOver && isDropValid
                                     ? 'border-green-400 bg-green-50'
                                     : isDragOver && !isDropValid
                                     ? 'border-red-400 bg-red-50'
                                     : 'border-gray-200 hover:border-gray-300'
                                 }`}>
-                                  <span className="text-xs text-gray-400">
-                                    {isDragOver 
-                                      ? isDropValid 
-                                        ? t('schedule.drop') 
-                                        : t('schedule.cannotSwap')
-                                      : 'Դատարկ'
-                                    }
-                                  </span>
+                                  {isDragOver ? (
+                                    <div className="text-center">
+                                      <div className={`text-xs font-medium ${isDropValid ? 'text-green-700' : 'text-red-700'}`}>
+                                        {isDropValid ? (
+                                          <div className="flex items-center space-x-1">
+                                            <CheckCircle className="h-3 w-3" />
+                                            <span>{dragValidationMessage}</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center space-x-1">
+                                            <X className="h-3 w-3" />
+                                            <span>Չի կարող</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {!isDropValid && dragValidationMessage && (
+                                        <div className="text-xs text-red-600 mt-1 max-w-[140px] break-words">
+                                          {dragValidationMessage}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">Դատարկ</span>
+                                  )}
                                 </div>
                               )}
                             </td>
