@@ -30,62 +30,53 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ con
     const rect = e.currentTarget.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
     
     // Tooltip dimensions
     const tooltipWidth = 320;
-    const tooltipHeight = 200;
-    const margin = 15; // Safe margin from screen edges
+    const tooltipHeight = 200; // Approximate height
+    const offset = 15; // Distance from the element
     
     let x = 0;
     let y = 0;
     
-    // Calculate absolute positions (including scroll)
-    const elementLeft = rect.left + scrollX;
-    const elementRight = rect.right + scrollX;
-    const elementTop = rect.top + scrollY;
-    const elementBottom = rect.bottom + scrollY;
-    const elementCenterX = elementLeft + rect.width / 2;
-    const elementCenterY = elementTop + rect.height / 2;
-    
     // Try positioning to the right first
-    if (elementRight + margin + tooltipWidth <= viewportWidth + scrollX - margin) {
-      x = elementRight + margin;
-      y = elementCenterY - tooltipHeight / 2;
+    if (rect.right + offset + tooltipWidth <= viewportWidth) {
+      x = rect.right + offset;
     }
-    // Try positioning to the left
-    else if (elementLeft - margin - tooltipWidth >= scrollX + margin) {
-      x = elementLeft - margin - tooltipWidth;
-      y = elementCenterY - tooltipHeight / 2;
+    // If not enough space on the right, try left
+    else if (rect.left - offset - tooltipWidth >= 0) {
+      x = rect.left - offset - tooltipWidth;
     }
-    // Try positioning below
-    else if (elementBottom + margin + tooltipHeight <= viewportHeight + scrollY - margin) {
-      x = elementCenterX - tooltipWidth / 2;
-      y = elementBottom + margin;
-    }
-    // Try positioning above
-    else if (elementTop - margin - tooltipHeight >= scrollY + margin) {
-      x = elementCenterX - tooltipWidth / 2;
-      y = elementTop - margin - tooltipHeight;
-    }
-    // Fallback: position in viewport center, avoiding the element
+    // If neither side works, center horizontally but ensure it's visible
     else {
-      x = Math.max(scrollX + margin, Math.min(viewportWidth + scrollX - tooltipWidth - margin, elementCenterX - tooltipWidth / 2));
-      
-      // Position above or below based on available space
-      if (elementTop - scrollY > viewportHeight / 2) {
-        // More space above, position above
-        y = Math.max(scrollY + margin, elementTop - tooltipHeight - margin);
-      } else {
-        // More space below, position below
-        y = Math.min(viewportHeight + scrollY - tooltipHeight - margin, elementBottom + margin);
+      x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
+    }
+    
+    // Vertical positioning - try to center on the element
+    y = rect.top + rect.height / 2 - tooltipHeight / 2;
+    
+    // Ensure tooltip doesn't go above viewport
+    if (y < 10) {
+      y = 10;
+    }
+    // Ensure tooltip doesn't go below viewport
+    else if (y + tooltipHeight > viewportHeight - 10) {
+      y = viewportHeight - tooltipHeight - 10;
+    }
+    
+    // If tooltip would overlap with the element, adjust position
+    if (x < rect.right + offset && x + tooltipWidth > rect.left - offset) {
+      // If we're overlapping horizontally, position above or below
+      if (rect.top - tooltipHeight - offset >= 10) {
+        // Position above
+        y = rect.top - tooltipHeight - offset;
+        x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
+      } else if (rect.bottom + offset + tooltipHeight <= viewportHeight - 10) {
+        // Position below
+        y = rect.bottom + offset;
+        x = Math.max(10, Math.min(viewportWidth - tooltipWidth - 10, rect.left + rect.width / 2 - tooltipWidth / 2));
       }
     }
-    
-    // Final bounds check - ensure tooltip is fully within viewport
-    x = Math.max(scrollX + margin, Math.min(viewportWidth + scrollX - tooltipWidth - margin, x));
-    y = Math.max(scrollY + margin, Math.min(viewportHeight + scrollY - tooltipHeight - margin, y));
     
     setPosition({ x, y });
     setIsVisible(true);
@@ -108,13 +99,11 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ con
           style={{
             left: position.x,
             top: position.y,
-            width: '320px',
-            maxHeight: '200px',
+            maxWidth: '320px',
             whiteSpace: 'pre-wrap',
             backdropFilter: 'blur(8px)',
             backgroundColor: 'rgba(3, 82, 79, 0.95)',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            overflow: 'auto'
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}
         >
           {content}
