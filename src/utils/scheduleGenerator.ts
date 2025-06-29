@@ -80,6 +80,12 @@ export class ScheduleGenerator {
 
       log('✅ Input validation passed');
 
+      // 🔥 NEW: Validate teacher-group assignments
+      const teacherGroupValidation = this.validateTeacherGroupAssignments();
+      if (!teacherGroupValidation.valid) {
+        log(`⚠️ Teacher-group assignment warnings: ${teacherGroupValidation.warnings?.join(', ')}`);
+      }
+
       // Log classroom specializations and teacher labs
       this.logClassroomInfo(log);
 
@@ -170,6 +176,32 @@ export class ScheduleGenerator {
     return { valid: true };
   }
 
+  // 🔥 NEW: Validate teacher-group assignments
+  private validateTeacherGroupAssignments(): { valid: boolean; warnings?: string[] } {
+    const warnings: string[] = [];
+
+    this.teachers.forEach(teacher => {
+      if (teacher.assignedClassGroups.length === 0) {
+        warnings.push(`Teacher ${teacher.firstName} ${teacher.lastName} has no assigned groups`);
+      }
+    });
+
+    this.classGroups.forEach(group => {
+      const teachersForGroup = this.teachers.filter(t => 
+        t.assignedClassGroups.includes(group.id)
+      );
+      
+      if (teachersForGroup.length === 0) {
+        warnings.push(`Group ${group.name} has no assigned teachers`);
+      }
+    });
+
+    return { 
+      valid: warnings.length === 0, 
+      warnings: warnings.length > 0 ? warnings : undefined 
+    };
+  }
+
   private logClassroomInfo(log: (message: string) => void): void {
     // Log specialized laboratories
     const specializedLabs = this.classrooms.filter(c => c.type === 'lab' && c.specialization);
@@ -210,6 +242,20 @@ export class ScheduleGenerator {
         }
       });
     }
+
+    // 🔥 NEW: Log teacher-group assignments
+    log('👥 Teacher-group assignments:');
+    this.teachers.forEach(teacher => {
+      if (teacher.assignedClassGroups.length > 0) {
+        const groupNames = teacher.assignedClassGroups.map(groupId => {
+          const group = this.classGroups.find(g => g.id === groupId);
+          return group ? group.name : groupId;
+        });
+        log(`   👨‍🏫 ${teacher.firstName} ${teacher.lastName}: Groups ${groupNames.join(', ')}`);
+      } else {
+        log(`   ⚠️ ${teacher.firstName} ${teacher.lastName}: No assigned groups`);
+      }
+    });
   }
 
   private generateLessonRequirements(): LessonRequirement[] {
@@ -220,6 +266,17 @@ export class ScheduleGenerator {
         if (yearlyHours > 0) {
           const subject = this.subjects.find(s => s.id === subjectId);
           if (subject && subject.teacherIds.length > 0) {
+            // 🔥 CRITICAL: Filter teachers to only those assigned to this group
+            const validTeacherIds = subject.teacherIds.filter(teacherId => {
+              const teacher = this.teachers.find(t => t.id === teacherId);
+              return teacher && teacher.assignedClassGroups.includes(group.id);
+            });
+
+            if (validTeacherIds.length === 0) {
+              console.warn(`⚠️ No valid teachers for subject ${subject.name} in group ${group.name} - skipping`);
+              return; // Skip this subject-group combination
+            }
+
             // Calculate weekly hours
             const weeklyHours = Math.ceil(yearlyHours / this.institution.academicWeeks);
             
@@ -229,13 +286,13 @@ export class ScheduleGenerator {
                 id: `${group.id}-${subjectId}-${i}`,
                 groupId: group.id,
                 groupName: group.name,
-                groupObj: group, // 🔥 NEW: Add full group object
+                groupObj: group,
                 subjectId: subject.id,
                 subjectName: subject.name,
                 subjectType: subject.type,
-                availableTeacherIds: subject.teacherIds,
+                availableTeacherIds: validTeacherIds, // 🔥 Use filtered teacher IDs
                 priority: this.calculatePriority(subject, group),
-                lessonIndex: i, // 🔥 NEW: Track lesson index for same subject
+                lessonIndex: i,
               });
             }
           }
@@ -337,7 +394,18 @@ export class ScheduleGenerator {
     
     // 1. Check if teachers are assigned to this subject
     if (!requirement.availableTeacherIds.length) {
-      log(`   🚫 CRITICAL: No teachers assigned to subject "${requirement.subjectName}"`);
+      log(`   🚫 CRITICAL: No teachers assigned to subject "${requirement.subjectName}" for group "${requirement.groupName}"`);
+      
+      // 🔥 NEW: Check if there are teachers for this subject but not assigned to this group
+      const subject = this.subjects.find(s => s.id === requirement.subjectId);
+      if (subject && subject.teacherIds.length > 0) {
+        const allSubjectTeachers = subject.teacherIds.map(teacherId => {
+          const teacher = this.teachers.find(t => t.id === teacherId);
+          return teacher ? `${teacher.firstName} ${teacher.lastName}` : teacherId;
+        });
+        log(`   💡 HINT: Subject "${requirement.subjectName}" has teachers (${allSubjectTeachers.join(', ')}) but none are assigned to group "${requirement.groupName}"`);
+        log(`   💡 SOLUTION: Assign these teachers to group "${requirement.groupName}" or assign different teachers to this subject`);
+      }
       return;
     }
     
@@ -359,6 +427,9 @@ export class ScheduleGenerator {
     
     if (!teachersWithAvailability.length) {
       log(`   🚫 CRITICAL: None of the assigned teachers have any available hours`);
+      existingTeachers.forEach(teacher => {
+        log(`   📅 Teacher ${teacher.firstName} ${teacher.lastName}: No available hours set`);
+      });
       return;
     }
     
@@ -558,6 +629,11 @@ export class ScheduleGenerator {
         randomizedTeachers.forEach(teacherId => {
           const teacher = this.teachers.find(t => t.id === teacherId);
           if (!teacher) return;
+
+          // 🔥 CRITICAL: Double-check teacher is assigned to this group
+          if (!teacher.assignedClassGroups.includes(requirement.groupId)) {
+            return; // Skip this teacher - not assigned to this group
+          }
 
           // Check if teacher is available at this time
           if (!teacher.availableHours[day]?.includes(lessonNumber)) return;
@@ -903,6 +979,9 @@ export class ScheduleGenerator {
     // 🔥 NEW: Analyze same subject distribution
     this.analyzeSameSubjectDistribution(log);
 
+    // 🔥 NEW: Validate teacher-group assignments in final schedule
+    this.validateFinalScheduleAssignments(log);
+
     // Log home classroom usage
     const groupsWithHomeRooms = this.classGroups.filter(g => g.homeRoom);
     groupsWithHomeRooms.forEach(group => {
@@ -965,6 +1044,38 @@ export class ScheduleGenerator {
     });
 
     log('✅ Distribution optimization complete');
+  }
+
+  // 🔥 NEW: Validate final schedule assignments
+  private validateFinalScheduleAssignments(log: (message: string) => void): void {
+    log('🔍 Validating teacher-group assignments in final schedule...');
+    
+    let violationCount = 0;
+    const violations: string[] = [];
+
+    this.schedule.forEach(slot => {
+      const teacher = this.teachers.find(t => t.id === slot.teacherId);
+      const group = this.classGroups.find(g => g.id === slot.classGroupId);
+      
+      if (teacher && group) {
+        if (!teacher.assignedClassGroups.includes(group.id)) {
+          violationCount++;
+          const violation = `Teacher ${teacher.firstName} ${teacher.lastName} assigned to group ${group.name} but not in their assigned groups list`;
+          violations.push(violation);
+          log(`   ❌ VIOLATION: ${violation}`);
+        }
+      }
+    });
+
+    if (violationCount === 0) {
+      log(`   ✅ Perfect teacher-group assignment compliance: All ${this.schedule.length} lessons follow assignment rules`);
+    } else {
+      log(`   ⚠️ Found ${violationCount} teacher-group assignment violations:`);
+      violations.forEach(violation => {
+        log(`      • ${violation}`);
+      });
+      log(`   💡 RECOMMENDATION: Review teacher assignments to groups in the Teachers section`);
+    }
   }
 
   // 🔥 NEW: Analyze same subject distribution across days
