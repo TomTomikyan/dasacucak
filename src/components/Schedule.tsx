@@ -918,7 +918,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, slot)}
                                     onDragEnd={handleDragEnd}
-                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move hover:bg-[#03524f] hover:bg-opacity-20 hover:border-opacity-30 transition-all duration-200 hover:shadow-md group relative"
+                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move transition-all duration-200 group relative"
                                   >
                                     <div className="space-y-1">
                                       <div className="font-medium text-[#03524f] text-xs truncate">
@@ -945,7 +945,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                     ? 'border-green-400 bg-green-50'
                                     : isDragOver && !isDropValid
                                     ? 'border-red-400 bg-red-50'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    : 'border-gray-200'
                                 }`}>
                                   {isDragOver ? (
                                     <div className="text-center">
