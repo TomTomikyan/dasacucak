@@ -40,6 +40,14 @@ const Schedule: React.FC<ScheduleProps> = ({
   const [showLogs, setShowLogs] = useState(false);
   const [logsExpanded, setLogsExpanded] = useState(true); // New state for collapsible logs
 
+  // 🔥 NEW: Get properly ordered working days (Monday first)
+  const getOrderedWorkingDays = (): string[] => {
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    // Filter and sort working days according to proper week order
+    return dayOrder.filter(day => institution.workingDays.includes(day));
+  };
+
   // Filter schedule by selected group
   const filteredSchedule = selectedGroup === 'all' 
     ? schedule 
@@ -209,7 +217,10 @@ const Schedule: React.FC<ScheduleProps> = ({
       ? classGroups 
       : classGroups.filter(g => g.id === selectedGroup);
 
-    institution.workingDays.forEach(day => {
+    // 🔥 Use properly ordered working days
+    const orderedWorkingDays = getOrderedWorkingDays();
+
+    orderedWorkingDays.forEach(day => {
       for (let lesson = 1; lesson <= institution.lessonsPerDay; lesson++) {
         groupsToShow.forEach(group => {
           const key = `${day}-${lesson}-${group.id}`;
@@ -457,7 +468,8 @@ const Schedule: React.FC<ScheduleProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {institution.workingDays.map(day => (
+                {/* 🔥 Use properly ordered working days */}
+                {getOrderedWorkingDays().map(day => (
                   <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
                       <tr key={`${day}-${time.lesson}`} className="hover:bg-gray-50">
@@ -519,7 +531,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                       </tr>
                     ))}
                     {/* Add separator between days */}
-                    {day !== institution.workingDays[institution.workingDays.length - 1] && (
+                    {day !== getOrderedWorkingDays()[getOrderedWorkingDays().length - 1] && (
                       <tr className="bg-gray-100">
                         <td colSpan={(selectedGroup === 'all' ? classGroups.length : 1) + 2} className="h-1"></td>
                       </tr>
