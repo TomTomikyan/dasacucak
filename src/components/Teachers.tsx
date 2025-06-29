@@ -81,7 +81,7 @@ const Teachers: React.FC<TeachersProps> = ({
     return t(`courses.${courseNumber}`);
   };
 
-  // 🔥 SIMPLIFIED: Just get current subject names - no validation needed since it's automatic
+  // Get current subject names - automatic updates handled by useScheduleData
   const getTeacherSubjectNames = (teacherSubjects: string[]) => {
     return teacherSubjects.map(subjectName => {
       const currentSubject = subjects.find(s => s.name === subjectName);
@@ -247,22 +247,6 @@ const Teachers: React.FC<TeachersProps> = ({
           {t('teachers.addTeacher')}
         </button>
       </div>
-
-      {/* Automatic Update Info */}
-      {subjects.length > 0 && teachers.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <div>
-              <h3 className="text-sm font-medium text-green-800">Автоматическое обновление</h3>
-              <p className="text-sm text-green-700 mt-1">
-                Система автоматически обновляет связи между преподавателями и предметами при изменении названий. 
-                Никаких дополнительных действий не требуется.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add/Edit Form Modal */}
       {showForm && (
