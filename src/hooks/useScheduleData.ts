@@ -30,6 +30,7 @@ const STORAGE_KEYS = {
   CLASSROOMS: 'college_schedule_classrooms',
   TEACHERS: 'college_schedule_teachers',
   SCHEDULE: 'college_schedule_schedule',
+  SUBJECT_NAME_MAPPING: 'college_schedule_subject_name_mapping', // NEW: Track subject name changes
 };
 
 // Helper functions for localStorage
@@ -72,6 +73,11 @@ export const useScheduleData = () => {
     loadFromStorage(STORAGE_KEYS.SCHEDULE, [])
   );
 
+  // 🔥 NEW: Track subject name changes to maintain relationships
+  const [subjectNameMapping, setSubjectNameMapping] = useState<{ [oldName: string]: string }>(() => 
+    loadFromStorage(STORAGE_KEYS.SUBJECT_NAME_MAPPING, {})
+  );
+
   // Auto-save to localStorage when data changes
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.INSTITUTION, institution);
@@ -97,11 +103,60 @@ export const useScheduleData = () => {
     saveToStorage(STORAGE_KEYS.SCHEDULE, schedule);
   }, [schedule]);
 
-  // Auto-assign teachers to subjects when teachers change
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SUBJECT_NAME_MAPPING, subjectNameMapping);
+  }, [subjectNameMapping]);
+
+  // 🔥 NEW: Function to update subject name mapping when subjects change
+  const updateSubjectNameMapping = useCallback((oldSubjects: Subject[], newSubjects: Subject[]) => {
+    const newMapping = { ...subjectNameMapping };
+    let hasChanges = false;
+
+    // Find renamed subjects
+    oldSubjects.forEach(oldSubject => {
+      const newSubject = newSubjects.find(s => s.id === oldSubject.id);
+      if (newSubject && newSubject.name !== oldSubject.name) {
+        newMapping[oldSubject.name] = newSubject.name;
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      setSubjectNameMapping(newMapping);
+    }
+  }, [subjectNameMapping]);
+
+  // 🔥 NEW: Function to update teacher subjects when subject names change
+  const updateTeacherSubjects = useCallback((nameMapping: { [oldName: string]: string }) => {
+    if (Object.keys(nameMapping).length === 0) return;
+
+    const updatedTeachers = teachers.map(teacher => {
+      const updatedSubjects = teacher.subjects.map(subjectName => {
+        // If this subject was renamed, use the new name
+        return nameMapping[subjectName] || subjectName;
+      });
+
+      // Only update if there are actual changes
+      const hasChanges = updatedSubjects.some((name, index) => name !== teacher.subjects[index]);
+      
+      return hasChanges ? { ...teacher, subjects: updatedSubjects } : teacher;
+    });
+
+    // Only update state if there are actual changes
+    const hasAnyChanges = updatedTeachers.some((teacher, index) => 
+      JSON.stringify(teacher.subjects) !== JSON.stringify(teachers[index].subjects)
+    );
+
+    if (hasAnyChanges) {
+      setTeachers(updatedTeachers);
+    }
+  }, [teachers]);
+
+  // 🔥 ENHANCED: Auto-assign teachers to subjects when teachers OR subjects change
   useEffect(() => {
     if (teachers.length > 0 && subjects.length > 0) {
       const updatedSubjects = subjects.map(subject => {
-        // Find teachers who teach this subject
+        // Find teachers who teach this subject (by current name)
         const matchingTeachers = teachers.filter(teacher => 
           teacher.subjects.includes(subject.name)
         );
@@ -137,6 +192,32 @@ export const useScheduleData = () => {
       }
     }
   }, [teachers]); // Only depend on teachers, not subjects to avoid infinite loop
+
+  // 🔥 NEW: Enhanced setSubjects function that tracks name changes
+  const setSubjectsWithTracking = useCallback((newSubjects: Subject[] | ((prev: Subject[]) => Subject[])) => {
+    setSubjects(prevSubjects => {
+      const updatedSubjects = typeof newSubjects === 'function' ? newSubjects(prevSubjects) : newSubjects;
+      
+      // Track name changes
+      updateSubjectNameMapping(prevSubjects, updatedSubjects);
+      
+      // Update teacher subjects based on name changes
+      const nameMapping: { [oldName: string]: string } = {};
+      prevSubjects.forEach(oldSubject => {
+        const newSubject = updatedSubjects.find(s => s.id === oldSubject.id);
+        if (newSubject && newSubject.name !== oldSubject.name) {
+          nameMapping[oldSubject.name] = newSubject.name;
+        }
+      });
+      
+      // Update teachers with new subject names
+      if (Object.keys(nameMapping).length > 0) {
+        setTimeout(() => updateTeacherSubjects(nameMapping), 0);
+      }
+      
+      return updatedSubjects;
+    });
+  }, [updateSubjectNameMapping, updateTeacherSubjects]);
 
   const updateInstitution = useCallback((updates: Partial<Institution>) => {
     setInstitution(prev => {
@@ -181,8 +262,8 @@ export const useScheduleData = () => {
     );
     newSubject.teacherIds = matchingTeachers.map(teacher => teacher.id);
     
-    setSubjects(prev => [...prev, newSubject]);
-  }, [teachers]);
+    setSubjectsWithTracking(prev => [...prev, newSubject]);
+  }, [teachers, setSubjectsWithTracking]);
 
   const addClassroom = useCallback((classroom: Omit<Classroom, 'id'>) => {
     const newClassroom: Classroom = {
@@ -256,6 +337,7 @@ export const useScheduleData = () => {
       classrooms,
       teachers,
       schedule,
+      subjectNameMapping, // Include name mapping in export
       exportDate: new Date().toISOString(),
       version: '1.0'
     };
@@ -271,7 +353,7 @@ export const useScheduleData = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [institution, classGroups, subjects, classrooms, teachers, schedule]);
+  }, [institution, classGroups, subjects, classrooms, teachers, schedule, subjectNameMapping]);
 
   const importConfiguration = useCallback((file: File) => {
     return new Promise<void>((resolve, reject) => {
@@ -288,10 +370,11 @@ export const useScheduleData = () => {
           // Import data
           setInstitution(configData.institution);
           setClassGroups(configData.classGroups || []);
-          setSubjects(configData.subjects || []);
+          setSubjectsWithTracking(configData.subjects || []);
           setClassrooms(configData.classrooms || []);
           setTeachers(configData.teachers || []);
           setSchedule(configData.schedule || []);
+          setSubjectNameMapping(configData.subjectNameMapping || {});
           
           resolve();
         } catch (error) {
@@ -301,21 +384,22 @@ export const useScheduleData = () => {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
-  }, []);
+  }, [setSubjectsWithTracking]);
 
   const clearAllData = useCallback(() => {
     setInstitution(defaultInstitution);
     setClassGroups([]);
-    setSubjects([]);
+    setSubjectsWithTracking([]);
     setClassrooms([]);
     setTeachers([]);
     setSchedule([]);
+    setSubjectNameMapping({});
     
     // Clear localStorage
     Object.values(STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);
     });
-  }, []);
+  }, [setSubjectsWithTracking]);
 
   return {
     institution,
@@ -325,7 +409,7 @@ export const useScheduleData = () => {
     addClassGroup,
     updateClassGroupSubjects,
     subjects,
-    setSubjects,
+    setSubjects: setSubjectsWithTracking, // Use enhanced version
     addSubject,
     classrooms,
     setClassrooms,
