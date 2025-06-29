@@ -13,7 +13,6 @@ import {
   XCircle,
   TrendingUp,
   Activity,
-  Upload,
   Trash2,
   BarChart3
 } from 'lucide-react';
@@ -122,27 +121,6 @@ const Overview: React.FC<OverviewProps> = ({
   if (!healthChecks.hasGroupSubjects) issues.push(t('overview.issues.noGroupSubjects'));
   if (!healthChecks.hasSubjectTeachers) issues.push(t('overview.issues.noSubjectTeachers'));
 
-  // Handle file import
-  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.json')) {
-      showToast.showError(t('toast.invalidFileFormat'), t('toast.selectJsonFile'));
-      return;
-    }
-
-    try {
-      await importConfiguration(file);
-      showToast.showSuccess(t('toast.importSuccessful'), t('toast.importSuccessfulDesc'));
-    } catch (error) {
-      showToast.showError(t('toast.importFailed'), t('toast.importFailedDesc'));
-    }
-
-    // Clear the input
-    event.target.value = '';
-  };
-
   const handleClearData = () => {
     if (confirm(t('overview.confirmClearAll'))) {
       clearAllData();
@@ -197,21 +175,6 @@ const Overview: React.FC<OverviewProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleFileImport}
-            className="hidden"
-            id="import-file"
-          />
-          <label
-            htmlFor="import-file"
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {t('overview.import')}
-          </label>
-          
           <button
             onClick={handleClearData}
             className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
