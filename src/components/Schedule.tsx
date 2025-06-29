@@ -50,21 +50,17 @@ const Schedule: React.FC<ScheduleProps> = ({
     return group ? group.name : t('common.unknown');
   };
 
-  // 🔥 AUTOMATIC: Enhanced subject name lookup - no manual updates needed
   const getSubjectName = (subjectId: string) => {
     const subject = subjects.find(s => s.id === subjectId);
     if (subject) {
-      return subject.name; // Return current subject name
+      return subject.name;
     }
     
-    // If subject not found by ID, it might have been deleted or renamed
-    // Try to find by checking if the subjectId might be an old name
     const subjectByName = subjects.find(s => s.name === subjectId);
     if (subjectByName) {
       return subjectByName.name;
     }
     
-    // Last resort: return the ID itself (might be the old name)
     return subjectId || t('common.unknown');
   };
 
@@ -307,22 +303,6 @@ const Schedule: React.FC<ScheduleProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Automatic Update Info */}
-      {schedule.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <div>
-              <h3 className="text-sm font-medium text-green-800">Автоматическое обновление</h3>
-              <p className="text-sm text-green-700 mt-1">
-                Расписание автоматически обновляется при изменении названий предметов. 
-                Все связи сохраняются автоматически.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Requirements Check */}
       {requirements.length > 0 && (
