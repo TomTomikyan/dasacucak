@@ -20,6 +20,49 @@ interface ClassGroupsProps {
   };
 }
 
+// Tooltip component
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-3 py-2 text-sm text-white bg-[#03524f] rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: position.x,
+            top: position.y,
+            maxWidth: '300px',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {content}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#03524f]"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ClassGroups: React.FC<ClassGroupsProps> = ({
   classGroups,
   addClassGroup,
@@ -280,6 +323,49 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
 
   const currentYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 6 }, (_, i) => currentYear - i);
+
+  // Get detailed tooltip content for each cell
+  const getGroupTooltip = (group: ClassGroup) => {
+    const courseText = getCourseText(group.course || 1);
+    const totalHours = getTotalHours(group.subjectHours || {});
+    const subjectCount = Object.keys(group.subjectHours || {}).length;
+    
+    let tooltip = `👥 ${group.name}\n`;
+    tooltip += `🎓 ${courseText}\n`;
+    tooltip += `📚 ${group.specialization || 'Ընդհանուր'}\n`;
+    tooltip += `👨‍🎓 ${group.studentsCount} ուսանող\n`;
+    tooltip += `📖 ${subjectCount} առարկա\n`;
+    tooltip += `⏰ ${totalHours}ժ/տարի`;
+    
+    if (group.homeRoom) {
+      const classroom = classrooms.find(c => c.id === group.homeRoom);
+      if (classroom) {
+        tooltip += `\n🏫 Հիմնական դասարան: ${classroom.number}`;
+      }
+    }
+    
+    return tooltip;
+  };
+
+  const getSubjectsTooltip = (group: ClassGroup) => {
+    const subjectHours = group.subjectHours || {};
+    const subjectCount = Object.keys(subjectHours).length;
+    
+    if (subjectCount === 0) {
+      return 'Առարկաներ չեն նշանակված';
+    }
+    
+    let tooltip = `📚 Նշանակված առարկաներ (${subjectCount}):\n`;
+    Object.entries(subjectHours).forEach(([subjectId, hours]) => {
+      const subjectName = getSubjectName(subjectId);
+      tooltip += `• ${subjectName} - ${hours}ժ/տարի\n`;
+    });
+    
+    const totalHours = getTotalHours(subjectHours);
+    tooltip += `\nԸնդամենը: ${totalHours}ժ/տարի`;
+    
+    return tooltip.trim();
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -717,54 +803,68 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 {classGroups.map((group) => (
                   <tr key={group.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
-                          <span className="text-xs font-medium text-[#03524f]">
-                            {group.name.substring(0, 2)}
-                          </span>
+                      <Tooltip content={getGroupTooltip(group)}>
+                        <div className="flex items-center cursor-help">
+                          <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                            <span className="text-xs font-medium text-[#03524f]">
+                              {group.name.substring(0, 2)}
+                            </span>
+                          </div>
+                          <span className="font-medium text-gray-900">{group.name}</span>
                         </div>
-                        <span className="font-medium text-gray-900">{group.name}</span>
-                      </div>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                        <GraduationCap className="h-3 w-3 mr-1" />
-                        {getCourseText(group.course || 1)}
-                      </span>
+                      <Tooltip content={`${getCourseText(group.course || 1)}\nԽումբը սովորում է ${group.course || 1}-րդ կուրսում`}>
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full cursor-help">
+                          <GraduationCap className="h-3 w-3 mr-1" />
+                          {getCourseText(group.course || 1)}
+                        </span>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {group.specialization || 'N/A'}
+                      <Tooltip content={group.specialization ? `Մասնագիտացում: ${group.specialization}` : 'Մասնագիտացում նշանակված չէ'}>
+                        <span className="cursor-help">{group.specialization || 'N/A'}</span>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {group.homeRoom ? (
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                          <span>{getClassroomName(group.homeRoom)}</span>
-                        </div>
+                        <Tooltip content={`Հիմնական դասարան: ${getClassroomName(group.homeRoom)}\nԽումբը հիմնականում սովորում է այս դասարանում`}>
+                          <div className="flex items-center cursor-help">
+                            <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                            <span>{getClassroomName(group.homeRoom)}</span>
+                          </div>
+                        </Tooltip>
                       ) : (
-                        <span className="text-gray-400 italic">{t('groups.noAssignedRoom')}</span>
+                        <Tooltip content="Հիմնական դասարան նշանակված չէ">
+                          <span className="text-gray-400 italic cursor-help">{t('groups.noAssignedRoom')}</span>
+                        </Tooltip>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {group.studentsCount}
+                      <Tooltip content={`Ուսանողների քանակ: ${group.studentsCount}\nԽմբում սովորում է ${group.studentsCount} ուսանող`}>
+                        <span className="cursor-help">{group.studentsCount}</span>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center space-x-1">
-                          <BookOpen className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {Object.keys(group.subjectHours || {}).length} {t('subjects.title').toLowerCase()}
-                          </span>
-                        </div>
-                        {getTotalHours(group.subjectHours || {}) > 0 && (
+                      <Tooltip content={getSubjectsTooltip(group)}>
+                        <div className="flex items-center space-x-2 cursor-help">
                           <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4 text-gray-400" />
+                            <BookOpen className="h-4 w-4 text-gray-400" />
                             <span className="text-sm text-gray-600">
-                              {getTotalHours(group.subjectHours || {})}ժ/{t('common.year')}
+                              {Object.keys(group.subjectHours || {}).length} {t('subjects.title').toLowerCase()}
                             </span>
                           </div>
-                        )}
-                      </div>
+                          {getTotalHours(group.subjectHours || {}) > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <span className="text-sm text-gray-600">
+                                {getTotalHours(group.subjectHours || {})}ժ/{t('common.year')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">

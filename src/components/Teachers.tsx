@@ -19,6 +19,49 @@ interface TeachersProps {
   };
 }
 
+// Tooltip component
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-3 py-2 text-sm text-white bg-[#03524f] rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: position.x,
+            top: position.y,
+            maxWidth: '300px',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {content}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#03524f]"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Teachers: React.FC<TeachersProps> = ({
   teachers,
   addTeacher,
@@ -229,6 +272,83 @@ const Teachers: React.FC<TeachersProps> = ({
           : formData.availableHours[day].filter(h => h !== hour)
       }
     });
+  };
+
+  // Get detailed tooltip content for each cell
+  const getTeacherTooltip = (teacher: Teacher) => {
+    const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
+    const currentSubjectNames = getTeacherSubjectNames(teacher.subjects);
+    
+    let tooltip = `👨‍🏫 ${teacher.firstName} ${teacher.lastName}\n`;
+    tooltip += `📚 Առարկաներ: ${currentSubjectNames.length > 0 ? currentSubjectNames.join(', ') : 'չեն նշանակված'}\n`;
+    tooltip += `👥 Խմբեր: ${teacher.assignedClassGroups.length}\n`;
+    tooltip += `⏰ Հասանելի: ${totalHours}ժ/շաբաթ`;
+    
+    if (teacher.homeClassroom) {
+      const classroom = classrooms.find(c => c.id === teacher.homeClassroom);
+      if (classroom) {
+        tooltip += `\n🏫 Սեփական դասարան: ${classroom.number}`;
+      }
+    }
+    
+    return tooltip;
+  };
+
+  const getSubjectsTooltip = (teacher: Teacher) => {
+    const currentSubjectNames = getTeacherSubjectNames(teacher.subjects);
+    
+    if (currentSubjectNames.length === 0) {
+      return 'Առարկաներ չեն նշանակված';
+    }
+    
+    return `📚 Ուսուցանող առարկաներ:\n${currentSubjectNames.map(name => `• ${name}`).join('\n')}`;
+  };
+
+  const getGroupsTooltip = (teacher: Teacher) => {
+    if (teacher.assignedClassGroups.length === 0) {
+      return 'Խմբեր չեն նշանակված';
+    }
+    
+    let tooltip = `👥 Նշանակված խմբեր (${teacher.assignedClassGroups.length}):\n`;
+    teacher.assignedClassGroups.forEach(groupId => {
+      const group = classGroups.find(g => g.id === groupId);
+      if (group) {
+        const courseText = getCourseText(group.course || 1);
+        tooltip += `• ${group.name} (${courseText}) - ${group.studentsCount} ուս.\n`;
+      }
+    });
+    
+    return tooltip.trim();
+  };
+
+  const getClassroomTooltip = (teacher: Teacher) => {
+    if (!teacher.homeClassroom) {
+      return 'Սեփական դասարան չունի';
+    }
+    
+    const classroom = classrooms.find(c => c.id === teacher.homeClassroom);
+    if (!classroom) {
+      return 'Դասարանը չի գտնվել';
+    }
+    
+    return `🏫 Սեփական դասարան\n${classroom.number} - ${t('common.floor')} ${classroom.floor}\n${t('classrooms.teacherLab')}\n${t('common.capacity')}: ${classroom.capacity}`;
+  };
+
+  const getAvailabilityTooltip = (teacher: Teacher) => {
+    const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
+    const availableDays = Object.keys(teacher.availableHours).filter(day => teacher.availableHours[day].length > 0);
+    
+    let tooltip = `⏰ Հասանելիություն:\n`;
+    tooltip += `📅 ${availableDays.length} օր\n`;
+    tooltip += `🕐 ${totalHours} ժամ/շաբաթ\n\n`;
+    
+    availableDays.forEach(day => {
+      const dayName = t(`days.${day.toLowerCase()}`);
+      const hours = teacher.availableHours[day];
+      tooltip += `${dayName}: ${hours.join(', ')}-րդ դասեր\n`;
+    });
+    
+    return tooltip.trim();
   };
 
   return (
@@ -528,71 +648,85 @@ const Teachers: React.FC<TeachersProps> = ({
                   return (
                     <tr key={teacher.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
-                            <span className="text-sm font-medium text-[#03524f]">
-                              {teacher.firstName[0]}{teacher.lastName[0]}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {teacher.firstName} {teacher.lastName}
+                        <Tooltip content={getTeacherTooltip(teacher)}>
+                          <div className="flex items-center cursor-help">
+                            <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                              <span className="text-sm font-medium text-[#03524f]">
+                                {teacher.firstName[0]}{teacher.lastName[0]}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {teacher.firstName} {teacher.lastName}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
-                          {currentSubjectNames.slice(0, 2).map((subjectName, index) => (
-                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
-                              {subjectName}
-                            </span>
-                          ))}
-                          {currentSubjectNames.length > 2 && (
-                            <span className="text-xs text-gray-500">
-                              +{currentSubjectNames.length - 2} {t('common.more')}
-                            </span>
-                          )}
-                          {currentSubjectNames.length === 0 && (
-                            <span className="text-xs text-gray-400 italic">Предметы не назначены</span>
-                          )}
-                        </div>
+                        <Tooltip content={getSubjectsTooltip(teacher)}>
+                          <div className="flex flex-wrap gap-1 cursor-help">
+                            {currentSubjectNames.slice(0, 2).map((subjectName, index) => (
+                              <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
+                                {subjectName}
+                              </span>
+                            ))}
+                            {currentSubjectNames.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{currentSubjectNames.length - 2} {t('common.more')}
+                              </span>
+                            )}
+                            {currentSubjectNames.length === 0 && (
+                              <span className="text-xs text-gray-400 italic">Предметы не назначены</span>
+                            )}
+                          </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
-                          {teacher.assignedClassGroups.slice(0, 3).map(groupId => (
-                            <span key={groupId} className="inline-flex px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
-                              {getGroupName(groupId)}
-                            </span>
-                          ))}
-                          {teacher.assignedClassGroups.length > 3 && (
-                            <span className="text-xs text-gray-500">
-                              +{teacher.assignedClassGroups.length - 3} {t('common.more')}
-                            </span>
-                          )}
-                          {teacher.assignedClassGroups.length === 0 && (
-                            <span className="text-xs text-red-500 font-medium">{t('teachers.noGroupsAssigned')}</span>
-                          )}
-                        </div>
+                        <Tooltip content={getGroupsTooltip(teacher)}>
+                          <div className="flex flex-wrap gap-1 cursor-help">
+                            {teacher.assignedClassGroups.slice(0, 3).map(groupId => (
+                              <span key={groupId} className="inline-flex px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
+                                {getGroupName(groupId)}
+                              </span>
+                            ))}
+                            {teacher.assignedClassGroups.length > 3 && (
+                              <span className="text-xs text-gray-500">
+                                +{teacher.assignedClassGroups.length - 3} {t('common.more')}
+                              </span>
+                            )}
+                            {teacher.assignedClassGroups.length === 0 && (
+                              <span className="text-xs text-red-500 font-medium">{t('teachers.noGroupsAssigned')}</span>
+                            )}
+                          </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {teacher.homeClassroom ? (
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                            <span>{getClassroomName(teacher.homeClassroom)}</span>
-                          </div>
+                          <Tooltip content={getClassroomTooltip(teacher)}>
+                            <div className="flex items-center cursor-help">
+                              <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                              <span>{getClassroomName(teacher.homeClassroom)}</span>
+                            </div>
+                          </Tooltip>
                         ) : (
-                          <span className="text-gray-400 italic">չունի</span>
+                          <Tooltip content="Սեփական դասարան չունի">
+                            <span className="text-gray-400 italic cursor-help">չունի</span>
+                          </Tooltip>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {Object.keys(teacher.availableHours).filter(day => teacher.availableHours[day].length > 0).length} {t('teachers.days')}
+                        <Tooltip content={getAvailabilityTooltip(teacher)}>
+                          <span className="cursor-help">{Object.keys(teacher.availableHours).filter(day => teacher.availableHours[day].length > 0).length} {t('teachers.days')}</span>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <Clock className="h-4 w-4 mr-1 text-gray-400" />
-                          {totalHours}ժ/{t('common.week')}
-                        </div>
+                        <Tooltip content={`Շաբաթական հասանելիություն: ${totalHours} ժամ\nԱվտոմատ հաշվարկված ըստ ընտրված ժամերի`}>
+                          <div className="flex items-center text-sm text-gray-900 cursor-help">
+                            <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                            {totalHours}ժ/{t('common.week')}
+                          </div>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">

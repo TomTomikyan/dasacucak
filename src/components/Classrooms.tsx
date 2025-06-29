@@ -17,6 +17,49 @@ interface ClassroomsProps {
   };
 }
 
+// Tooltip component
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-3 py-2 text-sm text-white bg-[#03524f] rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: position.x,
+            top: position.y,
+            maxWidth: '300px',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {content}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#03524f]"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Classrooms: React.FC<ClassroomsProps> = ({
   classrooms,
   addClassroom,
@@ -208,6 +251,37 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       default:
         return t('classrooms.theoryClassroom');
     }
+  };
+
+  // Get detailed tooltip content for each cell
+  const getClassroomTooltip = (classroom: Classroom) => {
+    const typeText = getTypeText(classroom.type);
+    const computerText = classroom.hasComputers ? 'Ունի համակարգիչներ' : 'Համակարգիչներ չկան';
+    
+    let tooltip = `🏫 Դասարան ${classroom.number}\n`;
+    tooltip += `🏢 ${t('common.floor')} ${classroom.floor}\n`;
+    tooltip += `📋 ${typeText}\n`;
+    tooltip += `💻 ${computerText}\n`;
+    tooltip += `👥 ${t('common.capacity')}: ${classroom.capacity}`;
+    
+    if (classroom.type === 'lab' && classroom.specialization) {
+      const specializedSubjects = getSpecializationDisplay(classroom.specialization);
+      tooltip += `\n\n🔬 Մասնագիտացված առարկաներ:\n${specializedSubjects}`;
+    }
+    
+    return tooltip;
+  };
+
+  const getSpecializationTooltip = (classroom: Classroom) => {
+    if (classroom.type === 'lab' && classroom.specialization) {
+      const subjects = getSpecializationDisplay(classroom.specialization);
+      return `🔬 Մասնագիտացված լաբորատորիա\n\nԱռարկաներ:\n${subjects}`;
+    } else if (classroom.type === 'teacher_lab') {
+      return '👨‍🏫 Ուսուցչի անձնական լաբորատորիա\nԿարող է օգտագործվել միայն նշանակված ուսուցչի կողմից';
+    } else if (classroom.type === 'lab') {
+      return '🔬 Ունիվերսալ լաբորատորիա\nԿարող է օգտագործվել ցանկացած լաբորատոր առարկայի համար';
+    }
+    return '';
   };
 
   // Filter subjects for lab selection (only lab subjects)
@@ -530,47 +604,61 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 {classrooms.map((classroom) => (
                   <tr key={classroom.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
-                          {getTypeIcon(classroom.type)}
+                      <Tooltip content={getClassroomTooltip(classroom)}>
+                        <div className="flex items-center cursor-help">
+                          <div className="h-8 w-8 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center mr-3">
+                            {getTypeIcon(classroom.type)}
+                          </div>
+                          <span className="font-medium text-gray-900">{classroom.number}</span>
                         </div>
-                        <span className="font-medium text-gray-900">{classroom.number}</span>
-                      </div>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {t('common.floor')} {classroom.floor}
+                      <Tooltip content={`${t('common.floor')} ${classroom.floor}\nДасарանը գտնվում է ${classroom.floor}-րդ հարկում`}>
+                        <span className="cursor-help">{t('common.floor')} {classroom.floor}</span>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(classroom.type)}`}>
-                        {getTypeText(classroom.type)}
-                      </span>
+                      <Tooltip content={`${getTypeText(classroom.type)}\n${classroom.hasComputers ? 'Ունի համակարգիչներ' : 'Համակարգիչներ չկան'}`}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full cursor-help ${getTypeColor(classroom.type)}`}>
+                          {getTypeText(classroom.type)}
+                        </span>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {classroom.capacity} {t('common.students')}
+                      <Tooltip content={`Տարողություն: ${classroom.capacity} ուսանող\nԴասարանում կարող են նստել առավելագույնը ${classroom.capacity} ուսանող`}>
+                        <span className="cursor-help">{classroom.capacity} {t('common.students')}</span>
+                      </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div className="flex flex-col space-y-1">
                         {(classroom.type === 'lab' || classroom.type === 'teacher_lab') && (
-                          <span className={`inline-flex px-2 py-1 text-xs rounded w-fit ${
-                            classroom.hasComputers 
-                              ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            <Monitor className="h-3 w-3 mr-1" />
-                            {classroom.hasComputers ? t('classrooms.computers') : t('classrooms.noComputers')}
-                          </span>
+                          <Tooltip content={classroom.hasComputers ? 'Դասարանում կան համակարգիչներ' : 'Դասարանում համակարգիչներ չկան'}>
+                            <span className={`inline-flex px-2 py-1 text-xs rounded w-fit cursor-help ${
+                              classroom.hasComputers 
+                                ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              <Monitor className="h-3 w-3 mr-1" />
+                              {classroom.hasComputers ? t('classrooms.computers') : t('classrooms.noComputers')}
+                            </span>
+                          </Tooltip>
                         )}
                         {classroom.specialization && classroom.type === 'lab' && (
-                          <div className="flex flex-wrap gap-1">
-                            {getSpecializationDisplay(classroom.specialization).split(', ').map((subject, index) => (
-                              <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
-                                {subject}
-                              </span>
-                            ))}
-                          </div>
+                          <Tooltip content={getSpecializationTooltip(classroom)}>
+                            <div className="flex flex-wrap gap-1 cursor-help">
+                              {getSpecializationDisplay(classroom.specialization).split(', ').map((subject, index) => (
+                                <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
+                                  {subject}
+                                </span>
+                              ))}
+                            </div>
+                          </Tooltip>
                         )}
                         {classroom.type === 'lab' && !classroom.specialization && (
-                          <span className="text-xs text-gray-400 italic">{t('classrooms.universalLab')}</span>
+                          <Tooltip content="Ունիվերսալ լաբորատորիա - կարող է օգտագործվել ցանկացած լաբորատոր առարկայի համար">
+                            <span className="text-xs text-gray-400 italic cursor-help">{t('classrooms.universalLab')}</span>
+                          </Tooltip>
                         )}
                       </div>
                     </td>
