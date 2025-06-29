@@ -828,7 +828,7 @@ const Schedule: React.FC<ScheduleProps> = ({
         </div>
       )}
 
-      {/* Schedule Grid - ENHANCED WITH BETTER DRAG AND DROP FEEDBACK */}
+      {/* Schedule Grid - ENHANCED WITH BETTER DRAG AND DROP FEEDBACK - NO HOVER EFFECTS */}
       {schedule.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -862,7 +862,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                 {getOrderedWorkingDays().map(day => (
                   <React.Fragment key={day}>
                     {lessonTimes.map((time, timeIndex) => (
-                      <tr key={`${day}-${time.lesson}`} className="hover:bg-gray-50">
+                      <tr key={`${day}-${time.lesson}`}>
                         {/* Day name - only show on first lesson of the day */}
                         {timeIndex === 0 && (
                           <td 
@@ -886,7 +886,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                           </Tooltip>
                         </td>
 
-                        {/* Schedule slots for each group - ENHANCED WITH BETTER VISUAL FEEDBACK */}
+                        {/* Schedule slots for each group - NO HOVER EFFECTS */}
                         {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
                           const slot = filteredSchedule.find(s => 
                             s.day === day && 
@@ -933,9 +933,9 @@ const Schedule: React.FC<ScheduleProps> = ({
                                         <span className="truncate">{getClassroomName(slot.classroomId)}</span>
                                       </div>
                                     </div>
-                                    {/* Drag indicator */}
-                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Move className="h-3 w-3 text-[#03524f]" />
+                                    {/* Drag indicator - always visible */}
+                                    <div className="absolute top-1 right-1">
+                                      <Move className="h-3 w-3 text-[#03524f] opacity-60" />
                                     </div>
                                   </div>
                                 </Tooltip>
