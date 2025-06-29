@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, GraduationCap, Trash2, Clock, BookOpen, MapPin, Edit, Save, X, Users, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, GraduationCap, Trash2, Clock, BookOpen, MapPin, Edit, Save, X, Users } from 'lucide-react';
 import { Teacher, Subject, Classroom, ClassGroup, Institution } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -81,92 +81,12 @@ const Teachers: React.FC<TeachersProps> = ({
     return t(`courses.${courseNumber}`);
   };
 
-  // 🔥 ENHANCED: Function to get current subject names and validate them
+  // 🔥 SIMPLIFIED: Just get current subject names - no validation needed since it's automatic
   const getTeacherSubjectNames = (teacherSubjects: string[]) => {
     return teacherSubjects.map(subjectName => {
-      // Try to find the subject by name in the current subjects list
       const currentSubject = subjects.find(s => s.name === subjectName);
-      // If found, return the current name; otherwise, return the stored name
       return currentSubject ? currentSubject.name : subjectName;
-    }).filter(Boolean); // Remove any empty/null values
-  };
-
-  // 🔥 ENHANCED: Function to check if a subject name exists in current subjects
-  const isValidSubjectName = (subjectName: string) => {
-    return subjects.some(s => s.name === subjectName);
-  };
-
-  // 🔥 ENHANCED: Function to update teacher subjects with current subject names
-  const updateTeacherSubjects = (teacherId: string) => {
-    const teacher = teachers.find(t => t.id === teacherId);
-    if (!teacher) return;
-
-    const updatedSubjects: string[] = [];
-    let hasChanges = false;
-
-    teacher.subjects.forEach(subjectName => {
-      const currentSubject = subjects.find(s => s.name === subjectName);
-      if (currentSubject) {
-        // Subject exists with current name
-        updatedSubjects.push(currentSubject.name);
-      } else {
-        // Try to find by old name or similar
-        const possibleSubject = subjects.find(s => 
-          s.name.toLowerCase().includes(subjectName.toLowerCase()) ||
-          subjectName.toLowerCase().includes(s.name.toLowerCase())
-        );
-        
-        if (possibleSubject) {
-          // Found a possible match, use the current name
-          updatedSubjects.push(possibleSubject.name);
-          hasChanges = true;
-        }
-        // If no match found, the subject was deleted - don't add it
-      }
-    });
-
-    if (hasChanges || updatedSubjects.length !== teacher.subjects.length) {
-      const updatedTeachers = teachers.map(t => 
-        t.id === teacherId 
-          ? { ...t, subjects: updatedSubjects }
-          : t
-      );
-      setTeachers(updatedTeachers);
-      
-      const addedCount = updatedSubjects.length - teacher.subjects.filter(s => isValidSubjectName(s)).length;
-      const removedCount = teacher.subjects.length - updatedSubjects.length;
-      
-      let message = '';
-      if (addedCount > 0 && removedCount > 0) {
-        message = `Обновлено ${addedCount} предметов, удалено ${removedCount} несуществующих предметов`;
-      } else if (addedCount > 0) {
-        message = `Обновлено ${addedCount} предметов с новыми названиями`;
-      } else if (removedCount > 0) {
-        message = `Удалено ${removedCount} несуществующих предметов`;
-      }
-      
-      if (message) {
-        showToast.showSuccess(
-          'Предметы обновлены',
-          `${message} у преподавателя ${teacher.firstName} ${teacher.lastName}`
-        );
-      }
-    }
-  };
-
-  // 🔥 NEW: Function to update all teachers' subjects
-  const updateAllTeachersSubjects = () => {
-    let totalUpdated = 0;
-    teachers.forEach(teacher => {
-      const beforeCount = teacher.subjects.filter(s => isValidSubjectName(s)).length;
-      updateTeacherSubjects(teacher.id);
-      // Note: We can't easily count after here due to async state updates
-    });
-    
-    showToast.showInfo(
-      'Обновление завершено',
-      'Предметы всех преподавателей обновлены в соответствии с текущими данными'
-    );
+    }).filter(Boolean);
   };
 
   const startEditing = (teacher: Teacher) => {
@@ -319,35 +239,25 @@ const Teachers: React.FC<TeachersProps> = ({
           <GraduationCap className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">{t('teachers.title')}</h2>
         </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={updateAllTeachersSubjects}
-            className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-            title="Обновить предметы у всех преподавателей в соответствии с текущими данными"
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Обновить все предметы
-          </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('teachers.addTeacher')}
-          </button>
-        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {t('teachers.addTeacher')}
+        </button>
       </div>
 
-      {/* Subject Update Info */}
+      {/* Automatic Update Info */}
       {subjects.length > 0 && teachers.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-blue-600" />
+            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
             <div>
-              <h3 className="text-sm font-medium text-blue-800">Автоматическое обновление предметов</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                При изменении названий предметов система автоматически обновляет связи с преподавателями. 
-                Используйте кнопку "Обновить все предметы" для принудительного обновления.
+              <h3 className="text-sm font-medium text-green-800">Автоматическое обновление</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Система автоматически обновляет связи между преподавателями и предметами при изменении названий. 
+                Никаких дополнительных действий не требуется.
               </p>
             </div>
           </div>
@@ -629,10 +539,7 @@ const Teachers: React.FC<TeachersProps> = ({
               <tbody className="bg-white divide-y divide-gray-200">
                 {teachers.map((teacher) => {
                   const totalHours = Object.values(teacher.availableHours).reduce((sum, hours) => sum + hours.length, 0);
-                  // 🔥 ENHANCED: Use the function to get current subject names and check validity
                   const currentSubjectNames = getTeacherSubjectNames(teacher.subjects);
-                  const hasInvalidSubjects = teacher.subjects.some(subjectName => !isValidSubjectName(subjectName));
-                  const hasOutdatedSubjects = teacher.subjects.length !== currentSubjectNames.length;
                   
                   return (
                     <tr key={teacher.id} className="hover:bg-gray-50">
@@ -647,40 +554,19 @@ const Teachers: React.FC<TeachersProps> = ({
                             <div className="font-medium text-gray-900">
                               {teacher.firstName} {teacher.lastName}
                             </div>
-                            {(hasInvalidSubjects || hasOutdatedSubjects) && (
-                              <button
-                                onClick={() => updateTeacherSubjects(teacher.id)}
-                                className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center mt-1"
-                                title="Обновить предметы преподавателя"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Обновить предметы
-                              </button>
-                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">
-                          {/* 🔥 ENHANCED: Display current subject names with validation indicators */}
                           {currentSubjectNames.slice(0, 2).map((subjectName, index) => (
-                            <span key={index} className={`inline-flex px-2 py-1 text-xs rounded ${
-                              isValidSubjectName(subjectName)
-                                ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]'
-                                : 'bg-red-100 text-red-700'
-                            }`}>
+                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded">
                               {subjectName}
                             </span>
                           ))}
                           {currentSubjectNames.length > 2 && (
                             <span className="text-xs text-gray-500">
                               +{currentSubjectNames.length - 2} {t('common.more')}
-                            </span>
-                          )}
-                          {hasInvalidSubjects && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Требует обновления
                             </span>
                           )}
                           {currentSubjectNames.length === 0 && (

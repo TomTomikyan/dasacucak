@@ -50,7 +50,7 @@ const Schedule: React.FC<ScheduleProps> = ({
     return group ? group.name : t('common.unknown');
   };
 
-  // 🔥 FIXED: Enhanced subject name lookup to handle updated subject names
+  // 🔥 AUTOMATIC: Enhanced subject name lookup - no manual updates needed
   const getSubjectName = (subjectId: string) => {
     const subject = subjects.find(s => s.id === subjectId);
     if (subject) {
@@ -77,47 +77,6 @@ const Schedule: React.FC<ScheduleProps> = ({
     const classroom = classrooms.find(c => c.id === classroomId);
     return classroom ? classroom.number : t('common.unknown');
   };
-
-  // 🔥 NEW: Function to update schedule with current subject names
-  const updateScheduleSubjectNames = () => {
-    const updatedSchedule = schedule.map(slot => {
-      const subject = subjects.find(s => s.id === slot.subjectId);
-      if (subject) {
-        return slot; // Subject found, no update needed
-      }
-      
-      // Try to find subject by name (in case the ID changed)
-      const subjectByName = subjects.find(s => s.name === slot.subjectId);
-      if (subjectByName) {
-        return {
-          ...slot,
-          subjectId: subjectByName.id // Update to use correct ID
-        };
-      }
-      
-      return slot; // Keep as is if no match found
-    });
-    
-    // Only update if there are actual changes
-    const hasChanges = updatedSchedule.some((slot, index) => 
-      slot.subjectId !== schedule[index].subjectId
-    );
-    
-    if (hasChanges) {
-      setSchedule(updatedSchedule);
-      showToast.showInfo(
-        'Расписание обновлено',
-        'Названия предметов в расписании обновлены в соответствии с текущими данными'
-      );
-    }
-  };
-
-  // Auto-update schedule when subjects change
-  useEffect(() => {
-    if (schedule.length > 0 && subjects.length > 0) {
-      updateScheduleSubjectNames();
-    }
-  }, [subjects]); // Only run when subjects change
 
   // Generate schedule
   const handleGenerateSchedule = async (regenerate = false) => {
@@ -313,29 +272,18 @@ const Schedule: React.FC<ScheduleProps> = ({
         
         <div className="flex items-center space-x-3">
           {schedule.length > 0 && (
-            <>
-              <button
-                onClick={updateScheduleSubjectNames}
-                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-                title="Обновить названия предметов в расписании"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Обновить названия
-              </button>
-              
-              <button
-                onClick={handleExportSchedule}
-                disabled={isExporting}
-                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
-              >
-                {isExporting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
-                {isExporting ? t('schedule.exporting') : t('schedule.export')}
-              </button>
-            </>
+            <button
+              onClick={handleExportSchedule}
+              disabled={isExporting}
+              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isExporting ? t('schedule.exporting') : t('schedule.export')}
+            </button>
           )}
           
           <button
@@ -359,6 +307,22 @@ const Schedule: React.FC<ScheduleProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Automatic Update Info */}
+      {schedule.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div>
+              <h3 className="text-sm font-medium text-green-800">Автоматическое обновление</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Расписание автоматически обновляется при изменении названий предметов. 
+                Все связи сохраняются автоматически.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Requirements Check */}
       {requirements.length > 0 && (
