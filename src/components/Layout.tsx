@@ -65,24 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-4">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-sm text-gray-500">
-              Built with{' '}
-              <a 
-                href="https://bolt.new" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-[#03524f] hover:text-[#024239] font-medium transition-colors"
-              >
-                Bolt.new
-              </a>
-            </p>
-          </div>
-        </div>
-      </footer>
+      
     </div>
   );
 };
