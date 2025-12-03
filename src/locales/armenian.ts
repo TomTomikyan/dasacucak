@@ -234,7 +234,7 @@ export const armenianTranslations = {
 
   // Overview page
   overview: {
-    title: 'Ընդհանուր տեսք',
+    title: 'Ամփոփիչ բաժին',
     subtitle: 'Ձեր ժամանակացույցի համակարգի ամբողջական վիճակը',
     noInstitutionName: 'Հաստատության անունը նշանակված չէ',
     systemHealth: 'Համակարգի առողջություն',
