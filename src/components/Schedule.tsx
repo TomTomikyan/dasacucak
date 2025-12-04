@@ -879,7 +879,8 @@ const Schedule: React.FC<ScheduleProps> = ({
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, slot)}
                                     onDragEnd={handleDragEnd}
-                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative"
+                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative pointer-events-auto"
+                                    style={{ transition: 'none' }}
                                   >
                                     <div className="space-y-1">
                                       <div className="font-medium text-[#03524f] text-xs truncate">
