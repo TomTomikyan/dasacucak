@@ -1,11 +1,18 @@
+/**
+ * useScheduleData - Գլխավոր հուկ ամբողջ հավելվածի տվյալների կառավարման համար
+ *
+ * Այս հուկը կառավարում է բոլոր տվյալները և իրականացնում է localStorage-ում ավտոմատ պահպանում։
+ * Պարունակում է ֆունկցիաներ խմբավորումների, առարկաների, սենյակների, ուսուցիչների և ժամանակացույցի կառավարման համար։
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { Institution, ClassGroup, Subject, Classroom, Teacher, ScheduleSlot } from '../types';
 
+// Ստանալ դասամիջոցների լռելյայն տևողությունները
+// Քոլեջի համար՝ կարճ դասամիջոցներ (10 րոպե) և երկար դասամիջոց (20 րոպե) 2-րդ դասից հետո
 const getDefaultBreakDurations = (lessonsPerDay: number): number[] => {
-  // College default: short breaks (5 min) and long breaks (20 min)
   return Array.from({ length: lessonsPerDay - 1 }, (_, i) => {
-    // Long break after 2nd lesson
-    return i === 1 ? 20 : 10;
+    return i === 1 ? 20 : 10; // 2-րդ դասից հետո 20 րոպե, մյուսներում 10 րոպե
   });
 };
 
@@ -22,7 +29,7 @@ const defaultInstitution: Institution = {
   specializations: [], // Initialize empty specializations array
 };
 
-// Local storage keys
+// LocalStorage բանալիներ - բոլոր տվյալները պահպանվում են տեղական հիշողության մեջ
 const STORAGE_KEYS = {
   INSTITUTION: 'college_schedule_institution',
   CLASS_GROUPS: 'college_schedule_class_groups',
@@ -33,7 +40,7 @@ const STORAGE_KEYS = {
   SUBJECT_NAME_MAPPING: 'college_schedule_subject_name_mapping',
 };
 
-// Helper functions for localStorage
+// Օգնական ֆունկցիա՝ տվյալները localStorage-ում պահպանելու համար
 const saveToStorage = (key: string, data: any) => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
@@ -42,6 +49,7 @@ const saveToStorage = (key: string, data: any) => {
   }
 };
 
+// Օգնական ֆունկցիա՝ տվյալները localStorage-ից բեռնելու համար
 const loadFromStorage = <T>(key: string, defaultValue: T): T => {
   try {
     const stored = localStorage.getItem(key);
@@ -53,32 +61,34 @@ const loadFromStorage = <T>(key: string, defaultValue: T): T => {
 };
 
 export const useScheduleData = () => {
-  // Load initial data from localStorage
-  const [institution, setInstitution] = useState<Institution>(() => 
+  // Բեռնել տվյալները localStorage-ից (հավելվածի սկզբնավորման ժամանակ)
+  // Եթե տվյալներ չկան, օգտագործվում են լռելյայն արժեքներ
+  const [institution, setInstitution] = useState<Institution>(() =>
     loadFromStorage(STORAGE_KEYS.INSTITUTION, defaultInstitution)
   );
-  const [classGroups, setClassGroups] = useState<ClassGroup[]>(() => 
+  const [classGroups, setClassGroups] = useState<ClassGroup[]>(() =>
     loadFromStorage(STORAGE_KEYS.CLASS_GROUPS, [])
   );
-  const [subjects, setSubjects] = useState<Subject[]>(() => 
+  const [subjects, setSubjects] = useState<Subject[]>(() =>
     loadFromStorage(STORAGE_KEYS.SUBJECTS, [])
   );
-  const [classrooms, setClassrooms] = useState<Classroom[]>(() => 
+  const [classrooms, setClassrooms] = useState<Classroom[]>(() =>
     loadFromStorage(STORAGE_KEYS.CLASSROOMS, [])
   );
-  const [teachers, setTeachers] = useState<Teacher[]>(() => 
+  const [teachers, setTeachers] = useState<Teacher[]>(() =>
     loadFromStorage(STORAGE_KEYS.TEACHERS, [])
   );
-  const [schedule, setSchedule] = useState<ScheduleSlot[]>(() => 
+  const [schedule, setSchedule] = useState<ScheduleSlot[]>(() =>
     loadFromStorage(STORAGE_KEYS.SCHEDULE, [])
   );
 
-  // Track subject name changes to maintain relationships
-  const [subjectNameMapping, setSubjectNameMapping] = useState<{ [oldName: string]: string }>(() => 
+  // Հետևել առարկաների անվան փոփոխություններին՝ կապերը պահպանելու համար
+  const [subjectNameMapping, setSubjectNameMapping] = useState<{ [oldName: string]: string }>(() =>
     loadFromStorage(STORAGE_KEYS.SUBJECT_NAME_MAPPING, {})
   );
 
-  // Auto-save to localStorage when data changes
+  // ԱՎՏՈՄԱՏ ՊԱՀՊԱՆՈՒՄ - Երբ տվյալները փոխվում են, դրանք ավտոմատ պահպանվում են localStorage-ում
+  // Սա երաշխավորում է, որ տվյալները չկկորեն նույնիսկ էջը թարմացնելիս
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.INSTITUTION, institution);
   }, [institution]);
@@ -107,7 +117,8 @@ export const useScheduleData = () => {
     saveToStorage(STORAGE_KEYS.SUBJECT_NAME_MAPPING, subjectNameMapping);
   }, [subjectNameMapping]);
 
-  // 🔥 AUTOMATIC: Update teacher subjects when subjects change
+  // 🔥 ԱՎՏՈՄԱՏ ԹԱՐՄԱՑՈՒՄ - Երբ առարկաները փոխվում են, ուսուցիչների առարկաները ավտոմատ թարմացվում են
+  // Սա ապահովում է, որ եթե առարկան վերանվանվի կամ ջնջվի, ուսուցիչների ցանկերը նույնպես թարմացվեն
   useEffect(() => {
     if (teachers.length > 0 && subjects.length > 0) {
       let hasUpdates = false;
@@ -151,7 +162,9 @@ export const useScheduleData = () => {
     }
   }, [subjects]); // Run when subjects change
 
-  // 🔥 AUTOMATIC: Auto-assign teachers to subjects when teachers change
+  // 🔥 ԱՎՏՈՄԱՏ ՀԱՏԿԱՑՈՒՄ - Երբ ուսուցիչները փոխվում են, նրանք ավտոմատ հատկացվում են առարկաներին
+  // Օրինակ՝ եթե ավելացնենք նոր ուսուցիչ և նշենք, որ դասավանդում է Մաթեմատիկա,
+  // ապա Մաթեմատիկա առարկան ավտոմատ կստանա այս ուսուցչի ID-ն
   useEffect(() => {
     if (teachers.length > 0 && subjects.length > 0) {
       const updatedSubjects = subjects.map(subject => {
@@ -192,7 +205,8 @@ export const useScheduleData = () => {
     }
   }, [teachers]); // Only depend on teachers, not subjects to avoid infinite loop
 
-  // 🔥 AUTOMATIC: Update schedule when subjects change
+  // 🔥 ԱՎՏՈՄԱՏ ԹԱՐՄԱՑՈՒՄ - Երբ առարկաները փոխվում են, ժամանակացույցը նույնպես թարմացվում է
+  // Սա անհրաժեշտ է, որպեսզի ժամանակացույցը միշտ համապատասխանի ընթացիկ առարկաներին
   useEffect(() => {
     if (schedule.length > 0 && subjects.length > 0) {
       let hasUpdates = false;
@@ -331,7 +345,8 @@ export const useScheduleData = () => {
     setClassGroups(newGroups);
   }, []);
 
-  // Export/Import functions
+  // ԱՐՏԱՀԱՆՈՒՄ - Պահպանել բոլոր տվյալները JSON ֆայլում
+  // Օգտագործողը կարող է ներբեռնել ամբողջ կարգավորումը և ավելի ուշ ներմուծել այլ համակարգչում
   const exportConfiguration = useCallback(() => {
     const configData = {
       institution,
@@ -358,6 +373,8 @@ export const useScheduleData = () => {
     URL.revokeObjectURL(url);
   }, [institution, classGroups, subjects, classrooms, teachers, schedule, subjectNameMapping]);
 
+  // ՆԵՐՄՈՒԾՈՒՄ - Բեռնել տվյալները JSON ֆայլից
+  // Թույլ է տալիս վերականգնել նախկինում պահպանված կարգավորումը
   const importConfiguration = useCallback((file: File) => {
     return new Promise<void>((resolve, reject) => {
       const reader = new FileReader();
@@ -389,6 +406,8 @@ export const useScheduleData = () => {
     });
   }, []);
 
+  // ՄԱՔՐԵԼ ԲՈԼՈՐ ՏՎՅԱԼՆԵՐԸ - Վերականգնել լռելյայն վիճակը
+  // Ջնջում է բոլոր տվյալները և մաքրում localStorage-ը
   const clearAllData = useCallback(() => {
     setInstitution(defaultInstitution);
     setClassGroups([]);

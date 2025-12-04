@@ -1,3 +1,22 @@
+/**
+ * App - Գլխավոր հավելվածի կոմպոնենտ
+ *
+ * Սա հավելվածի կենտրոնական կոմպոնենտն է, որը կառավարում է՝
+ * - Էկրանների փոխարկումը (Setup, Classrooms, Subjects, Groups, Teachers, Overview, Schedule)
+ * - Տվյալների ընդհանուր հոսքը բոլոր կոմպոնենտներին
+ * - Ծանուցումների ցուցադրումը (Toast notifications)
+ * - Կոնֆիգուրացիայի արտահանում/ներմուծում
+ *
+ * ԷԿՐԱՆՆԵՐԻ ՀԵՐԹԱԿԱՆՈՒԹՅՈՒՆ՝
+ * 1. Setup - Հաստատության հիմնական կարգավորումներ
+ * 2. Classrooms - Սենյակների կարգավորում
+ * 3. Subjects - Առարկաների ավելացում
+ * 4. Groups - Խմբերի ստեղծում և առարկաների հատկացում
+ * 5. Teachers - Ուսուցիչների ավելացում և հասանելի ժամերի կարգավորում
+ * 6. Overview - Ընդհանուր տեսարան և կարգավորումների վերանայում
+ * 7. Schedule - Ժամանակացույցի գեներացում և դիտում
+ */
+
 import React, { useState } from 'react';
 import Layout from './components/Layout';
 import Setup from './components/Setup';
@@ -13,43 +32,49 @@ import { useToast } from './hooks/useToast';
 import { useLocalization } from './hooks/useLocalization';
 
 function App() {
+  // Ակտիվ էկրանի վիճակ - որոշում է թե որ էկրանն է ցուցադրվում
   const [activeTab, setActiveTab] = useState('setup');
+
+  // Տեղայնացում - ներկայումս միայն հայերեն
   const { t } = useLocalization();
+  // Տվյալների հուկ - կառավարում է բոլոր տվյալները և ապահովում localStorage-ում պահպանում
+  // Տվյալների այս հուկը տրամադրում է բոլոր CRUD գործողությունները (Create, Read, Update, Delete)
   const {
-    institution,
-    setInstitution,
-    classGroups,
-    setClassGroups,
-    addClassGroup,
-    updateClassGroupSubjects,
-    subjects,
-    setSubjects,
-    addSubject,
-    classrooms,
-    setClassrooms,
-    addClassroom,
-    generateClassrooms,
-    teachers,
-    setTeachers,
-    addTeacher,
-    schedule,
-    setSchedule,
-    generateCollegeGroups,
-    exportConfiguration,
-    importConfiguration,
-    clearAllData,
+    institution,           // Հաստատության տվյալներ
+    setInstitution,        // Թարմացնել հաստատությունը
+    classGroups,           // Խմբերի ցանկ
+    setClassGroups,        // Թարմացնել խմբերը
+    addClassGroup,         // Ավելացնել նոր խումբ
+    updateClassGroupSubjects, // Թարմացնել խմբի առարկաները
+    subjects,              // Առարկաների ցանկ
+    setSubjects,           // Թարմացնել առարկաները
+    addSubject,            // Ավելացնել նոր առարկա
+    classrooms,            // Սենյակների ցանկ
+    setClassrooms,         // Թարմացնել սենյակները
+    addClassroom,          // Ավելացնել նոր սենյակ
+    generateClassrooms,    // Ավտոմատ ստեղծել սենյակներ
+    teachers,              // Ուսուցիչների ցանկ
+    setTeachers,           // Թարմացնել ուսուցիչներին
+    addTeacher,            // Ավելացնել նոր ուսուցիչ
+    schedule,              // Ժամանակացույց
+    setSchedule,           // Թարմացնել ժամանակացույցը
+    generateCollegeGroups, // Ավտոմատ ստեղծել քոլեջի խմբեր
+    exportConfiguration,   // Արտահանել կոնֆիգուրացիան JSON ֆայլ
+    importConfiguration,   // Ներմուծել կոնֆիգուրացիան JSON ֆայլից
+    clearAllData,          // Մաքրել բոլոր տվյալները
   } = useScheduleData();
 
+  // Ծանուցումների հուկ - ցուցադրում է հաջողության/սխալի հաղորդագրություններ
   const {
-    toasts,
-    removeToast,
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo,
+    toasts,         // Ակտիվ ծանուցումների ցանկ
+    removeToast,    // Հեռացնել ծանուցում
+    showSuccess,    // Ցուցադրել հաջողության հաղորդագրություն
+    showError,      // Ցուցադրել սխալի հաղորդագրություն
+    showWarning,    // Ցուցադրել նախազգուշացման հաղորդագրություն
+    showInfo,       // Ցուցադրել տեղեկատվական հաղորդագրություն
   } = useToast();
 
-  // Enhanced functions with toast notifications
+  // ԱՐՏԱՀԱՆՄԱՆ ՄՇԱԿՈՒՄ - Պահպանել կոնֆիգուրացիան և ցուցադրել ծանուցում
   const handleExportConfiguration = () => {
     try {
       exportConfiguration();
@@ -59,6 +84,7 @@ function App() {
     }
   };
 
+  // ՆԵՐՄՈՒԾՄԱՆ ՄՇԱԿՈՒՄ - Բեռնել կոնֆիգուրացիան և ցուցադրել ծանուցում
   const handleImportConfiguration = async (file: File) => {
     try {
       await importConfiguration(file);
@@ -68,6 +94,7 @@ function App() {
     }
   };
 
+  // ՏՎՅԱԼՆԵՐԻ ՄԱՔՐՄԱՆ ՄՇԱԿՈՒՄ - Ջնջել բոլոր տվյալները և ցուցադրել ծանուցում
   const handleClearAllData = () => {
     try {
       clearAllData();
@@ -77,6 +104,8 @@ function App() {
     }
   };
 
+  // ՑՈՒՑԱԴՐԵԼ ԲՈՎԱՆԴԱԿՈՒԹՅՈՒՆԸ - Ակտիվ էկրանին համապատասխան կոմպոնենտի ցուցադրում
+  // Յուրաքանչյուր կոմպոնենտ ստանում է անհրաժեշտ տվյալները և ֆունկցիաները որպես props
   const renderContent = () => {
     switch (activeTab) {
       case 'setup':

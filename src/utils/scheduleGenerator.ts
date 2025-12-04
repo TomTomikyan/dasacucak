@@ -1,3 +1,25 @@
+/**
+ * ScheduleGenerator - Ժամանակացույցի Գեներատոր
+ *
+ * ՀԻՄՆԱԿԱՆ ԱՇԽԱՏԱՆՔ՝
+ * Ավտոմատ ստեղծում է ժամանակացույց քոլեջի համար՝ հաշվի առնելով բոլոր սահմանափակումները։
+ *
+ * ԱԼԳՈՐԻԹՄԻ ՔԱՅԼԵՐԸ՝
+ * 1. Վավերացնել մուտքային տվյալները (խմբեր, առարկաներ, ուսուցիչներ, սենյակներ)
+ * 2. Ստեղծել դասերի պահանջների ցանկ (որ դասերը պետք է տեղավորել)
+ * 3. Սահմանել առաջնահերթություն (լաբորատոր աշխատանքներ առաջին)
+ * 4. Յուրաքանչյուր դասի համար գտնել հասանելի ժամանակահատվածներ
+ * 5. Ընտրել լավագույն ժամանակահատվածը (հաշվի առնելով բաշխումը և օպտիմալացումը)
+ * 6. Վերլուծել և օպտիմալացնել ստացված ժամանակացույցը
+ *
+ * ՍԱՀՄԱՆԱՓԱԿՈՒՄՆԵՐ՝
+ * - Ուսուցիչը չի կարող միաժամանակ լինել 2 տեղում
+ * - Խումբը չի կարող միաժամանակ ունենալ 2 դաս
+ * - Սենյակը չի կարող միաժամանակ օգտագործվել 2 խմբի կողմից
+ * - Լաբորատոր աշխատանքներ պետք է լինեն հատուկ լաբորատորիաներում
+ * - Ուսուցիչը պետք է դասավանդի միայն իր հատկացված խմբերին
+ */
+
 import { Institution, ClassGroup, Subject, Teacher, Classroom, ScheduleSlot } from '../types';
 
 export interface GenerationResult {
@@ -6,6 +28,8 @@ export interface GenerationResult {
   error?: string;
 }
 
+// ԳԼԽԱՎՈՐ ԴԱՍԸ - ScheduleGenerator
+// Սա կառուցում է ամբողջ ժամանակացույցը հատված առ հատված
 export class ScheduleGenerator {
   private institution: Institution;
   private classGroups: ClassGroup[];
@@ -55,6 +79,8 @@ export class ScheduleGenerator {
     return dayOrder.filter(day => this.institution.workingDays.includes(day));
   }
 
+  // ԳԼԽԱՎՈՐ ՄԵԹՈԴ - generateSchedule
+  // Սա գեներացնում է ամբողջ ժամանակացույցը սկզբից մինչև վերջ
   async generateSchedule(logCallback?: (message: string) => void): Promise<GenerationResult> {
     const log = (message: string) => {
       console.log(message);
@@ -62,13 +88,15 @@ export class ScheduleGenerator {
     };
 
     try {
-      // 🎲 Generate new random seed for each generation
+      // 🎲 Ստեղծել նոր պատահական սերմ յուրաքանչյուր գեներացիայի համար
+      // Սա երաշխավորում է, որ յուրաքանչյուր անգամ կստանանք տարբեր ժամանակացույց
       this.randomSeed = Date.now() + Math.floor(Math.random() * 10000);
       log(`🎲 Using random seed: ${this.randomSeed}`);
-      
+
       log('🚀 Starting smart schedule generation...');
-      
-      // 🔥 CRITICAL: Always reset state completely
+
+      // 🔥 ԿԱՐԵՎՈՐ - Մաքրել բոլոր նախորդ տվյալները
+      // Այսպես եզ ստուգում ենք, որ չկա հին տվյալներ
       this.schedule = [];
       this.conflicts.clear();
 
@@ -258,6 +286,8 @@ export class ScheduleGenerator {
     });
   }
 
+  // ՍՏԵՂԾԵԼ ԴԱՍԵՐԻ ՊԱՀԱՆՋՆԵՐԻ ՑԱՆԿ
+  // Յուրաքանչյուր խմբի և առարկայի համար հաշվարկում է քանի՞ դաս պետք է տեղավորել
   private generateLessonRequirements(): LessonRequirement[] {
     const requirements: LessonRequirement[] = [];
 
@@ -266,7 +296,8 @@ export class ScheduleGenerator {
         if (yearlyHours > 0) {
           const subject = this.subjects.find(s => s.id === subjectId);
           if (subject && subject.teacherIds.length > 0) {
-            // 🔥 CRITICAL: Filter teachers to only those assigned to this group
+            // 🔥 ԿԱՐԵՎՈՐ - Զտել միայն այն ուսուցիչներին, ովքեր հատկացված են այս խմբին
+            // Սա երաշխավորում է, որ ուսուցիչը դասավանդի միայն իր խմբերին
             const validTeacherIds = subject.teacherIds.filter(teacherId => {
               const teacher = this.teachers.find(t => t.id === teacherId);
               return teacher && teacher.assignedClassGroups.includes(group.id);
@@ -303,25 +334,29 @@ export class ScheduleGenerator {
     return requirements;
   }
 
+  // ՀԱՇՎԱՐԿԵԼ ԱՌԱՋՆԱՀԵՐԹՈՒԹՅՈՒՆ
+  // Որոշում է թե որ դասերը պետք է նախ տեղավորել
+  // Ավելի ցածր թիվ = ավելի բարձր առաջնահերթություն (առաջին տեղավորվում են)
   private calculatePriority(subject: Subject, group: ClassGroup): number {
-    // Higher priority = lower number (scheduled first)
     let priority = 0;
 
-    // Lab subjects get higher priority (need specific classrooms)
+    // Լաբորատոր աշխատանքներ ստանում են բարձր առաջնահերթություն
+    // (քանի որ նրանք պետք է լինեն հատուկ լաբորատորիաներում)
     if (subject.type === 'lab') priority -= 10;
 
-    // Subjects with specialized classrooms get even higher priority
-    const hasSpecializedClassroom = this.classrooms.some(c => 
-      c.type === 'lab' && 
-      c.specialization && 
+    // Եթե առարկան ունի հատուկ լաբորատորիա, ուրեմն ավելի բարձր առաջնահերթություն
+    const hasSpecializedClassroom = this.classrooms.some(c =>
+      c.type === 'lab' &&
+      c.specialization &&
       c.specialization.split(', ').includes(subject.id)
     );
     if (hasSpecializedClassroom) priority -= 20;
 
-    // Fewer available teachers = higher priority
+    // Քիչ ուսուցիչներ ունեցող առարկաները ստանում են բարձր առաջնահերթություն
+    // (քանի որ դժվար է նրանց համար ժամանակ գտնել)
     priority += subject.teacherIds.length;
 
-    // Larger groups get slightly higher priority
+    // Մեծ խմբերը ստանում են մի փոքր ավելի բարձր առաջնահերթություն
     priority -= Math.floor(group.studentsCount / 10);
 
     return priority;
@@ -804,94 +839,98 @@ export class ScheduleGenerator {
     return topScores[randomIndex].slot;
   }
 
+  // ԳՆԱՀԱՏԵԼ ԺԱՄԱՆԱԿԱՀԱՏՎԱԾԸ
+  // Յուրաքանչյուր հնարավոր ժամանակահատվածի համար հաշվարկում է միավոր
+  // Ավելի բարձր միավոր = ավելի լավ ժամանակահատված
   private scoreSlot(slot: ScheduleSlot, requirement: LessonRequirement): number {
     let score = 0;
 
-    // 🔥 Use properly ordered working days for scoring
+    // Օգտագործել ճիշտ հերթականությամբ աշխատանքային օրերը
     const orderedWorkingDays = this.getOrderedWorkingDays();
     const dayIndex = orderedWorkingDays.indexOf(slot.day);
-    
-    // Prefer earlier in the week for important subjects
+
+    // Նախընտրել շաբաթի սկզբի օրերը կարևոր առարկաների համար
     score += (orderedWorkingDays.length - dayIndex) * 2;
 
-    // Prefer middle lessons (not too early, not too late)
+    // Նախընտրել միջին դասերը (ոչ շատ վաղ, ոչ շատ ուշ)
     const middleLesson = Math.ceil(this.institution.lessonsPerDay / 2);
     const lessonDistance = Math.abs(slot.lessonNumber - middleLesson);
     score += (this.institution.lessonsPerDay - lessonDistance) * 3;
 
-    // Check for balanced distribution for this group
-    const groupLessonsOnDay = this.schedule.filter(s => 
+    // Ստուգել հավասարակշռված բաշխումը այս խմբի համար
+    const groupLessonsOnDay = this.schedule.filter(s =>
       s.classGroupId === slot.classGroupId && s.day === slot.day
     ).length;
-    score -= groupLessonsOnDay * 5; // Penalty for overloading a day
+    score -= groupLessonsOnDay * 5; // Պատիժ օրվա գերբեռնվածության համար
 
-    // 🔥 HUGE bonus for group using their home classroom
+    // 🔥 ՄԵԾԱՄԱՍՆԱԿԱՆ ԲՈՆՈՒՍ - Խումբը օգտագործում է իր տնային սենյակը
     if (slot.classroomId === requirement.groupObj.homeRoom) {
-      score += 150; // Highest priority for group's home classroom
+      score += 150; // Ամենաբարձր առաջնահերթությունը տնային սենյակի համար
     }
 
-    // 🔥 HUGE bonus for teacher using their own lab
+    // 🔥 ՄԵԾ ԲՈՆՈՒՍ - Ուսուցիչը օգտագործում է իր սեփական լաբորատորիան
     const teacher = this.teachers.find(t => t.id === slot.teacherId);
     if (teacher?.homeClassroom === slot.classroomId) {
-      score += 100; // Very high priority for teacher's own classroom
+      score += 100; // Շատ բարձր առաջնահերթություն ուսուցչի սեփական սենյակի համար
     }
 
-    // HUGE bonus for using specialized classroom for the correct subject
+    // ՄԵԾ ԲՈՆՈՒՍ - Օգտագործել հատուկ լաբորատորիան ճիշտ առարկայի համար
     const classroom = this.classrooms.find(c => c.id === slot.classroomId);
     if (classroom?.type === 'lab' && classroom.specialization) {
       const allowedSubjects = classroom.specialization.split(', ').filter(Boolean);
       if (allowedSubjects.includes(requirement.subjectId)) {
-        score += 50; // Very high priority for correct specialization
+        score += 50; // Շատ բարձր առաջնահերթություն ճիշտ հատուկացման համար
       }
     }
 
-    // 🔥 NEW: Enhanced same subject distribution logic
+    // 🔥 Բարելավված նույն առարկայի բաշխման տրամաբանություն
     const sameSubjectDistributionScore = this.calculateSameSubjectDistributionScore(slot, requirement);
     score += sameSubjectDistributionScore;
 
-    // 🔥 NEW: Consecutive lesson logic for same teacher
+    // 🔥 Անընդհատ դասերի տրամաբանություն նույն ուսուցչի համար
     const consecutiveTeacherScore = this.calculateConsecutiveTeacherScore(slot, requirement);
     score += consecutiveTeacherScore;
 
-    // 🎲 Add small random factor to break ties
+    // 🎲 Ավելացնել փոքր պատահական գործոն՝ կապերը կտրելու համար
     score += this.seededRandom() * 5;
 
     return score;
   }
 
-  // 🔥 NEW: Calculate score for same subject distribution
+  // 🔥 ՀԱՇՎԱՐԿԵԼ ՄԻԱՎՈՐ ՆՈՒՅՆ ԱՌԱՐԿԱՅԻ ԲԱՇԽՄԱՆ ՀԱՄԱՐ
+  // Սա ապահովում է, որ նույն առարկայի դասերը սփռվեն տարբեր օրերի վրա
   private calculateSameSubjectDistributionScore(slot: ScheduleSlot, requirement: LessonRequirement): number {
     let score = 0;
 
-    // Count how many lessons of the same subject this group already has on this day
-    const sameSubjectSameDay = this.schedule.filter(s => 
-      s.classGroupId === slot.classGroupId && 
-      s.subjectId === slot.subjectId && 
+    // Հաշվել քանի՞ դաս նույն առարկայի արդեն կա այս օրը այս խմբի համար
+    const sameSubjectSameDay = this.schedule.filter(s =>
+      s.classGroupId === slot.classGroupId &&
+      s.subjectId === slot.subjectId &&
       s.day === slot.day
     ).length;
 
-    // 🔥 MAIN RULE: Prefer different days for same subject
+    // 🔥 ԳԼԽԱՎՈՐ ԿԱՆՈՆ - Նախընտրել տարբեր օրեր նույն առարկայի համար
     if (sameSubjectSameDay === 0) {
-      // No lessons of this subject on this day - HUGE bonus
+      // Այս օրը չկա այս առարկայի դաս - ՄԵԾԱՄԱՍՆԱԿԱՆ ԲՈՆՈՒՍ
       score += 200;
     } else if (sameSubjectSameDay === 1) {
-      // Already 1 lesson of this subject on this day
-      // Check if they would be consecutive
-      const existingLesson = this.schedule.find(s => 
-        s.classGroupId === slot.classGroupId && 
-        s.subjectId === slot.subjectId && 
+      // Արդեն կա 1 դաս այս առարկայից այս օրը
+      // Ստուգել արդյոք դրանք կլինեն անընդհատ
+      const existingLesson = this.schedule.find(s =>
+        s.classGroupId === slot.classGroupId &&
+        s.subjectId === slot.subjectId &&
         s.day === slot.day
       );
-      
+
       if (existingLesson && Math.abs(existingLesson.lessonNumber - slot.lessonNumber) === 1) {
-        // Would be consecutive - this is acceptable
+        // Կլինեն անընդհատ - սա ընդունելի է
         score += 50;
       } else {
-        // Would NOT be consecutive - heavy penalty
+        // ՉԵՆ լինի անընդհատ - մեծ պատիժ
         score -= 150;
       }
     } else {
-      // Already 2+ lessons of this subject on this day - very heavy penalty
+      // Արդեն 2+ դաս այս առարկայից այս օրը - շատ մեծ պատիժ
       score -= 300;
     }
 
@@ -1172,15 +1211,17 @@ export class ScheduleGenerator {
   }
 }
 
+// Դասի պահանջ - Տեղեկություն մեկ դասի մասին, որը պետք է տեղավորել
+// Պարունակում է բոլոր անհրաժեշտ տեղեկությունները դասը ժամանակացույցում տեղադրելու համար
 interface LessonRequirement {
-  id: string;
-  groupId: string;
-  groupName: string;
-  groupObj: ClassGroup; // 🔥 NEW: Full group object for access to homeRoom
-  subjectId: string;
-  subjectName: string;
-  subjectType: 'theory' | 'lab';
-  availableTeacherIds: string[];
-  priority: number;
-  lessonIndex: number; // 🔥 NEW: Track lesson index for same subject
+  id: string; // Եզակի նույնականացուցիչ
+  groupId: string; // Խմբի ID
+  groupName: string; // Խմբի անվանում
+  groupObj: ClassGroup; // Ամբողջական խմբի օբյեկտ (պահանջվում է տնային սենյակի հասանելիության համար)
+  subjectId: string; // Առարկայի ID
+  subjectName: string; // Առարկայի անվանում
+  subjectType: 'theory' | 'lab'; // Տիպ - տեսական կամ լաբորատոր
+  availableTeacherIds: string[]; // Հասանելի ուսուցիչների ID-ներ
+  priority: number; // Առաջնահերթություն (ցածր թիվ = բարձր առաջնահերթություն)
+  lessonIndex: number; // Դասի ինդեքս (օգտագործվում է նույն առարկայի դասերի հետևման համար)
 }
