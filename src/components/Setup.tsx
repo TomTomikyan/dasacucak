@@ -126,17 +126,17 @@ const Setup: React.FC<SetupProps> = ({
 
   const handleFileImport = async (file: File) => {
     if (!file.name.endsWith('.json')) {
-      showToast.showError('Неверный формат файла', 'Пожалуйста, выберите JSON файл');
+      showToast.showError(t('toast.invalidFileFormat'), t('toast.selectJsonFile'));
       return;
     }
 
     setIsImporting(true);
     try {
       await importConfiguration(file);
-      showToast.showSuccess('Импорт успешен', 'Конфигурация была успешно импортирована');
+      showToast.showSuccess(t('toast.importSuccessful'), t('toast.importSuccessfulDesc'));
     } catch (error) {
       console.error('Import error:', error);
-      showToast.showError('Ошибка импорта', 'Не удалось импортировать конфигурацию');
+      showToast.showError(t('toast.importFailed'), t('toast.importFailedDesc'));
     } finally {
       setIsImporting(false);
     }
@@ -175,7 +175,7 @@ const Setup: React.FC<SetupProps> = ({
     const jsonFile = files.find(file => file.name.endsWith('.json'));
 
     if (!jsonFile) {
-      showToast.showError('Неверный формат файла', 'Пожалуйста, перетащите JSON файл');
+      showToast.showError(t('toast.invalidFileFormat'), t('toast.selectJsonFile'));
       return;
     }
 
@@ -233,8 +233,8 @@ const Setup: React.FC<SetupProps> = ({
           <div className="absolute inset-0 bg-[#03524f] bg-opacity-10 rounded-lg flex items-center justify-center z-10 pointer-events-none">
             <div className="text-center">
               <FileText className="h-16 w-16 text-[#03524f] mx-auto mb-4" />
-              <p className="text-xl font-semibold text-[#03524f]">Отпустите файл для импорта</p>
-              <p className="text-[#03524f] opacity-80 mt-2">Поддерживаются только JSON файлы</p>
+              <p className="text-xl font-semibold text-[#03524f]">{t('setup.dropFileToImport')}</p>
+              <p className="text-[#03524f] opacity-80 mt-2">{t('setup.onlyJsonSupported')}</p>
             </div>
           </div>
         )}
@@ -246,7 +246,7 @@ const Setup: React.FC<SetupProps> = ({
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl font-semibold text-gray-900">{t('setup.title')}</h2>
                 <p className="text-sm text-gray-500 truncate">
-                  Կարգավորեք հիմնական պարամետրերը
+                  {t('setup.subtitle')}
                 </p>
               </div>
             </div>

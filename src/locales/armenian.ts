@@ -108,6 +108,8 @@ export const armenianTranslations = {
       'Ամբողջ ժամանակացույցը',
       'Հաստատության կարգավորումները'
     ],
+    dropFileToImport: 'Բաց թողեք ֆայլը ներմուծելու համար',
+    onlyJsonSupported: 'Աջակցվում են միայն JSON ֆայլեր',
   },
 
   // Groups page
@@ -431,13 +433,10 @@ export const armenianTranslations = {
     dataClearedDesc: 'Բոլոր տվյալները հաջողությամբ մաքրվեցին',
     icsExportSuccessfulDesc: 'Ժամանակացույցը հաջողությամբ արտահանվեց .ics ֆայլի տեսքով',
     icsExportFailedDesc: 'Չհաջողվեց արտահանել ժամանակացույցը .ics ֆայլի տեսքով',
-    
-    // Generation
-    generationSuccessful: 'Ստեղծումը հաջողվեց',
-    generationSuccessfulDesc: '{count} տարր հաջողությամբ ստեղծվեց',
-    
+
     // Assignments
-    subjectUpdated: 'Առարկաները թարմացվեցին',
+    subjectsAssigned: 'Առարկաները նշանակվեցին',
+    subjectsAssignedDesc: 'Խմբերի առարկաները հաջողությամբ նշանակվեցին',
     noSubjectsAssignedDesc: 'Խմբերին առարկաներ չեն նշանակված',
     noTeachersAssignedDesc: 'Առարկաներին ուսուցիչներ չեն նշանակված',
   },

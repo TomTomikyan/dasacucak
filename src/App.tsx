@@ -10,9 +10,11 @@ import Schedule from './components/Schedule';
 import { ToastContainer } from './components/Toast';
 import { useScheduleData } from './hooks/useScheduleData';
 import { useToast } from './hooks/useToast';
+import { useLocalization } from './hooks/useLocalization';
 
 function App() {
   const [activeTab, setActiveTab] = useState('setup');
+  const { t } = useLocalization();
   const {
     institution,
     setInstitution,
@@ -51,27 +53,27 @@ function App() {
   const handleExportConfiguration = () => {
     try {
       exportConfiguration();
-      showSuccess('Export Successful', 'Configuration has been exported successfully!');
+      showSuccess(t('toast.exportSuccessful'), t('toast.exportSuccessfulDesc'));
     } catch (error) {
-      showError('Export Failed', 'Failed to export configuration. Please try again.');
+      showError(t('toast.exportFailed'), t('toast.exportFailedDesc'));
     }
   };
 
   const handleImportConfiguration = async (file: File) => {
     try {
       await importConfiguration(file);
-      showSuccess('Import Successful', 'Configuration has been imported successfully!');
+      showSuccess(t('toast.importSuccessful'), t('toast.importSuccessfulDesc'));
     } catch (error) {
-      showError('Import Failed', 'Failed to import configuration. Please check the file format.');
+      showError(t('toast.importFailed'), t('toast.importFailedDesc'));
     }
   };
 
   const handleClearAllData = () => {
     try {
       clearAllData();
-      showSuccess('Data Cleared', 'All data has been cleared successfully!');
+      showSuccess(t('toast.dataCleared'), t('toast.dataClearedDesc'));
     } catch (error) {
-      showError('Clear Failed', 'Failed to clear data. Please try again.');
+      showError(t('toast.exportFailed'), t('toast.exportFailedDesc'));
     }
   };
 
