@@ -807,14 +807,12 @@ const Schedule: React.FC<ScheduleProps> = ({
                   {/* Group column headers */}
                   {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
                     <th key={group.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
-                      <Tooltip content={getGroupDetails(group.id)}>
-                        <div className="flex flex-col items-center cursor-help">
-                          <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
-                          <div className="text-xs text-gray-400 mt-1 normal-case">
-                            {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
-                          </div>
+                      <div className="flex flex-col items-center">
+                        <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
+                        <div className="text-xs text-gray-400 mt-1 normal-case">
+                          {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
                         </div>
-                      </Tooltip>
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -838,13 +836,11 @@ const Schedule: React.FC<ScheduleProps> = ({
 
                         {/* Lesson time */}
                         <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 text-center">
-                          <Tooltip content={`${time.lesson}-րդ դաս\n${time.startTime} - ${time.endTime}\nՏևողություն: ${institution.lessonDuration} րոպե`}>
-                            <div className="cursor-help">
-                              <div className="font-medium text-[#03524f]">{time.lesson}</div>
-                              <div className="text-xs">{time.startTime}</div>
-                              <div className="text-xs">{time.endTime}</div>
-                            </div>
-                          </Tooltip>
+                          <div>
+                            <div className="font-medium text-[#03524f]">{time.lesson}</div>
+                            <div className="text-xs">{time.startTime}</div>
+                            <div className="text-xs">{time.endTime}</div>
+                          </div>
                         </td>
 
                         {/* Schedule slots for each group - NO HOVER EFFECTS */}
@@ -874,33 +870,30 @@ const Schedule: React.FC<ScheduleProps> = ({
                               onDrop={(e) => handleDrop(e, day, time.lesson, group.id)}
                             >
                               {slot ? (
-                                <Tooltip content={getLessonTooltip(slot)}>
-                                  <div
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, slot)}
-                                    onDragEnd={handleDragEnd}
-                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative pointer-events-auto"
-                                    style={{ transition: 'none' }}
-                                  >
-                                    <div className="space-y-1">
-                                      <div className="font-medium text-[#03524f] text-xs truncate">
-                                        {getSubjectName(slot.subjectId)}
-                                      </div>
-                                      <div className="flex items-center text-xs text-gray-600">
-                                        <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
-                                        <span className="truncate">{getTeacherName(slot.teacherId)}</span>
-                                      </div>
-                                      <div className="flex items-center text-xs text-gray-600">
-                                        <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                                        <span className="truncate">{getClassroomName(slot.classroomId)}</span>
-                                      </div>
+                                <div
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, slot)}
+                                  onDragEnd={handleDragEnd}
+                                  className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative"
+                                >
+                                  <div className="space-y-1">
+                                    <div className="font-medium text-[#03524f] text-xs truncate">
+                                      {getSubjectName(slot.subjectId)}
                                     </div>
-                                    {/* Drag indicator - always visible */}
-                                    <div className="absolute top-1 right-1">
-                                      <Move className="h-3 w-3 text-[#03524f] opacity-60" />
+                                    <div className="flex items-center text-xs text-gray-600">
+                                      <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-600">
+                                      <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="truncate">{getClassroomName(slot.classroomId)}</span>
                                     </div>
                                   </div>
-                                </Tooltip>
+                                  {/* Drag indicator - always visible */}
+                                  <div className="absolute top-1 right-1">
+                                    <Move className="h-3 w-3 text-[#03524f] opacity-60" />
+                                  </div>
+                                </div>
                               ) : (
                                 <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex flex-col items-center justify-center ${
                                   isDragOver && isDropValid
