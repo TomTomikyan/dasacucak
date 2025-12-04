@@ -75,6 +75,7 @@ const Teachers: React.FC<TeachersProps> = ({
   const { t } = useLocalization();
   const [showForm, setShowForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+  const [deletingTeacher, setDeletingTeacher] = useState<Teacher | null>(null);
   const [showValidationError, setShowValidationError] = useState(false);
   
   // Generate default available hours based on institution settings
@@ -230,10 +231,10 @@ const Teachers: React.FC<TeachersProps> = ({
 
   const deleteTeacher = (id: string) => {
     const teacher = teachers.find(t => t.id === id);
-    if (teacher && confirm(t('common.confirmDelete'))) {
+    if (teacher) {
       setTeachers(teachers.filter(teacher => teacher.id !== id));
       showToast.showSuccess(
-        t('toast.teacherDeleted'), 
+        t('toast.teacherDeleted'),
         t('toast.teacherDeletedDesc', { name: `${teacher.firstName} ${teacher.lastName}` })
       );
     }
@@ -604,6 +605,39 @@ const Teachers: React.FC<TeachersProps> = ({
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deletingTeacher && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {t('common.confirmDelete')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {t('common.confirmDeleteQuestion')} "{deletingTeacher.firstName} {deletingTeacher.lastName}" ուսուցչին:
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setDeletingTeacher(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => {
+                    deleteTeacher(deletingTeacher.id);
+                    setDeletingTeacher(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Teachers List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {teachers.length === 0 ? (
@@ -738,7 +772,7 @@ const Teachers: React.FC<TeachersProps> = ({
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => deleteTeacher(teacher.id)}
+                            onClick={() => setDeletingTeacher(teacher)}
                             className="text-red-600 hover:text-red-900 transition-colors"
                             title={t('common.delete')}
                           >

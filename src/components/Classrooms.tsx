@@ -72,6 +72,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [showBulkForm, setShowBulkForm] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<Classroom | null>(null);
+  const [deletingClassroom, setDeletingClassroom] = useState<Classroom | null>(null);
   const [formData, setFormData] = useState({
     number: '',
     floor: 1,
@@ -188,10 +189,10 @@ const Classrooms: React.FC<ClassroomsProps> = ({
 
   const deleteClassroom = (id: string) => {
     const classroom = classrooms.find(c => c.id === id);
-    if (classroom && confirm(t('common.confirmDelete'))) {
+    if (classroom) {
       setClassrooms(classrooms.filter(classroom => classroom.id !== id));
       showToast.showSuccess(
-        t('toast.classroomDeleted'), 
+        t('toast.classroomDeleted'),
         t('toast.classroomDeletedDesc', { number: classroom.number })
       );
     }
@@ -567,6 +568,39 @@ const Classrooms: React.FC<ClassroomsProps> = ({
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deletingClassroom && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {t('common.confirmDelete')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {t('common.confirmDeleteQuestion')} "{deletingClassroom.number}" դասարանը:
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setDeletingClassroom(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => {
+                    deleteClassroom(deletingClassroom.id);
+                    setDeletingClassroom(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Classrooms List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {classrooms.length === 0 ? (
@@ -672,7 +706,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => deleteClassroom(classroom.id)}
+                          onClick={() => setDeletingClassroom(classroom)}
                           className="text-red-600 hover:text-red-900 transition-colors"
                           title={t('common.delete')}
                         >

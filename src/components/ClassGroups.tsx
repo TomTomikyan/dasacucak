@@ -78,6 +78,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [showBulkForm, setShowBulkForm] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ClassGroup | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState<ClassGroup | null>(null);
   const [editingSubjects, setEditingSubjects] = useState<string | null>(null);
   const [tempSubjectHours, setTempSubjectHours] = useState<{ [subjectId: string]: number }>({});
   const [formData, setFormData] = useState({
@@ -215,10 +216,10 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
 
   const deleteClassGroup = (id: string) => {
     const group = classGroups.find(g => g.id === id);
-    if (group && confirm(t('common.confirmDelete'))) {
+    if (group) {
       setClassGroups(classGroups.filter(group => group.id !== id));
       showToast.showSuccess(
-        t('toast.groupDeleted'), 
+        t('toast.groupDeleted'),
         t('toast.groupDeletedDesc', { name: group.name })
       );
     }
@@ -680,6 +681,39 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deletingGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {t('common.confirmDelete')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {t('common.confirmDeleteQuestion')} "{deletingGroup.name}" խումբը:
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setDeletingGroup(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => {
+                    deleteClassGroup(deletingGroup.id);
+                    setDeletingGroup(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Subject Hours Editing Modal */}
       {editingSubjects && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -883,7 +917,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                           <BookOpen className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => deleteClassGroup(group.id)}
+                          onClick={() => setDeletingGroup(group)}
                           className="text-red-600 hover:text-red-900 transition-colors"
                           title={t('common.delete')}
                         >
