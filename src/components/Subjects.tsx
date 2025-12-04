@@ -9,6 +9,12 @@ interface SubjectsProps {
   setSubjects: (subjects: Subject[]) => void;
   classGroups: ClassGroup[];
   teachers: Teacher[];
+  showToast: {
+    showSuccess: (title: string, message: string, duration?: number) => void;
+    showError: (title: string, message: string, duration?: number) => void;
+    showWarning: (title: string, message: string, duration?: number) => void;
+    showInfo: (title: string, message: string, duration?: number) => void;
+  };
 }
 
 // Tooltip component
@@ -60,10 +66,12 @@ const Subjects: React.FC<SubjectsProps> = ({
   setSubjects,
   classGroups,
   teachers,
+  showToast,
 }) => {
   const { t } = useLocalization();
   const [showForm, setShowForm] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [deletingSubject, setDeletingSubject] = useState<Subject | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     type: 'theory' as 'theory' | 'lab',
@@ -85,6 +93,10 @@ const Subjects: React.FC<SubjectsProps> = ({
           : subject
       );
       setSubjects(updatedSubjects);
+      showToast.showSuccess(
+        t('toast.subjectUpdated'),
+        t('toast.subjectUpdatedDesc', { name: formData.name })
+      );
       setEditingSubject(null);
     } else {
       // Add new subject - teachers will be auto-assigned in useScheduleData hook
@@ -93,6 +105,10 @@ const Subjects: React.FC<SubjectsProps> = ({
         specializationRequired: '',
         teacherIds: [], // Will be auto-populated by the hook
       });
+      showToast.showSuccess(
+        t('toast.subjectAdded'),
+        t('toast.subjectAddedDesc', { name: formData.name })
+      );
     }
     setFormData({
       name: '',
@@ -126,7 +142,14 @@ const Subjects: React.FC<SubjectsProps> = ({
   };
 
   const deleteSubject = (id: string) => {
-    setSubjects(subjects.filter(subject => subject.id !== id));
+    const subject = subjects.find(s => s.id === id);
+    if (subject) {
+      setSubjects(subjects.filter(subject => subject.id !== id));
+      showToast.showSuccess(
+        t('toast.subjectDeleted'),
+        t('toast.subjectDeletedDesc', { name: subject.name })
+      );
+    }
   };
 
   const handleTeacherSelection = (teacherId: string, checked: boolean) => {
@@ -384,6 +407,39 @@ const Subjects: React.FC<SubjectsProps> = ({
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deletingSubject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {t('common.confirmDelete')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {t('common.confirmDeleteQuestion')} "{deletingSubject.name}" առարկան:
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setDeletingSubject(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => {
+                    deleteSubject(deletingSubject.id);
+                    setDeletingSubject(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Subjects List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {subjects.length === 0 ? (
@@ -510,7 +566,7 @@ const Subjects: React.FC<SubjectsProps> = ({
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => deleteSubject(subject.id)}
+                            onClick={() => setDeletingSubject(subject)}
                             className="text-red-600 hover:text-red-900 transition-colors"
                             title={t('common.delete')}
                           >
