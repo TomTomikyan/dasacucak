@@ -875,11 +875,11 @@ const Schedule: React.FC<ScheduleProps> = ({
                             >
                               {slot ? (
                                 <Tooltip content={getLessonTooltip(slot)}>
-                                  <div 
+                                  <div
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, slot)}
                                     onDragEnd={handleDragEnd}
-                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move transition-all duration-200 relative"
+                                    className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative"
                                   >
                                     <div className="space-y-1">
                                       <div className="font-medium text-[#03524f] text-xs truncate">
@@ -901,7 +901,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                   </div>
                                 </Tooltip>
                               ) : (
-                                <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex flex-col items-center justify-center transition-all duration-200 ${
+                                <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex flex-col items-center justify-center ${
                                   isDragOver && isDropValid
                                     ? 'border-green-400 bg-green-50'
                                     : isDragOver && !isDropValid
