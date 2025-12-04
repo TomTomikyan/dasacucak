@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Eye, 
   Download, 
@@ -62,6 +62,7 @@ const Overview: React.FC<OverviewProps> = ({
   showToast,
 }) => {
   const { t } = useLocalization();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Calculate key metrics
   const metrics = {
@@ -122,10 +123,8 @@ const Overview: React.FC<OverviewProps> = ({
   if (!healthChecks.hasSubjectTeachers) issues.push(t('overview.issues.noSubjectTeachers'));
 
   const handleClearData = () => {
-    if (confirm(t('overview.confirmClearAll'))) {
-      clearAllData();
-      showToast.showSuccess(t('toast.dataCleared'), t('toast.dataClearedDesc'));
-    }
+    clearAllData();
+    showToast.showSuccess(t('toast.dataCleared'), t('toast.dataClearedDesc'));
   };
 
   const MetricCard: React.FC<{
@@ -176,7 +175,7 @@ const Overview: React.FC<OverviewProps> = ({
         
         <div className="flex items-center space-x-3">
           <button
-            onClick={handleClearData}
+            onClick={() => setShowDeleteConfirm(true)}
             className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -362,6 +361,39 @@ const Overview: React.FC<OverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {t('common.confirmDelete')}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {t('overview.confirmClearAll')}
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => {
+                    handleClearData();
+                    setShowDeleteConfirm(false);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
