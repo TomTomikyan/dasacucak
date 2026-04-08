@@ -18,10 +18,27 @@ interface SetupProps {
   showToast: ToastFunctions;
 }
 
-const Setup: React.FC<SetupProps> = ({ 
-  institution, 
-  setInstitution, 
-  importConfiguration, 
+const calculateAcademicWeeks = (semester1EndDate: string, semester2StartDate?: string): number => {
+  const sep1 = new Date(`${new Date(semester1EndDate).getFullYear()}-09-01`);
+  const end1 = new Date(semester1EndDate);
+  const start2 = semester2StartDate
+    ? new Date(semester2StartDate)
+    : new Date(`${new Date(semester1EndDate).getFullYear() + 1}-01-26`);
+
+  const endYear = start2.getFullYear();
+  const end2 = new Date(`${endYear}-06-15`);
+
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const sem1Weeks = Math.round((end1.getTime() - sep1.getTime()) / msPerWeek);
+  const sem2Weeks = Math.round((end2.getTime() - start2.getTime()) / msPerWeek);
+
+  return Math.max(1, sem1Weeks + sem2Weeks);
+};
+
+const Setup: React.FC<SetupProps> = ({
+  institution,
+  setInstitution,
+  importConfiguration,
   clearAllData,
   showToast
 }) => {
@@ -477,6 +494,87 @@ const Setup: React.FC<SetupProps> = ({
             </div>
           </div>
 
+          {/* Semester Date Settings */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              <Calendar className="inline h-4 w-4 mr-1" />
+              {t('setup.semesterDates')}
+            </label>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {t('setup.semester1Start')}
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={`${t('setup.semester1StartFixed')}`}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {t('setup.semester1End')}
+                  </label>
+                  <input
+                    type="date"
+                    value={institution.semester1EndDate || ''}
+                    onChange={(e) => {
+                      const endDate = e.target.value;
+                      setInstitution({ semester1EndDate: endDate });
+                      if (endDate) {
+                        const calculatedWeeks = calculateAcademicWeeks(endDate, institution.semester2StartDate);
+                        setInstitution({ academicWeeks: calculatedWeeks });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {t('setup.semester2Start')}
+                  </label>
+                  <input
+                    type="date"
+                    value={institution.semester2StartDate || `${new Date().getFullYear() + 1}-01-26`}
+                    onChange={(e) => {
+                      const startDate = e.target.value;
+                      setInstitution({ semester2StartDate: startDate });
+                      if (institution.semester1EndDate) {
+                        const calculatedWeeks = calculateAcademicWeeks(institution.semester1EndDate, startDate);
+                        setInstitution({ academicWeeks: calculatedWeeks });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {t('setup.semester2EndNote')}
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={t('setup.semester2EndNoteValue')}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-500 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 bg-[#03524f] bg-opacity-5 rounded-md p-3">
+                <div className="text-xs text-gray-600">
+                  <span className="font-medium text-[#03524f]">{t('setup.calculatedWeeks')}: </span>
+                  <span className="font-bold text-[#03524f]">{institution.academicWeeks} {t('common.week')}</span>
+                  {institution.semester1EndDate && (
+                    <span className="ml-2 text-gray-500">
+                      ({t('setup.autoCalculated')})
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Academic Weeks */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -484,7 +582,7 @@ const Setup: React.FC<SetupProps> = ({
             </label>
             <input
               type="number"
-              min="30"
+              min="1"
               max="52"
               value={institution.academicWeeks}
               onChange={(e) => setInstitution({ academicWeeks: parseInt(e.target.value) })}

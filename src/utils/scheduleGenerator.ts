@@ -28,6 +28,42 @@ export interface GenerationResult {
   error?: string;
 }
 
+// Helper: calculate how many academic weeks each subject occupies
+// subject hourly load / 2 = number of pairs needed per semester
+// Returns: { sem1Weeks, sem2Weeks, switchWeek } for split-cell logic
+export function calculateSubjectWeeks(
+  totalHours: number,
+  academicWeeks: number,
+  pairsPerWeek: number
+): { totalPairs: number; weeksCovered: number } {
+  const totalPairs = Math.ceil(totalHours / 2); // 1 pair = 2 academic hours
+  const weeksCovered = pairsPerWeek > 0 ? Math.ceil(totalPairs / pairsPerWeek) : academicWeeks;
+  return { totalPairs, weeksCovered };
+}
+
+// Helper: detect parity partners - subjects with odd total hours that can be paired
+// Two subjects with odd hours can share one 70-min slot (35+35 min split)
+export function findParityPairs(
+  subjectHoursMap: { subjectId: string; hours: number }[]
+): Array<{ subjectId1: string; subjectId2: string }> {
+  const oddSubjects = subjectHoursMap.filter(s => s.hours % 2 !== 0);
+  const pairs: Array<{ subjectId1: string; subjectId2: string }> = [];
+  const used = new Set<string>();
+
+  for (let i = 0; i < oddSubjects.length; i++) {
+    if (used.has(oddSubjects[i].subjectId)) continue;
+    for (let j = i + 1; j < oddSubjects.length; j++) {
+      if (used.has(oddSubjects[j].subjectId)) continue;
+      pairs.push({ subjectId1: oddSubjects[i].subjectId, subjectId2: oddSubjects[j].subjectId });
+      used.add(oddSubjects[i].subjectId);
+      used.add(oddSubjects[j].subjectId);
+      break;
+    }
+  }
+
+  return pairs;
+}
+
 // ԳԼԽԱՎՈՐ ԴԱՍԸ - ScheduleGenerator
 // Սա կառուցում է ամբողջ ժամանակացույցը հատված առ հատված
 export class ScheduleGenerator {
@@ -143,19 +179,25 @@ export class ScheduleGenerator {
       log(`✅ Scheduling complete: ${scheduledCount} scheduled, ${failedCount} failed`);
 
       if (scheduledCount === 0) {
-        return { 
-          success: false, 
-          schedule: [], 
-          error: 'No lessons could be scheduled. Check teacher availability and classroom assignments.' 
+        return {
+          success: false,
+          schedule: [],
+          error: 'No lessons could be scheduled. Check teacher availability and classroom assignments.'
         };
       }
 
       // Optimize schedule distribution
       this.optimizeScheduleDistribution(log);
 
-      return { 
-        success: true, 
-        schedule: this.schedule 
+      // Apply smart replacement (split-cell) logic for subjects that end mid-semester
+      this.applySmartReplacement(log);
+
+      // Apply parity pairing for subjects with odd hours
+      this.applyParityPairing(log);
+
+      return {
+        success: true,
+        schedule: this.schedule
       };
 
     } catch (error) {
@@ -1208,6 +1250,138 @@ export class ScheduleGenerator {
     } else {
       log(`   ✅ Excellent same-subject distribution across all groups!`);
     }
+  }
+
+  // Smart Replacement: detect when a subject ends before the semester ends and assign
+  // a replacement subject in the same slot. Creates split cells (subject1 / subject2).
+  private applySmartReplacement(log: (message: string) => void): void {
+    log('🔄 Applying smart replacement (split-cell) logic...');
+
+    const academicWeeks = this.institution.academicWeeks;
+
+    this.classGroups.forEach(group => {
+      const groupSlots = this.schedule.filter(s => s.classGroupId === group.id);
+      const subjectHours = group.subjectHours || {};
+
+      Object.entries(subjectHours).forEach(([subjectId, totalHours]) => {
+        if (totalHours <= 0) return;
+        const subject = this.subjects.find(s => s.id === subjectId);
+        if (!subject) return;
+
+        const subjectSlots = groupSlots.filter(s => s.subjectId === subjectId && !s.subjectId2);
+        if (subjectSlots.length === 0) return;
+
+        const pairsPerWeek = subjectSlots.length;
+        const totalPairs = Math.ceil(totalHours / 2);
+        const weeksCovered = pairsPerWeek > 0 ? Math.ceil(totalPairs / pairsPerWeek) : academicWeeks;
+
+        if (weeksCovered < academicWeeks) {
+          const switchWeek = weeksCovered;
+          log(`📅 Subject ${subject.name} for group ${group.name} ends at week ${switchWeek} (of ${academicWeeks})`);
+
+          const candidateReplacements = Object.entries(subjectHours)
+            .filter(([candId, candHours]) => {
+              if (candId === subjectId || candHours <= 0) return false;
+              const candSubject = this.subjects.find(s => s.id === candId);
+              if (!candSubject) return false;
+              const candPairs = Math.ceil(candHours / 2);
+              const remainingWeeks = academicWeeks - switchWeek;
+              return candPairs <= remainingWeeks * pairsPerWeek;
+            })
+            .map(([candId]) => candId);
+
+          if (candidateReplacements.length > 0) {
+            const replacementSubjectId = candidateReplacements[0];
+            const replacementSubject = this.subjects.find(s => s.id === replacementSubjectId);
+
+            subjectSlots.forEach(slot => {
+              const daySlots = this.schedule
+                .filter(s => s.classGroupId === group.id && s.day === slot.day)
+                .map(s => s.lessonNumber)
+                .sort((a, b) => a - b);
+
+              const isFirst = daySlots[0] === slot.lessonNumber;
+              const isLast = daySlots[daySlots.length - 1] === slot.lessonNumber;
+
+              if (isFirst || isLast) {
+                const replacementTeacherId = replacementSubject?.teacherIds.find(tid => {
+                  const teacher = this.teachers.find(t => t.id === tid);
+                  return teacher && teacher.assignedClassGroups.includes(group.id);
+                });
+
+                if (replacementTeacherId) {
+                  slot.subjectId2 = replacementSubjectId;
+                  slot.teacherId2 = replacementTeacherId;
+                  slot.weekSwitch = switchWeek;
+                  log(`   ✅ Split: ${subject.name} / ${replacementSubject?.name} for ${group.name} (week ${switchWeek})`);
+                }
+              }
+            });
+          }
+        }
+      });
+    });
+
+    log('✅ Smart replacement applied');
+  }
+
+  // Parity Pairing: subjects with odd total hours get paired in one 70-min slot (35+35 min)
+  private applyParityPairing(log: (message: string) => void): void {
+    log('⚖️ Applying parity pairing for odd-hour subjects...');
+
+    this.classGroups.forEach(group => {
+      const subjectHours = group.subjectHours || {};
+      const oddHourSubjects = Object.entries(subjectHours)
+        .filter(([, hours]) => hours > 0 && hours % 2 !== 0)
+        .map(([subjectId, hours]) => ({ subjectId, hours }));
+
+      if (oddHourSubjects.length < 2) return;
+
+      const used = new Set<string>();
+      for (let i = 0; i < oddHourSubjects.length; i++) {
+        if (used.has(oddHourSubjects[i].subjectId)) continue;
+        for (let j = i + 1; j < oddHourSubjects.length; j++) {
+          if (used.has(oddHourSubjects[j].subjectId)) continue;
+
+          const sub1Id = oddHourSubjects[i].subjectId;
+          const sub2Id = oddHourSubjects[j].subjectId;
+          const sub1 = this.subjects.find(s => s.id === sub1Id);
+          const sub2 = this.subjects.find(s => s.id === sub2Id);
+          if (!sub1 || !sub2) continue;
+
+          const sub1Slots = this.schedule.filter(s =>
+            s.classGroupId === group.id && s.subjectId === sub1Id && !s.pairSubjectId
+          );
+
+          const boundarySlot = sub1Slots.find(slot => {
+            const daySlots = this.schedule
+              .filter(s => s.classGroupId === group.id && s.day === slot.day)
+              .map(s => s.lessonNumber)
+              .sort((a, b) => a - b);
+            return daySlots[0] === slot.lessonNumber || daySlots[daySlots.length - 1] === slot.lessonNumber;
+          });
+
+          if (boundarySlot) {
+            const teacher2Id = sub2.teacherIds.find(tid => {
+              const teacher = this.teachers.find(t => t.id === tid);
+              return teacher && teacher.assignedClassGroups.includes(group.id);
+            });
+
+            if (teacher2Id) {
+              boundarySlot.pairSubjectId = sub2Id;
+              boundarySlot.pairTeacherId = teacher2Id;
+              boundarySlot.pairMinutes = 35;
+              used.add(sub1Id);
+              used.add(sub2Id);
+              log(`   ✅ Parity pair: ${sub1.name} + ${sub2.name} (35+35 min) for ${group.name}`);
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    log('✅ Parity pairing complete');
   }
 }
 

@@ -874,22 +874,79 @@ const Schedule: React.FC<ScheduleProps> = ({
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, slot)}
                                   onDragEnd={handleDragEnd}
-                                  className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative"
+                                  className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative overflow-hidden"
                                 >
-                                  <div className="space-y-1">
-                                    <div className="font-medium text-[#03524f] text-xs truncate">
-                                      {getSubjectName(slot.subjectId)}
+                                  {slot.subjectId2 ? (
+                                    /* Split cell: subject1 / subject2 */
+                                    <div className="flex flex-col h-full">
+                                      {/* Top half - first subject (before weekSwitch) */}
+                                      <div className="flex-1 pb-1 border-b border-[#03524f] border-opacity-30">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.subjectId)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                        </div>
+                                        {slot.weekSwitch && (
+                                          <div className="text-xs text-gray-400">до нед. {slot.weekSwitch}</div>
+                                        )}
+                                      </div>
+                                      {/* Divider slash */}
+                                      <div className="text-center text-[#03524f] text-xs font-bold leading-none py-0.5 opacity-50">/</div>
+                                      {/* Bottom half - second subject (after weekSwitch) */}
+                                      <div className="flex-1 pt-1">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.subjectId2)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{slot.teacherId2 ? getTeacherName(slot.teacherId2) : ''}</span>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center text-xs text-gray-600">
-                                      <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                  ) : slot.pairSubjectId ? (
+                                    /* Parity pair: subject1 (35 min) + subject2 (35 min) */
+                                    <div className="flex flex-col h-full">
+                                      <div className="flex-1 pb-1 border-b border-amber-300 border-opacity-60">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.subjectId)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                        </div>
+                                        <div className="text-xs text-amber-600">35 {t('common.minutes') || 'min'}</div>
+                                      </div>
+                                      <div className="text-center text-amber-500 text-xs font-bold leading-none py-0.5 opacity-70">+</div>
+                                      <div className="flex-1 pt-1">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.pairSubjectId)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{slot.pairTeacherId ? getTeacherName(slot.pairTeacherId) : ''}</span>
+                                        </div>
+                                        <div className="text-xs text-amber-600">35 {t('common.minutes') || 'min'}</div>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center text-xs text-gray-600">
-                                      <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                  ) : (
+                                    /* Normal cell */
+                                    <div className="space-y-1">
+                                      <div className="font-medium text-[#03524f] text-xs truncate">
+                                        {getSubjectName(slot.subjectId)}
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                      </div>
                                     </div>
-                                  </div>
-                                  {/* Drag indicator - always visible */}
+                                  )}
+                                  {/* Drag indicator */}
                                   <div className="absolute top-1 right-1">
                                     <Move className="h-3 w-3 text-[#03524f] opacity-60" />
                                   </div>

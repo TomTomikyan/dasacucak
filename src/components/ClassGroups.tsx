@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, GraduationCap, Trash2, Edit, BookOpen, Clock, Save, X, MapPin } from 'lucide-react';
+import { Plus, Users, GraduationCap, Trash2, CreditCard as Edit, BookOpen, Clock, Save, X, MapPin } from 'lucide-react';
 import { ClassGroup, Institution, Subject, Classroom } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -715,83 +715,139 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
       )}
 
       {/* Subject Hours Editing Modal */}
-      {editingSubjects && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {t('groups.assignSubjects')} - {classGroups.find(g => g.id === editingSubjects)?.name}
-                  <span className="ml-2 text-sm text-gray-500">
-                    ({getCourseText(classGroups.find(g => g.id === editingSubjects)?.course || 1)})
-                  </span>
-                </h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={saveSubjectHours}
-                    className="inline-flex items-center px-3 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239]"
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    {t('common.save')}
-                  </button>
-                  <button
-                    onClick={cancelEditingSubjects}
-                    className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    {t('common.cancel')}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {getAvailableSubjectsForGroup(editingSubjects).length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    {t('groups.noSubjectsForCourse', { course: getCourseText(classGroups.find(g => g.id === editingSubjects)?.course || 1) })}
-                  </p>
-                ) : (
-                  getAvailableSubjectsForGroup(editingSubjects).map((subject) => (
-                    <div key={subject.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-md">
-                      <div className="flex items-center space-x-3">
-                        <BookOpen className="h-5 w-5 text-[#03524f]" />
-                        <div>
-                          <span className="font-medium text-gray-900">{subject.name}</span>
-                          <div className="text-sm text-gray-500">
-                            {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')} • {getCourseText(subject.course)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          min="0"
-                          max="200"
-                          value={tempSubjectHours[subject.id] || 0}
-                          onChange={(e) => updateSubjectHours(subject.id, parseInt(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
-                          placeholder="0"
-                        />
-                        <span className="text-sm text-gray-500">ժամ/{t('common.year')}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+      {editingSubjects && (() => {
+        const editingGroup = classGroups.find(g => g.id === editingSubjects);
+        const sameSpecGroups = classGroups.filter(g =>
+          g.specialization === editingGroup?.specialization &&
+          g.course === editingGroup?.course
+        );
+        const showStreams = sameSpecGroups.length > 1;
 
-              {getAvailableSubjectsForGroup(editingSubjects).length > 0 && (
-                <div className="mt-4 p-3 bg-[#03524f] bg-opacity-10 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-[#03524f]">{t('groups.totalHoursPerYear')}:</span>
-                    <span className="text-lg font-bold text-[#03524f]">
-                      {getTotalHours(tempSubjectHours)} {t('common.hours')}
-                    </span>
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      {t('groups.assignSubjects')} - {editingGroup?.name}
+                      <span className="ml-2 text-sm text-gray-500">
+                        ({getCourseText(editingGroup?.course || 1)})
+                      </span>
+                    </h3>
+                    {showStreams && (
+                      <p className="text-xs text-[#03524f] mt-1">
+                        {t('groups.streamHint', { spec: editingGroup?.specialization || '', count: sameSpecGroups.length })}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={saveSubjectHours}
+                      className="inline-flex items-center px-3 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239]"
+                    >
+                      <Save className="h-4 w-4 mr-1" />
+                      {t('common.save')}
+                    </button>
+                    <button
+                      onClick={cancelEditingSubjects}
+                      className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      {t('common.cancel')}
+                    </button>
                   </div>
                 </div>
-              )}
+
+                {showStreams && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      {t('groups.streamsDetected')}: <strong>{sameSpecGroups.map(g => g.name).join(', ')}</strong>
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">{t('groups.streamsNote')}</p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {getAvailableSubjectsForGroup(editingSubjects).length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">
+                      {t('groups.noSubjectsForCourse', { course: getCourseText(editingGroup?.course || 1) })}
+                    </p>
+                  ) : (
+                    getAvailableSubjectsForGroup(editingSubjects).map((subject) => (
+                      <div key={subject.id} className="border border-gray-200 rounded-md p-3">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <BookOpen className="h-5 w-5 text-[#03524f]" />
+                          <div>
+                            <span className="font-medium text-gray-900">{subject.name}</span>
+                            <div className="text-sm text-gray-500">
+                              {subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory')} • {getCourseText(subject.course)}
+                            </div>
+                          </div>
+                        </div>
+                        {showStreams ? (
+                          <div className="ml-8 grid grid-cols-2 gap-2">
+                            {sameSpecGroups.map(streamGroup => (
+                              <div key={streamGroup.id} className={`flex items-center justify-between p-2 rounded-md ${streamGroup.id === editingSubjects ? 'bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-30' : 'bg-gray-50 border border-gray-200'}`}>
+                                <span className={`text-sm font-medium ${streamGroup.id === editingSubjects ? 'text-[#03524f]' : 'text-gray-600'}`}>
+                                  {streamGroup.name}
+                                  {streamGroup.id === editingSubjects && <span className="ml-1 text-xs">{'(*)'}</span>}
+                                </span>
+                                <div className="flex items-center space-x-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="200"
+                                    value={streamGroup.id === editingSubjects
+                                      ? tempSubjectHours[subject.id] || 0
+                                      : streamGroup.subjectHours[subject.id] || 0
+                                    }
+                                    onChange={(e) => {
+                                      if (streamGroup.id === editingSubjects) {
+                                        updateSubjectHours(subject.id, parseInt(e.target.value) || 0);
+                                      }
+                                    }}
+                                    disabled={streamGroup.id !== editingSubjects}
+                                    className={`w-16 px-2 py-1 text-center border rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f] text-sm ${streamGroup.id !== editingSubjects ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' : 'border-gray-300'}`}
+                                  />
+                                  <span className="text-xs text-gray-500">ժ</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="ml-8 flex items-center space-x-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="200"
+                              value={tempSubjectHours[subject.id] || 0}
+                              onChange={(e) => updateSubjectHours(subject.id, parseInt(e.target.value) || 0)}
+                              className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                            />
+                            <span className="text-sm text-gray-500">ժամ/{t('common.year')}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {getAvailableSubjectsForGroup(editingSubjects).length > 0 && (
+                  <div className="mt-4 p-3 bg-[#03524f] bg-opacity-10 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#03524f]">{t('groups.totalHoursPerYear')} ({editingGroup?.name}):</span>
+                      <span className="text-lg font-bold text-[#03524f]">
+                        {getTotalHours(tempSubjectHours)} {t('common.hours')}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Groups List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">

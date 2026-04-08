@@ -11,6 +11,9 @@ export interface Institution {
   startTime: string; // Դասերի սկիզբի ժամը (ձևաչափ՝ "08:00")
   academicWeeks: number; // Ուսումնական շաբաթների քանակ տարեկան
   specializations: string[]; // Մասնագիտությունների ցանկ քոլեջում
+  // Semester date settings
+  semester1EndDate?: string; // Semester 1 end date (YYYY-MM-DD), semester 2 always starts Jan 26
+  semester2StartDate?: string; // Semester 2 start date (YYYY-MM-DD), default Jan 26
 }
 
 // Ուսումնական խումբ - Ուսանողների խումբ որոշակի մասնագիտությամբ և դասընթացով
@@ -69,11 +72,19 @@ export interface ScheduleSlot {
   day: string; // Շաբաթվա օր (օրինակ՝ "Monday")
   lessonNumber: number; // Դասի համար (1, 2, 3, ...)
   classGroupId: string; // Խմբի ID
-  subjectId: string; // Առարկայի ID
+  subjectId: string; // Առարկայի ID (1st half of semester or full semester)
   teacherId: string; // Ուսուցչի ID
   classroomId: string; // Սենյակի ID
   startTime: string; // Սկիզբի ժամ (ձևաչափ՝ "08:00")
   endTime: string; // Ավարտի ժամ (ձևաչափ՝ "09:10")
+  // Split cell support - when a subject ends mid-semester and is replaced
+  subjectId2?: string; // Second subject ID (after week_switch)
+  teacherId2?: string; // Second teacher ID (after week_switch)
+  weekSwitch?: number; // Week number when the switch happens (subject1 -> subject2)
+  // Pair system: 1 lesson slot = 2 academic hours (70 min)
+  pairSubjectId?: string; // If this slot is a "parity pair" (odd-hour subject paired with another)
+  pairTeacherId?: string; // Teacher for the parity pair subject
+  pairMinutes?: number; // Minutes allocated to this subject in the pair (e.g. 35 min each)
 }
 
 // Գեներացիայի սահմանափակումներ - Կարգավորումներ ժամանակացույցի ստեղծման համար

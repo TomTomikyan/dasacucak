@@ -48,6 +48,9 @@ export const armenianTranslations = {
     unknown: 'Անհայտ',
     notSet: 'Չի սահմանված',
     filters: 'Ֆիլտրեր',
+    minutes: 'րոպե',
+    splitCell: 'Բաժանված բջիջ (կիսամյակի կեսից փոխվում է)',
+    parityCombined: 'Հարակցված (35+35 րոպե)',
   },
 
   // Days of the week
@@ -76,6 +79,15 @@ export const armenianTranslations = {
   setup: {
     title: 'Հիմնական կարգավորումներ',
     subtitle: 'Կարգավորեք ձեր կրթական հաստատության հիմնական պարամետրերը',
+    semesterDates: 'Կիսամյակների ամսաթվեր',
+    semester1Start: '1-ին կիսամյակի սկիզբ',
+    semester1StartFixed: 'Սեպտեմբերի 1 (ֆիքսված)',
+    semester1End: '1-ին կիսամյակի ավարտ',
+    semester2Start: '2-րդ կիսամյակի սկիզբ',
+    semester2EndNote: '2-րդ կիսամյակի ավարտ',
+    semester2EndNoteValue: 'Հունիսի 15 (ստandardly)',
+    calculatedWeeks: 'Հաշվարկված ուսումնական շաբաթներ',
+    autoCalculated: 'ավտոմատ հաշվված',
     collegeName: 'Քոլեջի անվանումը',
     collegeNamePlaceholder: 'Մուտքագրեք քոլեջի անվանումը',
     specializations: 'Մասնագիտություններ',
@@ -137,6 +149,10 @@ export const armenianTranslations = {
     noGroups: 'Խմբեր չկան',
     noGroupsDesc: 'Ավելացրեք ձեր առաջին խումբը կամ օգտագործեք զանգվածային ստեղծման գործառույթը:',
     noSpecialization: 'Մասնագիտացում չկա',
+    streamHint: '{spec} մասնագիտության {count} հոսք հայտնաբերված',
+    streamsDetected: 'Հոսքեր հայտնաբերված',
+    streamsNote: 'Ամեն հոսք կարող է ունենալ տարբեր ժամաքանակ նույն առարկայի համար',
+    selectYears: 'Ընտրեք ուսման տարիներ',
   },
 
   // Subjects page

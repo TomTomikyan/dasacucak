@@ -16,6 +16,8 @@ const getDefaultBreakDurations = (lessonsPerDay: number): number[] => {
   });
 };
 
+const currentYear = new Date().getFullYear();
+
 const defaultInstitution: Institution = {
   id: '1',
   name: '',
@@ -26,7 +28,9 @@ const defaultInstitution: Institution = {
   breakDurations: getDefaultBreakDurations(4),
   startTime: '09:00',
   academicWeeks: 40,
-  specializations: [], // Initialize empty specializations array
+  specializations: [],
+  semester1EndDate: `${currentYear}-12-26`,
+  semester2StartDate: `${currentYear + 1}-01-26`,
 };
 
 // LocalStorage բանալիներ - բոլոր տվյալները պահպանվում են տեղական հիշողության մեջ
