@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BookOpen, Users, Trash2, Monitor, Edit, Save, X, GraduationCap, CheckCircle } from 'lucide-react';
+import { Plus, BookOpen, Users, Trash2, Monitor, CreditCard as Edit, Save, X, GraduationCap, CheckCircle } from 'lucide-react';
 import { Subject, ClassGroup, Teacher } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -317,6 +317,54 @@ const Subjects: React.FC<SubjectsProps> = ({
                     />
                   </div>
                 </div>
+
+                {/* Per-group/stream hours breakdown */}
+                {(() => {
+                  const relevantGroups = classGroups.filter(g => g.course === formData.course);
+                  if (relevantGroups.length === 0) return null;
+
+                  // Group by specialization
+                  const bySpec: Record<string, ClassGroup[]> = {};
+                  relevantGroups.forEach(g => {
+                    const spec = g.specialization || 'Ընդհանուր';
+                    if (!bySpec[spec]) bySpec[spec] = [];
+                    bySpec[spec].push(g);
+                  });
+
+                  const subjectId = editingSubject?.id;
+
+                  return (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <Users className="inline h-4 w-4 mr-1" />
+                        Ժամաքանակ ըստ խմբերի / հոսքերի
+                      </label>
+                      <div className="border border-gray-200 rounded-md divide-y divide-gray-100">
+                        {Object.entries(bySpec).map(([spec, groups]) => (
+                          <div key={spec} className="p-3">
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{spec}</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {groups.map(group => {
+                                const hrs = subjectId
+                                  ? group.subjectHours[subjectId] || 0
+                                  : 0;
+                                return (
+                                  <div key={group.id} className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${hrs > 0 ? 'bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <span className={`font-medium ${hrs > 0 ? 'text-[#03524f]' : 'text-gray-500'}`}>{group.name}</span>
+                                    <span className={`text-xs font-bold ${hrs > 0 ? 'text-[#03524f]' : 'text-gray-400'}`}>
+                                      {hrs > 0 ? `${hrs} ժ` : '—'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-400">Ժամաքանակները խմբերի բաժնում են կարգավորվում</p>
+                    </div>
+                  );
+                })()}
 
                 {/* Auto-assignment preview */}
                 {!editingSubject && formData.name && (
