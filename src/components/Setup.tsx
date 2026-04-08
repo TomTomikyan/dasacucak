@@ -18,20 +18,35 @@ interface SetupProps {
   showToast: ToastFunctions;
 }
 
-const calculateAcademicWeeks = (semester1EndDate: string, semester2StartDate?: string): number => {
-  const sep1 = new Date(`${new Date(semester1EndDate).getFullYear()}-09-01`);
-  const end1 = new Date(semester1EndDate);
-  const start2 = semester2StartDate
-    ? new Date(semester2StartDate)
-    : new Date(`${new Date(semester1EndDate).getFullYear() + 1}-01-26`);
+const MONTHS_AM = [
+  'Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս',
+  'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'
+];
 
-  const endYear = start2.getFullYear();
-  const end2 = new Date(`${endYear}-06-15`);
+const buildDate = (year: number, month: number, day: number): string => {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
 
+const parseMonthDay = (dateStr: string): { month: number; day: number } => {
+  if (!dateStr) return { month: 9, day: 1 };
+  const parts = dateStr.split('-');
+  return { month: parseInt(parts[1]) || 9, day: parseInt(parts[2]) || 1 };
+};
+
+const calculateAcademicWeeks = (
+  sem1Start: string,
+  sem1End: string,
+  sem2Start: string,
+  sem2End: string
+): number => {
+  if (!sem1Start || !sem1End || !sem2Start || !sem2End) return 40;
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const sem1Weeks = Math.round((end1.getTime() - sep1.getTime()) / msPerWeek);
-  const sem2Weeks = Math.round((end2.getTime() - start2.getTime()) / msPerWeek);
-
+  const s1 = new Date(sem1Start).getTime();
+  const e1 = new Date(sem1End).getTime();
+  const s2 = new Date(sem2Start).getTime();
+  const e2 = new Date(sem2End).getTime();
+  const sem1Weeks = Math.max(0, Math.round((e1 - s1) / msPerWeek));
+  const sem2Weeks = Math.max(0, Math.round((e2 - s2) / msPerWeek));
   return Math.max(1, sem1Weeks + sem2Weeks);
 };
 
@@ -501,97 +516,229 @@ const Setup: React.FC<SetupProps> = ({
               {t('setup.semesterDates')}
             </label>
             <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    {t('setup.semester1Start')}
-                  </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={`${t('setup.semester1StartFixed')}`}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    {t('setup.semester1End')}
-                  </label>
-                  <input
-                    type="date"
-                    value={institution.semester1EndDate || ''}
-                    onChange={(e) => {
-                      const endDate = e.target.value;
-                      setInstitution({ semester1EndDate: endDate });
-                      if (endDate) {
-                        const calculatedWeeks = calculateAcademicWeeks(endDate, institution.semester2StartDate);
-                        setInstitution({ academicWeeks: calculatedWeeks });
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f] text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    {t('setup.semester2Start')}
-                  </label>
-                  <input
-                    type="date"
-                    value={institution.semester2StartDate || `${new Date().getFullYear() + 1}-01-26`}
-                    onChange={(e) => {
-                      const startDate = e.target.value;
-                      setInstitution({ semester2StartDate: startDate });
-                      if (institution.semester1EndDate) {
-                        const calculatedWeeks = calculateAcademicWeeks(institution.semester1EndDate, startDate);
-                        setInstitution({ academicWeeks: calculatedWeeks });
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f] text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    {t('setup.semester2EndNote')}
-                  </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={t('setup.semester2EndNoteValue')}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-500 text-sm"
-                  />
+              {/* Semester 1 */}
+              <div>
+                <div className="text-xs font-semibold text-[#03524f] uppercase tracking-wide mb-2">1-ին կիսամյակ</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Sem1 Start */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {t('setup.semester1Start')} <span className="text-gray-400">(ֆիքսված Սեպ. 1)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={parseMonthDay(institution.semester1StartDate || '').month}
+                        onChange={(e) => {
+                          const y = institution.semester1StartDate
+                            ? parseInt(institution.semester1StartDate.split('-')[0])
+                            : new Date().getFullYear();
+                          const m = parseInt(e.target.value);
+                          const d = parseMonthDay(institution.semester1StartDate || '').day;
+                          const newDate = buildDate(y, m, d);
+                          const s2 = institution.semester2StartDate || buildDate(y + 1, 1, 26);
+                          const s2e = institution.semester2EndDate || buildDate(parseInt(s2.split('-')[0]), 6, 15);
+                          setInstitution({ semester1StartDate: newDate });
+                          if (institution.semester1EndDate) {
+                            setInstitution({ academicWeeks: calculateAcademicWeeks(newDate, institution.semester1EndDate, s2, s2e) });
+                          }
+                        }}
+                        className="flex-1 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                      >
+                        {MONTHS_AM.map((m, i) => (
+                          <option key={i + 1} value={i + 1}>{m}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={parseMonthDay(institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1)).day}
+                        onChange={(e) => {
+                          const y = institution.semester1StartDate
+                            ? parseInt(institution.semester1StartDate.split('-')[0])
+                            : new Date().getFullYear();
+                          const m = parseMonthDay(institution.semester1StartDate || '').month || 9;
+                          const newDate = buildDate(y, m, parseInt(e.target.value) || 1);
+                          const s2 = institution.semester2StartDate || buildDate(y + 1, 1, 26);
+                          const s2e = institution.semester2EndDate || buildDate(parseInt(s2.split('-')[0]), 6, 15);
+                          setInstitution({ semester1StartDate: newDate });
+                          if (institution.semester1EndDate) {
+                            setInstitution({ academicWeeks: calculateAcademicWeeks(newDate, institution.semester1EndDate, s2, s2e) });
+                          }
+                        }}
+                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] text-center"
+                      />
+                    </div>
+                  </div>
+                  {/* Sem1 End */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {t('setup.semester1End')} <span className="text-gray-400">(ֆիքսված Դեկ. 26)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={parseMonthDay(institution.semester1EndDate || '').month || 12}
+                        onChange={(e) => {
+                          const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                          const y = parseInt(s1.split('-')[0]);
+                          const m = parseInt(e.target.value);
+                          const d = parseMonthDay(institution.semester1EndDate || '').day || 26;
+                          const newDate = buildDate(m >= 9 ? y : y + 1, m, d);
+                          const s2 = institution.semester2StartDate || buildDate(y + 1, 1, 26);
+                          const s2e = institution.semester2EndDate || buildDate(parseInt(s2.split('-')[0]), 6, 15);
+                          setInstitution({ semester1EndDate: newDate, academicWeeks: calculateAcademicWeeks(s1, newDate, s2, s2e) });
+                        }}
+                        className="flex-1 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                      >
+                        {MONTHS_AM.map((m, i) => (
+                          <option key={i + 1} value={i + 1}>{m}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={parseMonthDay(institution.semester1EndDate || buildDate(new Date().getFullYear(), 12, 26)).day}
+                        onChange={(e) => {
+                          const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                          const y = parseInt(s1.split('-')[0]);
+                          const m = parseMonthDay(institution.semester1EndDate || '').month || 12;
+                          const newDate = buildDate(m >= 9 ? y : y + 1, m, parseInt(e.target.value) || 1);
+                          const s2 = institution.semester2StartDate || buildDate(y + 1, 1, 26);
+                          const s2e = institution.semester2EndDate || buildDate(parseInt(s2.split('-')[0]), 6, 15);
+                          setInstitution({ semester1EndDate: newDate, academicWeeks: calculateAcademicWeeks(s1, newDate, s2, s2e) });
+                        }}
+                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] text-center"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 bg-[#03524f] bg-opacity-5 rounded-md p-3">
+
+              {/* Semester 2 */}
+              <div>
+                <div className="text-xs font-semibold text-[#03524f] uppercase tracking-wide mb-2">2-րդ կիսամյակ</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Sem2 Start */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {t('setup.semester2Start')} <span className="text-gray-400">(ֆիքսված Հուն. 26)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={parseMonthDay(institution.semester2StartDate || '').month || 1}
+                        onChange={(e) => {
+                          const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                          const y = parseInt(s1.split('-')[0]) + 1;
+                          const m = parseInt(e.target.value);
+                          const d = parseMonthDay(institution.semester2StartDate || '').day || 26;
+                          const newDate = buildDate(y, m, d);
+                          const s2e = institution.semester2EndDate || buildDate(y, 6, 15);
+                          const s1e = institution.semester1EndDate || buildDate(parseInt(s1.split('-')[0]), 12, 26);
+                          setInstitution({ semester2StartDate: newDate, academicWeeks: calculateAcademicWeeks(s1, s1e, newDate, s2e) });
+                        }}
+                        className="flex-1 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                      >
+                        {MONTHS_AM.map((m, i) => (
+                          <option key={i + 1} value={i + 1}>{m}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={parseMonthDay(institution.semester2StartDate || buildDate(new Date().getFullYear() + 1, 1, 26)).day}
+                        onChange={(e) => {
+                          const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                          const y = parseInt(s1.split('-')[0]) + 1;
+                          const m = parseMonthDay(institution.semester2StartDate || '').month || 1;
+                          const newDate = buildDate(y, m, parseInt(e.target.value) || 1);
+                          const s2e = institution.semester2EndDate || buildDate(y, 6, 15);
+                          const s1e = institution.semester1EndDate || buildDate(parseInt(s1.split('-')[0]), 12, 26);
+                          setInstitution({ semester2StartDate: newDate, academicWeeks: calculateAcademicWeeks(s1, s1e, newDate, s2e) });
+                        }}
+                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] text-center"
+                      />
+                    </div>
+                  </div>
+                  {/* Sem2 End */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {t('setup.semester2EndNote')} <span className="text-gray-400">(ֆիքսված Հուն. 15)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={parseMonthDay(institution.semester2EndDate || '').month || 6}
+                        onChange={(e) => {
+                          const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                          const s2 = institution.semester2StartDate || buildDate(parseInt(s1.split('-')[0]) + 1, 1, 26);
+                          const y = parseInt(s2.split('-')[0]);
+                          const m = parseInt(e.target.value);
+                          const d = parseMonthDay(institution.semester2EndDate || '').day || 15;
+                          const newDate = buildDate(y, m, d);
+                          const s1e = institution.semester1EndDate || buildDate(parseInt(s1.split('-')[0]), 12, 26);
+                          setInstitution({ semester2EndDate: newDate, academicWeeks: calculateAcademicWeeks(s1, s1e, s2, newDate) });
+                        }}
+                        className="flex-1 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                      >
+                        {MONTHS_AM.map((m, i) => (
+                          <option key={i + 1} value={i + 1}>{m}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={parseMonthDay(institution.semester2EndDate || buildDate(new Date().getFullYear() + 1, 6, 15)).day}
+                        onChange={(e) => {
+                          const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                          const s2 = institution.semester2StartDate || buildDate(parseInt(s1.split('-')[0]) + 1, 1, 26);
+                          const y = parseInt(s2.split('-')[0]);
+                          const m = parseMonthDay(institution.semester2EndDate || '').month || 6;
+                          const newDate = buildDate(y, m, parseInt(e.target.value) || 1);
+                          const s1e = institution.semester1EndDate || buildDate(parseInt(s1.split('-')[0]), 12, 26);
+                          setInstitution({ semester2EndDate: newDate, academicWeeks: calculateAcademicWeeks(s1, s1e, s2, newDate) });
+                        }}
+                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Weeks summary */}
+              <div className="bg-[#03524f] bg-opacity-5 border border-[#03524f] border-opacity-15 rounded-md p-3 flex items-center justify-between">
                 <div className="text-xs text-gray-600">
                   <span className="font-medium text-[#03524f]">{t('setup.calculatedWeeks')}: </span>
-                  <span className="font-bold text-[#03524f]">{institution.academicWeeks} {t('common.week')}</span>
-                  {institution.semester1EndDate && (
-                    <span className="ml-2 text-gray-500">
-                      ({t('setup.autoCalculated')})
-                    </span>
-                  )}
+                  <span className="font-bold text-[#03524f] text-sm">{institution.academicWeeks} {t('common.week')}</span>
+                  {(() => {
+                    const s1 = institution.semester1StartDate || buildDate(new Date().getFullYear(), 9, 1);
+                    const s1e = institution.semester1EndDate || buildDate(new Date().getFullYear(), 12, 26);
+                    const s2 = institution.semester2StartDate || buildDate(new Date().getFullYear() + 1, 1, 26);
+                    const s2e = institution.semester2EndDate || buildDate(new Date().getFullYear() + 1, 6, 15);
+                    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+                    const sem1w = Math.max(0, Math.round((new Date(s1e).getTime() - new Date(s1).getTime()) / msPerWeek));
+                    const sem2w = Math.max(0, Math.round((new Date(s2e).getTime() - new Date(s2).getTime()) / msPerWeek));
+                    return (
+                      <span className="ml-3 text-gray-500">
+                        (1-ին՝ {sem1w} շ. + 2-րդ՝ {sem2w} շ.)
+                      </span>
+                    );
+                  })()}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Ձեռքով՝</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={institution.academicWeeks}
+                    onChange={(e) => setInstitution({ academicWeeks: parseInt(e.target.value) || 1 })}
+                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                  />
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Academic Weeks */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('setup.academicWeeks')}
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="52"
-              value={institution.academicWeeks}
-              onChange={(e) => setInstitution({ academicWeeks: parseInt(e.target.value) })}
-              className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
-              placeholder="40"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              {t('setup.academicWeeksNote')}
-            </p>
           </div>
         </div>
 

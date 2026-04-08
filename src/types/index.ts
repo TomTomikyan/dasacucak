@@ -12,8 +12,10 @@ export interface Institution {
   academicWeeks: number; // Ուսումնական շաբաթների քանակ տարեկան
   specializations: string[]; // Մասնագիտությունների ցանկ քոլեջում
   // Semester date settings
-  semester1EndDate?: string; // Semester 1 end date (YYYY-MM-DD), semester 2 always starts Jan 26
+  semester1StartDate?: string; // Semester 1 start date (YYYY-MM-DD), default Sep 1
+  semester1EndDate?: string; // Semester 1 end date (YYYY-MM-DD), default Dec 26
   semester2StartDate?: string; // Semester 2 start date (YYYY-MM-DD), default Jan 26
+  semester2EndDate?: string; // Semester 2 end date (YYYY-MM-DD), default Jun 15
 }
 
 // Ուսումնական խումբ - Ուսանողների խումբ որոշակի մասնագիտությամբ և դասընթացով
