@@ -16,6 +16,8 @@ export interface Institution {
   semester1EndDate?: string; // Semester 1 end date (YYYY-MM-DD), default Dec 26
   semester2StartDate?: string; // Semester 2 start date (YYYY-MM-DD), default Jan 26
   semester2EndDate?: string; // Semester 2 end date (YYYY-MM-DD), default Jun 15
+  semester1Weeks?: number; // Manual override for semester 1 weeks
+  semester2Weeks?: number; // Manual override for semester 2 weeks
 }
 
 // Ուսումնական խումբ - Ուսանողների խումբ որոշակի մասնագիտությամբ և դասընթացով
