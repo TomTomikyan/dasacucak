@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, BookOpen, X, GraduationCap, Clock, CreditCard as Edit, Save } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Trash2, BookOpen, X, GraduationCap, Clock, CreditCard as Edit, Save, Search } from 'lucide-react';
 import { Specialization, Subject, Institution } from '../types';
 
 interface SpecializationsProps {
@@ -37,9 +37,33 @@ const Specializations: React.FC<SpecializationsProps> = ({
 
   const [formData, setFormData] = useState(emptyForm());
 
-  const availableSubjects = subjects.filter(
-    (s) => s.course === formData.course || !s.course
+  const [subjectSearch, setSubjectSearch] = useState('');
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSubjectDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const addedSubjectIds = Object.keys(formData.subjectHours).concat(
+    subjects
+      .filter((s) => formData.subjectHours[s.id] !== undefined)
+      .map((s) => s.id)
   );
+
+  const searchableSubjects = subjects.filter((s) => {
+    const alreadyAdded = formData.subjectHours[s.id] !== undefined || s.id in formData.subjectHours;
+    const matchesSearch = s.name.toLowerCase().includes(subjectSearch.toLowerCase());
+    return !alreadyAdded && matchesSearch;
+  });
+
+  const addedSubjects = subjects.filter((s) => s.id in formData.subjectHours);
 
   const isDuplicateCode = (c: string, excludeId?: string) =>
     specializations.some(
@@ -55,10 +79,10 @@ const Specializations: React.FC<SpecializationsProps> = ({
     formData.code.trim().length > 0 &&
     formData.name.trim().length > 0 &&
     !isDuplicateCode(formData.code, editingSpec?.id || undefined) &&
-    Object.keys(formData.subjectHours).length > 0;
+    Object.values(formData.subjectHours).some((h) => h > 0);
 
   const setSubjectHour = (subjectId: string, val: number) => {
-    if (val <= 0) {
+    if (val < 0) {
       const copy = { ...formData.subjectHours };
       delete copy[subjectId];
       setFormData({ ...formData, subjectHours: copy });
@@ -70,6 +94,8 @@ const Specializations: React.FC<SpecializationsProps> = ({
   const openAdd = () => {
     setEditingSpec(null);
     setFormData(emptyForm());
+    setSubjectSearch('');
+    setShowSubjectDropdown(false);
     setShowForm(true);
   };
 
@@ -82,6 +108,8 @@ const Specializations: React.FC<SpecializationsProps> = ({
       academicWeeks: spec.academicWeeks,
       subjectHours: { ...spec.subjectHours },
     });
+    setSubjectSearch('');
+    setShowSubjectDropdown(false);
     setShowForm(true);
   };
 
@@ -89,6 +117,8 @@ const Specializations: React.FC<SpecializationsProps> = ({
     setShowForm(false);
     setEditingSpec(null);
     setFormData(emptyForm());
+    setSubjectSearch('');
+    setShowSubjectDropdown(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -256,46 +286,96 @@ const Specializations: React.FC<SpecializationsProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                     <BookOpen className="h-4 w-4" />
                     Առարկաների ժամաքանակ <span className="text-red-400">*</span>
-                    <span className="text-gray-400 font-normal text-xs ml-1">({formData.course}-ին կուրս)</span>
                   </label>
+
                   {subjects.length === 0 ? (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
                       Նախ ավելացրեք առարկաներ «Առարկաներ» բաժնում
                     </div>
-                  ) : availableSubjects.length === 0 ? (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
-                      {formData.course}-ին կուրսի առարկաներ չկան
-                    </div>
                   ) : (
-                    <div className="border border-gray-300 rounded-md p-3 max-h-52 overflow-y-auto space-y-2">
-                      {availableSubjects.map((subj) => (
-                        <div key={subj.id} className="flex items-center gap-3">
-                          <span className="flex-1 text-sm text-gray-700 truncate">{subj.name}</span>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                              subj.type === 'lab'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-green-100 text-green-700'
-                            }`}
-                          >
-                            {subj.type === 'lab' ? 'Լաբ.' : 'Տես.'}
-                          </span>
+                    <>
+                      {/* Search & Add */}
+                      <div ref={searchRef} className="relative mb-3">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                           <input
-                            type="number"
-                            min="0"
-                            max="500"
-                            placeholder="0"
-                            value={formData.subjectHours[subj.id] || ''}
-                            onChange={(e) => setSubjectHour(subj.id, parseInt(e.target.value) || 0)}
-                            className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                            type="text"
+                            value={subjectSearch}
+                            onChange={(e) => { setSubjectSearch(e.target.value); setShowSubjectDropdown(true); }}
+                            onFocus={() => setShowSubjectDropdown(true)}
+                            placeholder="Փնտրել և ավելացնել առարկա..."
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                           />
-                          <span className="text-xs text-gray-400 w-5">ժ.</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  {Object.keys(formData.subjectHours).length === 0 && subjects.length > 0 && (
-                    <p className="text-xs text-red-500 mt-1">Ավելացրեք առնվազն մեկ առարկայի ժամ</p>
+                        {showSubjectDropdown && (
+                          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {searchableSubjects.length === 0 ? (
+                              <div className="px-3 py-2 text-sm text-gray-400">
+                                {subjectSearch ? 'Ոչինչ չգտնվեց' : 'Բոլոր առարկաները ավելացված են'}
+                              </div>
+                            ) : (
+                              searchableSubjects.map((subj) => (
+                                <button
+                                  key={subj.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSubjectHour(subj.id, 0);
+                                    setSubjectSearch('');
+                                    setShowSubjectDropdown(false);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+                                >
+                                  <span className="flex-1 text-sm text-gray-700 truncate">{subj.name}</span>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                    subj.type === 'lab' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {subj.type === 'lab' ? 'Լաբ.' : 'Տես.'}
+                                  </span>
+                                  <Plus className="h-3.5 w-3.5 text-[#03524f] flex-shrink-0" />
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Added subjects with hours */}
+                      {addedSubjects.length > 0 && (
+                        <div className="border border-gray-300 rounded-md p-3 max-h-52 overflow-y-auto space-y-2">
+                          {addedSubjects.map((subj) => (
+                            <div key={subj.id} className="flex items-center gap-3">
+                              <span className="flex-1 text-sm text-gray-700 truncate">{subj.name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                subj.type === 'lab' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {subj.type === 'lab' ? 'Լաբ.' : 'Տես.'}
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="500"
+                                placeholder="0"
+                                value={formData.subjectHours[subj.id] || ''}
+                                onChange={(e) => setSubjectHour(subj.id, parseInt(e.target.value) || 0)}
+                                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                              />
+                              <span className="text-xs text-gray-400 w-5">ժ.</span>
+                              <button
+                                type="button"
+                                onClick={() => setSubjectHour(subj.id, -1)}
+                                className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {addedSubjects.length === 0 && (
+                        <p className="text-xs text-red-500 mt-1">Ավելացրեք առնվազն մեկ առարկա</p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
