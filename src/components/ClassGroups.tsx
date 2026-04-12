@@ -126,7 +126,7 @@ const SpecializationPicker: React.FC<SpecPickerProps> = ({ specializations, valu
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-gray-800 truncate">{spec.name}</div>
                     <div className="text-xs text-gray-400">
-                      {getCourseText(spec.course)} · {Object.keys(spec.subjectHours || {}).length} {t('subjects.title').toLowerCase()}
+                      {t(`courses.${spec.course}`)} · {Object.keys(spec.subjectHours || {}).length} {t('subjects.title').toLowerCase()}
                     </div>
                   </div>
                 </button>
@@ -490,7 +490,6 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('common.name')}</label>
                   <input
                     type="text"
-                    required
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f] text-sm"
