@@ -124,7 +124,18 @@ const Specializations: React.FC<SpecializationsProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      if (!formData.code.trim() && !formData.name.trim()) {
+        showToast.showWarning('Լրացրեք դաշտերը', 'Մուտքագրեք մասնագիտության կոդը և անվանումը');
+      } else if (!formData.code.trim()) {
+        showToast.showWarning('Կոդը բացակայում է', 'Մուտքագրեք մասնագիտության կոդը');
+      } else if (!formData.name.trim()) {
+        showToast.showWarning('Անվանումը բացակայում է', 'Մուտքագրեք մասնագիտության անվանումը');
+      } else if (!Object.values(formData.subjectHours).some((h) => h > 0)) {
+        showToast.showWarning('Առարկաներ չկան', 'Ավելացրեք առնվազն մեկ առարկա ժամաքանակով');
+      }
+      return;
+    }
 
     if (editingSpec) {
       setSpecializations(
@@ -391,8 +402,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={!canSubmit}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] transition-colors"
                 >
                   {editingSpec ? (
                     <>
