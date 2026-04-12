@@ -29,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <GraduationCap className="h-8 w-8 text-[#03524f]" />
+              <img src="/image.png" alt="College logo" className="h-10 w-10 object-contain" />
               <h1 className="text-xl font-bold text-gray-900">Քոլեջի Ժամանակացույցի Ստեղծիչ</h1>
             </div>
           </div>
