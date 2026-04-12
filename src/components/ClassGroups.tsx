@@ -146,7 +146,16 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!formData.name.trim()) {
+      showToast.showWarning(t('validation.required'), t('groups.nameRequired'));
+      return;
+    }
+    if (!formData.specialization) {
+      showToast.showWarning(t('validation.required'), t('groups.specializationRequired'));
+      return;
+    }
+
     if (editingGroup) {
       // Update existing group
       const updatedGroups = classGroups.map(group =>
@@ -202,7 +211,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
   const handleBulkGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (bulkData.years.length === 0 || bulkData.specializations.length === 0) {
-      showToast.showError(t('validation.selectAtLeastOne'), t('groups.selectYears'));
+      showToast.showWarning(t('validation.selectAtLeastOne'), t('groups.selectYearsRequired'));
       return;
     }
     
@@ -465,8 +474,7 @@ const ClassGroups: React.FC<ClassGroupsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={bulkData.years.length === 0 || bulkData.specializations.length === 0}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {t('common.generate')}
                 </button>

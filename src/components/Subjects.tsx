@@ -85,6 +85,10 @@ const Subjects: React.FC<SubjectsProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      showToast.showWarning(t('validation.required'), t('subjects.nameRequired'));
+      return;
+    }
     if (editingSubject) {
       // Update existing subject
       const updatedSubjects = subjects.map(subject =>
@@ -266,7 +270,6 @@ const Subjects: React.FC<SubjectsProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('subjects.subjectName')}</label>
                   <input
                     type="text"
-                    required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f]"

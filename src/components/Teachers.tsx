@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, GraduationCap, Trash2, Clock, BookOpen, MapPin, Edit, Save, X, Users } from 'lucide-react';
+import { Plus, GraduationCap, Trash2, Clock, BookOpen, MapPin, CreditCard as Edit, Save, X, Users } from 'lucide-react';
 import { Teacher, Subject, Classroom, ClassGroup, Institution } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -175,11 +175,22 @@ const Teachers: React.FC<TeachersProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
+
+    if (!formData.firstName.trim() && !formData.lastName.trim()) {
+      showToast.showWarning(t('validation.required'), t('teachers.nameRequired'));
+      return;
+    }
+    if (!formData.firstName.trim()) {
+      showToast.showWarning(t('validation.required'), t('teachers.firstNameRequired'));
+      return;
+    }
+    if (!formData.lastName.trim()) {
+      showToast.showWarning(t('validation.required'), t('teachers.lastNameRequired'));
+      return;
+    }
     if (formData.assignedClassGroups.length === 0) {
       setShowValidationError(true);
-      showToast.showError(t('validation.required'), t('teachers.selectGroupsRequired'));
+      showToast.showWarning(t('validation.required'), t('teachers.selectGroupsRequired'));
       return;
     }
     
@@ -587,8 +598,7 @@ const Teachers: React.FC<TeachersProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={classGroups.length === 0}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {editingTeacher ? (
                     <>

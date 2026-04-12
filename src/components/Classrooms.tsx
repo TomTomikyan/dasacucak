@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, MapPin, Monitor, Trash2, BookOpen, Edit, Save, X } from 'lucide-react';
+import { Plus, MapPin, Monitor, Trash2, BookOpen, CreditCard as Edit, Save, X } from 'lucide-react';
 import { Classroom, Subject } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -122,10 +122,13 @@ const Classrooms: React.FC<ClassroomsProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate room number uniqueness
+
+    if (!formData.number.trim()) {
+      showToast.showWarning(t('validation.required'), t('classrooms.numberRequired'));
+      return;
+    }
     if (isRoomNumberTaken(formData.number, editingClassroom?.id)) {
-      showToast.showError(t('validation.duplicateName'), t('validation.roomNumberExists'));
+      showToast.showWarning(t('validation.duplicateName'), t('validation.roomNumberExists'));
       return;
     }
     
@@ -401,7 +404,6 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('classrooms.roomNumber')}</label>
                     <input
                       type="text"
-                      required
                       value={formData.number}
                       onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
@@ -550,8 +552,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={formData.number && isRoomNumberTaken(formData.number, editingClassroom?.id)}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239]"
                 >
                   {editingClassroom ? (
                     <>
