@@ -11,6 +11,7 @@ import {
   Trash2,
   Clock,
   Building2,
+  LayoutDashboard,
 } from 'lucide-react';
 import {
   Institution,
@@ -72,49 +73,49 @@ const Overview: React.FC<OverviewProps> = ({
 
   const checklist = [
     {
-      label: 'Հաստատության անվանումը լրացված է',
+      label: t('setup.collegeName'),
       done: !!institution.name,
-      hint: 'Լրացրեք «Կարգավորումներ» բաժնում',
+      hint: t('overview.issues.noInstitution'),
     },
     {
-      label: 'Առаркаներ ավелацвел են',
+      label: t('subjects.title'),
       done: subjects.length > 0,
-      hint: `Ավелацрек «${t('subjects.title')}» բаżnum`,
+      hint: t('overview.issues.noSubjects'),
     },
     {
-      label: `${t('classrooms.title')} avelacrvel en`,
+      label: t('classrooms.title'),
       done: classrooms.length > 0,
-      hint: `Ավелацрек «${t('classrooms.title')}» բаżnum`,
+      hint: t('overview.issues.noClassrooms'),
     },
     {
-      label: `${t('groups.title')} steghcvats en`,
+      label: t('groups.title'),
       done: classGroups.length > 0,
-      hint: `Steghcek «${t('groups.title')}» baznum`,
+      hint: t('overview.issues.noGroups'),
     },
     {
-      label: 'Khmberин nshanakvats en arakanerr',
+      label: t('overview.issues.noGroupSubjects'),
       done: groupsWithoutSubjects.length === 0 && classGroups.length > 0,
       hint: groupsWithoutSubjects.length > 0
-        ? `${groupsWithoutSubjects.length} khmb aranc arakanerr`
+        ? `${groupsWithoutSubjects.map(g => g.name).join(', ')}`
         : '',
     },
     {
-      label: `${t('teachers.title')} avelacrvel en`,
+      label: t('teachers.title'),
       done: teachers.length > 0,
-      hint: `Avelacrеk «${t('teachers.title')}» baznum`,
+      hint: t('overview.issues.noTeachers'),
     },
     {
-      label: 'Bolor аrаканерин usicich ka',
+      label: t('overview.issues.noSubjectTeachers'),
       done: subjectsWithoutTeachers.length === 0 && subjects.length > 0,
       hint: subjectsWithoutTeachers.length > 0
-        ? `${subjectsWithoutTeachers.length} аrаkа aranc usicich`
+        ? subjectsWithoutTeachers.map(s => s.name).join(', ')
         : '',
     },
   ];
 
   const specMap: Record<string, ClassGroup[]> = {};
   classGroups.forEach(g => {
-    const key = g.specialization || '—';
+    const key = g.specialization || t('common.notSet');
     if (!specMap[key]) specMap[key] = [];
     specMap[key].push(g);
   });
@@ -146,54 +147,61 @@ const Overview: React.FC<OverviewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {institution.name || 'Հаstаtutуун'}
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {institution.workingDays.length} {t('overview.days')}
-            {' · '}
-            {institution.lessonsPerDay} {t('common.lesson')}/{t('common.day')}
-            {' · '}
-            {institution.lessonDuration} {t('overview.minutes')}
-            {' · '}
-            {institution.academicWeeks} {t('common.weeks')}
-          </p>
+      {/* Header — matches other sections exactly */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <LayoutDashboard className="h-6 w-6 text-[#03524f]" />
+          <h2 className="text-2xl font-bold text-gray-900">{t('navigation.overview')}</h2>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <input ref={importRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
           <button
             onClick={() => importRef.current?.click()}
-            className="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
           >
-            <Upload className="h-4 w-4 mr-1.5" />
+            <Upload className="h-4 w-4 mr-2" />
             {t('overview.import')}
           </button>
           <button
             onClick={exportConfiguration}
-            className="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
           >
-            <Download className="h-4 w-4 mr-1.5" />
+            <Download className="h-4 w-4 mr-2" />
             {t('overview.export')}
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="inline-flex items-center px-3 py-2 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
           >
-            <Trash2 className="h-4 w-4 mr-1.5" />
+            <Trash2 className="h-4 w-4 mr-2" />
             {t('overview.clearAll')}
           </button>
         </div>
       </div>
 
+      {/* Institution info bar */}
+      {institution.name && (
+        <div className="bg-white rounded-lg border border-gray-200 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+          <span className="font-semibold text-gray-800">{institution.name}</span>
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            <span>{institution.workingDays.length} {t('overview.days')}</span>
+            <span>·</span>
+            <span>{institution.lessonsPerDay} {t('common.lesson')}/{t('common.day').toLowerCase()}</span>
+            <span>·</span>
+            <span>{institution.lessonDuration} {t('overview.minutes')}</span>
+            <span>·</span>
+            <span>{institution.academicWeeks} {t('common.weeks')}</span>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT — Checklist + Problems */}
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Checklist</h3>
+          {/* Checklist */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Checklist</h3>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${allDone ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                 {doneCount}/{checklist.length}
               </span>
@@ -210,7 +218,7 @@ const Overview: React.FC<OverviewProps> = ({
                       {item.label}
                     </div>
                     {!item.done && item.hint && (
-                      <div className="text-xs text-amber-600 mt-0.5">{item.hint}</div>
+                      <div className="text-xs text-amber-600 mt-0.5 truncate">{item.hint}</div>
                     )}
                   </div>
                 </div>
@@ -218,11 +226,12 @@ const Overview: React.FC<OverviewProps> = ({
             </div>
           </div>
 
+          {/* Problems */}
           {(subjectsWithoutTeachers.length > 0 || groupsWithoutSubjects.length > 0 || teachersWithNoHours.length > 0) && (
-            <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-amber-100 flex items-center gap-2">
+            <div className="bg-white rounded-lg border border-amber-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-amber-100 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                <h3 className="text-sm font-semibold text-gray-900">Խndirner</h3>
+                <h3 className="text-base font-semibold text-gray-900">{t('overview.keyIssues')}</h3>
               </div>
               <div className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
                 {subjectsWithoutTeachers.map(s => (
@@ -279,8 +288,8 @@ const Overview: React.FC<OverviewProps> = ({
                 label: t('teachers.title'),
                 value: teachers.length,
                 sub: subjectsWithoutTeachers.length > 0
-                  ? `${subjectsWithoutTeachers.length} ${t('common.subject')} aranc`
-                  : t('subjects.autoAssigned'),
+                  ? `${subjectsWithoutTeachers.length} ${t('subjects.title').toLowerCase()} ${t('common.notSet').toLowerCase()}`
+                  : `${t('overview.scheduledLessons')} —`,
               },
               {
                 icon: Building2,
@@ -289,7 +298,7 @@ const Overview: React.FC<OverviewProps> = ({
                 sub: `${unassignedClassrooms.length} ${t('common.free')}`,
               },
             ].map(({ icon: Icon, label, value, sub }) => (
-              <div key={label} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <div key={label} className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
                 <Icon className="h-5 w-5 text-[#03524f] mb-2" />
                 <div className="text-2xl font-bold text-gray-900">{value}</div>
                 <div className="text-xs font-medium text-gray-600 mt-0.5">{label}</div>
@@ -300,11 +309,11 @@ const Overview: React.FC<OverviewProps> = ({
 
           {/* Groups by specialization */}
           {classGroups.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
                 <Users className="h-4 w-4 text-[#03524f]" />
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {t('groups.title')} — {t('common.specialization').toLowerCase()}ների կtrtum
+                <h3 className="text-base font-semibold text-gray-900">
+                  {t('groups.title')} — {t('common.specialization').toLowerCase()}ների բաշխում
                 </h3>
               </div>
               <div className="overflow-x-auto">
@@ -318,7 +327,7 @@ const Overview: React.FC<OverviewProps> = ({
                       <th className="px-5 py-2.5 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">{t('common.hours')}/{t('common.year')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-100">
                     {Object.entries(specMap).map(([spec, groups]) => {
                       const totalSt = groups.reduce((s, g) => s + g.studentsCount, 0);
                       const allSubjectIds = new Set(groups.flatMap(g => Object.keys(g.subjectHours || {})));
@@ -326,14 +335,14 @@ const Overview: React.FC<OverviewProps> = ({
                         ? Math.round(groups.reduce((s, g) => s + getTotalHours(g.subjectHours || {}), 0) / groups.length)
                         : 0;
                       return (
-                        <tr key={spec} className="hover:bg-gray-50">
-                          <td className="px-5 py-3 text-sm font-medium text-gray-800 max-w-[180px]">
-                            <span className="truncate block">{spec}</span>
+                        <tr key={spec} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-5 py-3 text-sm font-medium text-gray-800">
+                            <span className="block max-w-[160px] truncate">{spec}</span>
                           </td>
                           <td className="px-5 py-3">
                             <div className="flex flex-wrap gap-1">
                               {groups.map(g => (
-                                <span key={g.id} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[#03524f] bg-opacity-10 text-[#03524f]">
+                                <span key={g.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#03524f] bg-opacity-10 text-[#03524f]">
                                   {g.name}
                                 </span>
                               ))}
@@ -353,14 +362,14 @@ const Overview: React.FC<OverviewProps> = ({
 
           {/* Teacher workload */}
           {teachers.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-[#03524f]" />
-                <h3 className="text-sm font-semibold text-gray-900">
+                <h3 className="text-base font-semibold text-gray-900">
                   {t('teachers.title')} — {t('common.hoursPerYear')}
                 </h3>
               </div>
-              <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+              <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
                 {teacherLoad.map(({ teacher: tc, totalHours, weeklyLessons, weeklyAvailable }) => {
                   const overloaded = weeklyLessons > weeklyAvailable && weeklyAvailable > 0;
                   return (
@@ -398,10 +407,10 @@ const Overview: React.FC<OverviewProps> = ({
 
           {/* Schedule summary */}
           {schedule.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-4 w-4 text-[#03524f]" />
-                <h3 className="text-sm font-semibold text-gray-900">{t('navigation.schedule')}</h3>
+                <h3 className="text-base font-semibold text-gray-900">{t('navigation.schedule')}</h3>
               </div>
               <div className="flex items-center gap-6">
                 <div>
