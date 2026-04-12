@@ -229,9 +229,9 @@ const Classrooms: React.FC<ClassroomsProps> = ({
       case 'lab':
         return <Monitor className="h-4 w-4" />;
       case 'teacher_lab':
-        return <MapPin className="h-4 w-4" />;
+        return <Monitor className="h-4 w-4" />;
       default:
-        return <MapPin className="h-4 w-4" />;
+        return <BookOpen className="h-4 w-4" />;
     }
   };
 
@@ -628,7 +628,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     {t('common.capacity')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('common.specialization')}
+                    {t('common.subject')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('common.actions')}
@@ -667,18 +667,6 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div className="flex flex-col space-y-1">
-                        {(classroom.type === 'lab' || classroom.type === 'teacher_lab') && (
-                          <Tooltip content={classroom.hasComputers ? 'Դասարանում կան համակարգիչներ' : 'Դասարանում համակարգիչներ չկան'}>
-                            <span className={`inline-flex px-2 py-1 text-xs rounded w-fit cursor-help ${
-                              classroom.hasComputers 
-                                ? 'bg-[#03524f] bg-opacity-10 text-[#03524f]' 
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              <Monitor className="h-3 w-3 mr-1" />
-                              {classroom.hasComputers ? t('classrooms.computers') : t('classrooms.noComputers')}
-                            </span>
-                          </Tooltip>
-                        )}
                         {classroom.specialization && classroom.type === 'lab' && (
                           <Tooltip content={getSpecializationTooltip(classroom)}>
                             <div className="flex flex-wrap gap-1 cursor-help">
