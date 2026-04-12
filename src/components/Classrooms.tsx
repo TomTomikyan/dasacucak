@@ -649,7 +649,7 @@ const Classrooms: React.FC<ClassroomsProps> = ({
                       </Tooltip>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <Tooltip content={`${t('common.floor')} ${classroom.floor}\nДасарանը գտնվում է ${classroom.floor}-րդ հարկում`}>
+                      <Tooltip content={`${t('common.floor')} ${classroom.floor}`}>
                         <span className="cursor-help">{t('common.floor')} {classroom.floor}</span>
                       </Tooltip>
                     </td>

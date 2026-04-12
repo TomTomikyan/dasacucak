@@ -889,7 +889,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                                           <span className="truncate">{getTeacherName(slot.teacherId)}</span>
                                         </div>
                                         {slot.weekSwitch && (
-                                          <div className="text-xs text-gray-400">до нед. {slot.weekSwitch}</div>
+                                          <div className="text-xs text-gray-400">{t("common.untilWeek")} {slot.weekSwitch}</div>
                                         )}
                                       </div>
                                       {/* Divider slash */}

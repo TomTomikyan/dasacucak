@@ -721,7 +721,7 @@ const Teachers: React.FC<TeachersProps> = ({
                               </span>
                             )}
                             {currentSubjectNames.length === 0 && (
-                              <span className="text-xs text-gray-400 italic">Предметы не назначены</span>
+                              <span className="text-xs text-gray-400 italic">{t("teachers.noSubjectsAssigned")}</span>
                             )}
                           </div>
                         </Tooltip>

@@ -49,6 +49,7 @@ export const armenianTranslations = {
     notSet: 'Չի սահմանված',
     filters: 'Ֆիլտրեր',
     minutes: 'րոպե',
+    untilWeek: 'մինչև շաբ.',
     splitCell: 'Բաժանված բջիջ (կիսամյակի կեսից փոխվում է)',
     parityCombined: 'Հարակցված (35+35 րոպե)',
   },
@@ -255,6 +256,7 @@ export const armenianTranslations = {
     availableDays: 'Հասանելի օրեր',
     weeklyHours: 'Շաբաթական ժամեր',
     days: 'օր',
+    noSubjectsAssigned: 'Առարկաներ չեն նշանակված',
     noTeachers: 'Ուսուցիչներ չկան',
     noTeachersDesc: 'Ավելացրեք ձեր առաջին ուսուցիչին՝ ժամանակացույց ստեղծելու համար:',
   },
@@ -280,7 +282,7 @@ export const armenianTranslations = {
       noInstitution: 'Հաստատության տվյալները չեն լրացված',
       noGroups: 'Խմբեր չեն ստեղծված',
       noSubjects: 'Առարկաներ չեն ավելացված',
-      noTeachers: 'Ուսուցիչներ չեն ավելացված',
+    noTeachers: 'Ուսուցիչներ չկան',
       noClassrooms: 'Լսարաններ չեն ստեղծված',
       noGroupSubjects: 'Խմբերին առարկաներ չեն նշանակված',
       noSubjectTeachers: 'Առարկաներին ուսուցիչներ չեն նշանակված',
@@ -462,7 +464,7 @@ export const armenianTranslations = {
     // Assignments
     subjectsAssigned: 'Առարկաները նշանակվեցին',
     subjectsAssignedDesc: 'Խմբերի առարկաները հաջողությամբ նշանակվեցին',
-    noSubjectsAssignedDesc: 'Խմբերին առարկաներ չեն նշանակված',
+    noSubjectsAssigned: 'Առարկաներ չեն նշանակված',
     noTeachersAssignedDesc: 'Առարկաներին ուսուցիչներ չեն նշանակված',
   },
 
