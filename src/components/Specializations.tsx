@@ -58,9 +58,10 @@ const Specializations: React.FC<SpecializationsProps> = ({
   );
 
   const searchableSubjects = subjects.filter((s) => {
-    const alreadyAdded = formData.subjectHours[s.id] !== undefined || s.id in formData.subjectHours;
+    const alreadyAdded = s.id in formData.subjectHours;
     const matchesSearch = s.name.toLowerCase().includes(subjectSearch.toLowerCase());
-    return !alreadyAdded && matchesSearch;
+    const matchesCourse = s.course === formData.course;
+    return !alreadyAdded && matchesSearch && matchesCourse;
   });
 
   const addedSubjects = subjects.filter((s) => s.id in formData.subjectHours);
