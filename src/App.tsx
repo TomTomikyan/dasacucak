@@ -166,6 +166,7 @@ function App() {
             generateCollegeGroups={generateCollegeGroups}
             subjects={subjects}
             classrooms={classrooms}
+            specializations={specializations}
             showToast={{ showSuccess, showError, showWarning, showInfo }}
           />
         );

@@ -157,6 +157,13 @@ export const armenianTranslations = {
     streamsDetected: 'Հոսքեր հայտնաբերված',
     streamsNote: 'Ամեն հոսք կարող է ունենալ տարբեր ժամաքանակ նույն առարկայի համար',
     selectYears: 'Ընտրեք ուսման տարիներ',
+    selectByCode: 'Ընտրել կոդով',
+    specializationCode: 'Մասնագիտության կոդ',
+    searchByCode: 'Փնտրել կոդով...',
+    autoFilledFromSpec: 'Տվյալները լրացվել են մասնագիտությունից',
+    noSpecializationsAdded: 'Մասնագիտություններ չեն ավելացված',
+    addSpecializationsFirst: 'Նախ ավելացրեք մասնագիտություններ Ակադելագլության բաժնում',
+    specSubjectsWillLoad: 'Առարկաները և ժամերը կբլի լրացվի մասնագիտութից',
   },
 
   // Subjects page
