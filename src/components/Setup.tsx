@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Save, Building2, Clock, Calendar, Plus, Minus, X, BookOpen, Upload, Trash2, CheckCircle, FileText } from 'lucide-react';
+import { Save, Building2, Clock, Calendar, Plus, Minus, Upload, Trash2, CheckCircle, FileText } from 'lucide-react';
 import { Institution } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -58,7 +58,6 @@ const Setup: React.FC<SetupProps> = ({
   showToast
 }) => {
   const { t } = useLocalization();
-  const [newSpecialization, setNewSpecialization] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -107,36 +106,6 @@ const Setup: React.FC<SetupProps> = ({
     const newBreakDurations = [...institution.breakDurations];
     newBreakDurations[index] = duration;
     setInstitution({ breakDurations: newBreakDurations });
-  };
-
-  const handleAddSpecialization = () => {
-    if (newSpecialization.trim() && !institution.specializations.includes(newSpecialization.trim())) {
-      setInstitution({
-        specializations: [...institution.specializations, newSpecialization.trim()]
-      });
-      setNewSpecialization('');
-      showToast.showSuccess(
-        t('toast.specializationAdded'), 
-        t('toast.specializationAddedDesc', { name: newSpecialization.trim() })
-      );
-    }
-  };
-
-  const handleRemoveSpecialization = (specializationToRemove: string) => {
-    setInstitution({
-      specializations: institution.specializations.filter(spec => spec !== specializationToRemove)
-    });
-    showToast.showInfo(
-      t('toast.specializationRemoved'), 
-      t('toast.specializationRemovedDesc', { name: specializationToRemove })
-    );
-  };
-
-  const handleSpecializationKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddSpecialization();
-    }
   };
 
   const handleSaveConfiguration = () => {
@@ -305,66 +274,6 @@ const Setup: React.FC<SetupProps> = ({
         </div>
 
         <div className="px-6 py-6 space-y-6">
-
-          {/* Specializations Management */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              <BookOpen className="inline h-4 w-4 mr-1" />
-              {t('setup.specializations')}
-            </label>
-            
-            <div className="flex space-x-2 mb-3">
-              <input
-                type="text"
-                value={newSpecialization}
-                onChange={(e) => setNewSpecialization(e.target.value)}
-                onKeyPress={handleSpecializationKeyPress}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
-                placeholder={t('setup.specializationsPlaceholder')}
-              />
-              <button
-                type="button"
-                onClick={handleAddSpecialization}
-                disabled={!newSpecialization.trim() || institution.specializations.includes(newSpecialization.trim())}
-                className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                {t('setup.addSpecialization')}
-              </button>
-            </div>
-
-            {institution.specializations.length > 0 ? (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex flex-wrap gap-2">
-                  {institution.specializations.map((specialization, index) => (
-                    <div
-                      key={index}
-                      className="inline-flex items-center px-3 py-2 bg-[#03524f] bg-opacity-10 text-[#03524f] text-sm font-medium rounded-full"
-                    >
-                      <span>{specialization}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSpecialization(specialization)}
-                        className="ml-2 text-[#03524f] hover:text-[#024239] transition-colors"
-                        title={t('setup.removeSpecialization')}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {institution.specializations.length} {t('setup.specializationsConfigured')}
-                </p>
-              </div>
-            ) : (
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-500">
-                  {t('setup.noSpecializations')}
-                </p>
-              </div>
-            )}
-          </div>
 
           {/* Working Days */}
           <div>

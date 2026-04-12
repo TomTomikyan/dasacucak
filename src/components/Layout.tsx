@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { GraduationCap, Calendar, Users, BookOpen, MapPin, Settings, Eye } from 'lucide-react';
+import { GraduationCap, Calendar, Users, BookOpen, MapPin, Settings, Eye, Award } from 'lucide-react';
 import { useLocalization } from '../hooks/useLocalization';
 
 interface LayoutProps {
@@ -14,6 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
   const tabs = [
     { id: 'setup', label: t('navigation.setup'), icon: Settings },
     { id: 'subjects', label: t('navigation.subjects'), icon: BookOpen },
+    { id: 'specializations', label: 'Մասնագիտություններ', icon: Award },
     { id: 'classrooms', label: t('navigation.classrooms'), icon: MapPin },
     { id: 'groups', label: t('navigation.groups'), icon: Users },
     { id: 'teachers', label: t('navigation.teachers'), icon: GraduationCap },

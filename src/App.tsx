@@ -22,6 +22,7 @@ import Layout from './components/Layout';
 import Setup from './components/Setup';
 import ClassGroups from './components/ClassGroups';
 import Subjects from './components/Subjects';
+import Specializations from './components/Specializations';
 import Classrooms from './components/Classrooms';
 import Teachers from './components/Teachers';
 import Overview from './components/Overview';
@@ -62,6 +63,9 @@ function App() {
     exportConfiguration,   // Արտահանել կոնֆիգուրացիան JSON ֆայլ
     importConfiguration,   // Ներմուծել կոնֆիգուրացիան JSON ֆայլից
     clearAllData,          // Մաքրել բոլոր տվյալները
+    specializations,
+    setSpecializations,
+    addSpecialization,
   } = useScheduleData();
 
   // Ծանուցումների հուկ - ցուցադրում է հաջողության/սխալի հաղորդագրություններ
@@ -116,6 +120,17 @@ function App() {
             importConfiguration={handleImportConfiguration}
             clearAllData={handleClearAllData}
             showToast={{ showSuccess, showError, showWarning, showInfo }}
+          />
+        );
+      case 'specializations':
+        return (
+          <Specializations
+            specializations={specializations}
+            addSpecialization={addSpecialization}
+            setSpecializations={setSpecializations}
+            subjects={subjects}
+            institution={institution}
+            showToast={{ showSuccess, showError, showWarning }}
           />
         );
       case 'classrooms':

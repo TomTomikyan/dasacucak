@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Institution, ClassGroup, Subject, Classroom, Teacher, ScheduleSlot } from '../types';
+import { Institution, ClassGroup, Subject, Classroom, Teacher, ScheduleSlot, Specialization } from '../types';
 
 // Ստանալ դասամիջոցների լռելյայն տևողությունները
 // Քոլեջի համար՝ կարճ դասամիջոցներ (10 րոպե) և երկար դասամիջոց (20 րոպե) 2-րդ դասից հետո
@@ -42,6 +42,7 @@ const STORAGE_KEYS = {
   TEACHERS: 'college_schedule_teachers',
   SCHEDULE: 'college_schedule_schedule',
   SUBJECT_NAME_MAPPING: 'college_schedule_subject_name_mapping',
+  SPECIALIZATIONS: 'college_schedule_specializations',
 };
 
 // Օգնական ֆունկցիա՝ տվյալները localStorage-ում պահպանելու համար
@@ -85,6 +86,9 @@ export const useScheduleData = () => {
   const [schedule, setSchedule] = useState<ScheduleSlot[]>(() =>
     loadFromStorage(STORAGE_KEYS.SCHEDULE, [])
   );
+  const [specializations, setSpecializations] = useState<Specialization[]>(() =>
+    loadFromStorage(STORAGE_KEYS.SPECIALIZATIONS, [])
+  );
 
   // Հետևել առարկաների անվան փոփոխություններին՝ կապերը պահպանելու համար
   const [subjectNameMapping, setSubjectNameMapping] = useState<{ [oldName: string]: string }>(() =>
@@ -120,6 +124,10 @@ export const useScheduleData = () => {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.SUBJECT_NAME_MAPPING, subjectNameMapping);
   }, [subjectNameMapping]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SPECIALIZATIONS, specializations);
+  }, [specializations]);
 
   //  ԱՎՏՈՄԱՏ ԹԱՐՄԱՑՈՒՄ - Երբ առարկաները փոխվում են, ուսուցիչների առարկաները ավտոմատ թարմացվում են
   // Սա ապահովում է, որ եթե առարկան վերանվանվի կամ ջնջվի, ուսուցիչների ցանկերը նույնպես թարմացվեն
@@ -302,6 +310,14 @@ export const useScheduleData = () => {
     setTeachers(prev => [...prev, newTeacher]);
   }, []);
 
+  const addSpecialization = useCallback((spec: Omit<Specialization, 'id'>) => {
+    const newSpec: Specialization = {
+      ...spec,
+      id: Date.now().toString(),
+    };
+    setSpecializations(prev => [...prev, newSpec]);
+  }, []);
+
   const generateClassrooms = useCallback((floors: number, roomsPerFloor: number) => {
     const newClassrooms: Classroom[] = [];
     
@@ -399,6 +415,7 @@ export const useScheduleData = () => {
           setTeachers(configData.teachers || []);
           setSchedule(configData.schedule || []);
           setSubjectNameMapping(configData.subjectNameMapping || {});
+          setSpecializations(configData.specializations || []);
           
           resolve();
         } catch (error) {
@@ -420,6 +437,7 @@ export const useScheduleData = () => {
     setTeachers([]);
     setSchedule([]);
     setSubjectNameMapping({});
+    setSpecializations([]);
     
     // Clear localStorage
     Object.values(STORAGE_KEYS).forEach(key => {
@@ -450,5 +468,8 @@ export const useScheduleData = () => {
     exportConfiguration,
     importConfiguration,
     clearAllData,
+    specializations,
+    setSpecializations,
+    addSpecialization,
   };
 }

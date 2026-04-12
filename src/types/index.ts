@@ -10,7 +10,7 @@ export interface Institution {
   breakDurations: number[]; // Դասամիջոցների տևողությունը յուրաքանչյուր դասից հետո (րոպեով)
   startTime: string; // Դասերի սկիզբի ժամը (ձևաչափ՝ "08:00")
   academicWeeks: number; // Ուսումնական շաբաթների քանակ տարեկան
-  specializations: string[]; // Մասնագիտությունների ցանկ քոլեջում
+  specializations: string[]; // Legacy - kept for backwards compat
   // Semester date settings
   semester1StartDate?: string; // Semester 1 start date (YYYY-MM-DD), default Sep 1
   semester1EndDate?: string; // Semester 1 end date (YYYY-MM-DD), default Dec 26
@@ -18,6 +18,16 @@ export interface Institution {
   semester2EndDate?: string; // Semester 2 end date (YYYY-MM-DD), default Jun 15
   semester1Weeks?: number; // Manual override for semester 1 weeks
   semester2Weeks?: number; // Manual override for semester 2 weeks
+}
+
+// Մասնագիտություն - Ուսանողական մասնագիտության ամբողջական նկարագրություն
+export interface Specialization {
+  id: string; // Եզակի նույնականացուցիչ
+  code: string; // Մասնագիտության կոդ (թվեր, բացատներ, կետեր)
+  name: string; // Մասնագիտության անվանում
+  course: number; // Կուրս (1-6)
+  academicWeeks: number; // Ուսումնական շաբաթների քանակ այս մասնագիտության համար
+  subjectHours: { [subjectId: string]: number }; // Առարկա ID -> ժամաքանակ տարեկան
 }
 
 // Ուսումնական խումբ - Ուսանողների խումբ որոշակի մասնագիտությամբ և դասընթացով
