@@ -27,9 +27,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-3">
-              <img src="/image.png" alt="College logo" className="h-10 w-10 object-contain" />
+              <img src="/image.png" alt="College logo" className="h-14 w-14 object-contain" />
               <h1 className="text-xl font-bold text-gray-900">Քոլեջի Ժամանակացույցի Ստեղծիչ</h1>
             </div>
           </div>
