@@ -15,8 +15,6 @@ interface SpecializationsProps {
   };
 }
 
-const codePattern = /^[0-9 .]+$/;
-
 const Specializations: React.FC<SpecializationsProps> = ({
   specializations,
   addSpecialization,
@@ -49,15 +47,12 @@ const Specializations: React.FC<SpecializationsProps> = ({
     );
 
   const codeError =
-    formData.code.trim().length > 0 && !codePattern.test(formData.code.trim())
-      ? 'Կոդը կարող է պարունակել միայն թվեր, բացատներ և կետեր'
-      : isDuplicateCode(formData.code, editingSpec?.id || undefined)
+    isDuplicateCode(formData.code, editingSpec?.id || undefined)
       ? 'Այս կոդով մասնագիտությունն արդեն գոյություն ունի'
       : null;
 
   const canSubmit =
     formData.code.trim().length > 0 &&
-    codePattern.test(formData.code.trim()) &&
     formData.name.trim().length > 0 &&
     !isDuplicateCode(formData.code, editingSpec?.id || undefined) &&
     Object.keys(formData.subjectHours).length > 0;
@@ -178,7 +173,6 @@ const Specializations: React.FC<SpecializationsProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Կոդ <span className="text-red-400">*</span>
-                      <span className="text-gray-400 font-normal ml-1 text-xs">(թվեր, բացատ, կետ)</span>
                     </label>
                     <input
                       type="text"
