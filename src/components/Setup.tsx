@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Save, Building2, Clock, Calendar, Plus, Minus, Upload, Trash2, CheckCircle, FileText } from 'lucide-react';
+import { Save, Building2, Clock, Calendar, Plus, Minus, Download, Trash2, CheckCircle, FileText } from 'lucide-react';
 import { Institution } from '../types';
 import { useLocalization } from '../hooks/useLocalization';
 
@@ -227,7 +227,7 @@ const Setup: React.FC<SetupProps> = ({
                 disabled={isImporting}
                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#03524f] border border-[#03524f] rounded-md hover:bg-[#024239] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <Upload className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4 mr-2" />
                 {isImporting ? t('setup.importing') : t('setup.importConfig')}
               </button>
               

@@ -73,11 +73,6 @@ const Overview: React.FC<OverviewProps> = ({
 
   const checklist = [
     {
-      label: t('setup.collegeName'),
-      done: !!institution.name,
-      hint: t('overview.issues.noInstitution'),
-    },
-    {
       label: t('subjects.title'),
       done: subjects.length > 0,
       hint: t('overview.issues.noSubjects'),
@@ -157,16 +152,16 @@ const Overview: React.FC<OverviewProps> = ({
           <input ref={importRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
           <button
             onClick={() => importRef.current?.click()}
-            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4 mr-2" />
             {t('overview.import')}
           </button>
           <button
             onClick={exportConfiguration}
-            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md hover:bg-[#024239] transition-colors"
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Upload className="h-4 w-4 mr-2" />
             {t('overview.export')}
           </button>
           <button
@@ -178,22 +173,6 @@ const Overview: React.FC<OverviewProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Institution info bar */}
-      {institution.name && (
-        <div className="bg-white rounded-lg border border-gray-200 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
-          <span className="font-semibold text-gray-800">{institution.name}</span>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span>{institution.workingDays.length} {t('overview.days')}</span>
-            <span>·</span>
-            <span>{institution.lessonsPerDay} {t('common.lesson')}/{t('common.day').toLowerCase()}</span>
-            <span>·</span>
-            <span>{institution.lessonDuration} {t('overview.minutes')}</span>
-            <span>·</span>
-            <span>{institution.academicWeeks} {t('common.weeks')}</span>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT — Checklist + Problems */}
