@@ -489,7 +489,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
                   const totalHours = Object.values(spec.subjectHours).reduce((a, b) => a + b, 0);
 
                   return (
-                    <tr key={spec.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={spec.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center flex-shrink-0">
