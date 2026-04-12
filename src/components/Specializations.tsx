@@ -204,21 +204,20 @@ const Specializations: React.FC<SpecializationsProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Կուրս</label>
-                    <select
+                    <input
+                      type="number"
+                      min="1"
+                      max="6"
                       value={formData.course}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          course: parseInt(e.target.value),
+                          course: parseInt(e.target.value) || 1,
                           subjectHours: {},
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
-                    >
-                      {[1, 2, 3, 4, 5, 6].map((c) => (
-                        <option key={c} value={c}>{c}-ին կուրս</option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div>
