@@ -305,19 +305,6 @@ const Setup: React.FC<SetupProps> = ({
         </div>
 
         <div className="px-6 py-6 space-y-6">
-          {/* Institution Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('setup.collegeName')}
-            </label>
-            <input
-              type="text"
-              value={institution.name}
-              onChange={(e) => setInstitution({ name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] focus:border-[#03524f]"
-              placeholder={t('setup.collegeNamePlaceholder')}
-            />
-          </div>
 
           {/* Specializations Management */}
           <div>
