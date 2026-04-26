@@ -66,7 +66,7 @@ const Overview: React.FC<OverviewProps> = ({
     Object.values(subjectHours).reduce((s, h) => s + h, 0);
 
   const subjectsWithoutTeachers = subjects.filter(s => !s.teacherIds || s.teacherIds.length === 0);
-  const groupsWithoutSubjects = classGroups.filter(g => !g.subjectHours || Object.values(g.subjectHours).reduce((s, h) => s + h, 0) === 0);
+  const groupsWithoutSubjects = classGroups.filter(g => !g.subjectHours || Object.keys(g.subjectHours).length === 0);
   const teachersWithNoHours = teachers.filter(tc => !tc.availableHours || Object.keys(tc.availableHours).length === 0);
   const unassignedClassrooms = classrooms.filter(c => c.type === 'theory' && !classGroups.some(g => g.homeRoom === c.id));
   const totalStudents = classGroups.reduce((s, g) => s + g.studentsCount, 0);
@@ -116,13 +116,10 @@ const Overview: React.FC<OverviewProps> = ({
   });
 
   const teacherLoad = teachers.map(tc => {
-    // Match teacher subjects by name against subject list, then sum hours from groups
-    const teacherSubjectIds = subjects
-      .filter(s => tc.subjects.includes(s.name))
-      .map(s => s.id);
     const totalHours = classGroups.reduce((sum, group) => {
       return sum + Object.entries(group.subjectHours || {}).reduce((gSum, [subjectId, hours]) => {
-        if (teacherSubjectIds.includes(subjectId)) return gSum + hours;
+        const subject = subjects.find(s => s.id === subjectId);
+        if (subject && tc.subjects.includes(subject.name)) return gSum + hours;
         return gSum;
       }, 0);
     }, 0);
@@ -305,25 +302,14 @@ const Overview: React.FC<OverviewProps> = ({
                       <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('common.specialization')}</th>
                       <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('groups.title')}</th>
                       <th className="px-5 py-2.5 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">{t('common.students')}</th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('subjects.title')}</th>
+                      <th className="px-5 py-2.5 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">{t('subjects.title')}</th>
                       <th className="px-5 py-2.5 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">{t('common.hours')}/{t('common.year')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {Object.entries(specMap).map(([spec, groups]) => {
                       const totalSt = groups.reduce((s, g) => s + g.studentsCount, 0);
-                      // Collect all unique subject IDs with hours > 0 across all groups of this spec
-                      const allSubjectIds = new Set(
-                        groups.flatMap(g =>
-                          Object.entries(g.subjectHours || {})
-                            .filter(([, h]) => h > 0)
-                            .map(([id]) => id)
-                        )
-                      );
-                      // Resolve subject IDs to names
-                      const subjectNames = Array.from(allSubjectIds)
-                        .map(id => subjects.find(s => s.id === id)?.name)
-                        .filter(Boolean) as string[];
+                      const allSubjectIds = new Set(groups.flatMap(g => Object.keys(g.subjectHours || {})));
                       const avgHours = groups.length > 0
                         ? Math.round(groups.reduce((s, g) => s + getTotalHours(g.subjectHours || {}), 0) / groups.length)
                         : 0;
@@ -342,22 +328,7 @@ const Overview: React.FC<OverviewProps> = ({
                             </div>
                           </td>
                           <td className="px-5 py-3 text-sm text-gray-600 text-right">{totalSt}</td>
-                          <td className="px-5 py-3">
-                            {subjectNames.length === 0 ? (
-                              <span className="text-xs text-gray-400 italic">—</span>
-                            ) : (
-                              <div className="flex flex-wrap gap-1">
-                                {subjectNames.slice(0, 4).map(name => (
-                                  <span key={name} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
-                                    {name}
-                                  </span>
-                                ))}
-                                {subjectNames.length > 4 && (
-                                  <span className="text-xs text-gray-400">+{subjectNames.length - 4}</span>
-                                )}
-                              </div>
-                            )}
-                          </td>
+                          <td className="px-5 py-3 text-sm text-gray-600 text-right">{allSubjectIds.size}</td>
                           <td className="px-5 py-3 text-sm text-gray-600 text-right">{avgHours}</td>
                         </tr>
                       );

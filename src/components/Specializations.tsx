@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Plus, Trash2, BookOpen, X, GraduationCap, Clock,
-  CreditCard as Edit, Save, Search, Award, ChevronDown,
-} from 'lucide-react';
+import { Plus, Trash2, BookOpen, X, GraduationCap, Clock, CreditCard as Edit, Save, Search } from 'lucide-react';
 import { Specialization, Subject, Institution } from '../types';
 
 interface SpecializationsProps {
@@ -29,7 +26,6 @@ const Specializations: React.FC<SpecializationsProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [editingSpec, setEditingSpec] = useState<Specialization | null>(null);
   const [deletingSpec, setDeletingSpec] = useState<Specialization | null>(null);
-  const [expandedSpec, setExpandedSpec] = useState<string | null>(null);
 
   const emptyForm = () => ({
     code: '',
@@ -40,6 +36,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
   });
 
   const [formData, setFormData] = useState(emptyForm());
+
   const [subjectSearch, setSubjectSearch] = useState('');
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -54,6 +51,12 @@ const Specializations: React.FC<SpecializationsProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const addedSubjectIds = Object.keys(formData.subjectHours).concat(
+    subjects
+      .filter((s) => formData.subjectHours[s.id] !== undefined)
+      .map((s) => s.id)
+  );
+
   const searchableSubjects = subjects.filter((s) => {
     const alreadyAdded = s.id in formData.subjectHours;
     const matchesSearch = s.name.toLowerCase().includes(subjectSearch.toLowerCase());
@@ -63,12 +66,21 @@ const Specializations: React.FC<SpecializationsProps> = ({
 
   const addedSubjects = subjects.filter((s) => s.id in formData.subjectHours);
 
-  const isDuplicateCode = (code: string, excludeId?: string) =>
-    specializations.some((s) => s.code.trim() === code.trim() && s.id !== excludeId);
+  const isDuplicateCode = (c: string, excludeId?: string) =>
+    specializations.some(
+      (s) => s.code.trim() === c.trim() && s.id !== excludeId
+    );
 
-  const codeError = isDuplicateCode(formData.code, editingSpec?.id ?? undefined)
-    ? 'Այս կոդով մասնագիտությունն արդեն գոյություն ունի'
-    : null;
+  const codeError =
+    isDuplicateCode(formData.code, editingSpec?.id || undefined)
+      ? 'Այս կոդով մասնագիտությունն արդեն գոյություն ունի'
+      : null;
+
+  const canSubmit =
+    formData.code.trim().length > 0 &&
+    formData.name.trim().length > 0 &&
+    !isDuplicateCode(formData.code, editingSpec?.id || undefined) &&
+    Object.values(formData.subjectHours).some((h) => h > 0);
 
   const setSubjectHour = (subjectId: string, val: number) => {
     if (val < 0) {
@@ -78,12 +90,6 @@ const Specializations: React.FC<SpecializationsProps> = ({
     } else {
       setFormData({ ...formData, subjectHours: { ...formData.subjectHours, [subjectId]: val } });
     }
-  };
-
-  const removeSubject = (subjectId: string) => {
-    const copy = { ...formData.subjectHours };
-    delete copy[subjectId];
-    setFormData({ ...formData, subjectHours: copy });
   };
 
   const openAdd = () => {
@@ -118,27 +124,18 @@ const Specializations: React.FC<SpecializationsProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.code.trim()) {
-      showToast.showWarning('Կոդը բացակայում է', 'Մուտքագրեք մասնագիտության կոդը');
+    if (!canSubmit) {
+      if (!formData.code.trim() && !formData.name.trim()) {
+        showToast.showWarning('Լրացրեք դաշտերը', 'Մուտքագրեք մասնագիտության կոդը և անվանումը');
+      } else if (!formData.code.trim()) {
+        showToast.showWarning('Կոդը բացակայում է', 'Մուտքագրեք մասնագիտության կոդը');
+      } else if (!formData.name.trim()) {
+        showToast.showWarning('Անվանումը բացակայում է', 'Մուտքագրեք մասնագիտության անվանումը');
+      } else if (!Object.values(formData.subjectHours).some((h) => h > 0)) {
+        showToast.showWarning('Առարկաներ չկան', 'Ավելացրեք առնվազն մեկ առարկա ժամաքանակով');
+      }
       return;
     }
-    if (!formData.name.trim()) {
-      showToast.showWarning('Անվանումը բացակայում է', 'Մուտքագրեք մասնագիտության անվանումը');
-      return;
-    }
-    if (codeError) {
-      showToast.showWarning('Կրկնվող կոդ', codeError);
-      return;
-    }
-    if (!Object.values(formData.subjectHours).some((h) => h > 0)) {
-      showToast.showWarning('Առարկաներ չկան', 'Ավելացրեք առնվազն մեկ առարկա ժամաքանակով (> 0)');
-      return;
-    }
-
-    // Strip zero-hour entries before saving
-    const cleanedHours = Object.fromEntries(
-      Object.entries(formData.subjectHours).filter(([, h]) => h > 0)
-    );
 
     if (editingSpec) {
       setSpecializations(
@@ -150,7 +147,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
                 name: formData.name.trim(),
                 course: formData.course,
                 academicWeeks: formData.academicWeeks,
-                subjectHours: cleanedHours,
+                subjectHours: formData.subjectHours,
               }
             : s
         )
@@ -162,7 +159,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
         name: formData.name.trim(),
         course: formData.course,
         academicWeeks: formData.academicWeeks,
-        subjectHours: cleanedHours,
+        subjectHours: formData.subjectHours,
       });
       showToast.showSuccess('Ավելացված է', `«${formData.name.trim()}» մասնագիտությունը ավելացված է`);
     }
@@ -175,17 +172,14 @@ const Specializations: React.FC<SpecializationsProps> = ({
     setDeletingSpec(null);
   };
 
-  const getTotalHours = (subjectHours: { [id: string]: number }) =>
-    Object.values(subjectHours).reduce((a, b) => a + b, 0);
-
-  const getCourseLabel = (c: number) => `${c}-ին կուրս`;
+  const getSubjectName = (id: string) => subjects.find((s) => s.id === id)?.name || id;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Award className="h-6 w-6 text-[#03524f]" />
+          <GraduationCap className="h-6 w-6 text-[#03524f]" />
           <h2 className="text-2xl font-bold text-gray-900">Մասնագիտություններ</h2>
         </div>
         <button
@@ -203,10 +197,14 @@ const Specializations: React.FC<SpecializationsProps> = ({
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900">
                   {editingSpec ? 'Խմբագրել մասնագիտությունը' : 'Ավելացնել մասնագիտություն'}
                 </h3>
-                <button type="button" onClick={closeForm} className="text-gray-400 hover:text-gray-600">
+                <button
+                  type="button"
+                  onClick={closeForm}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -229,6 +227,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
                     />
                     {codeError && <p className="text-xs text-red-500 mt-1">{codeError}</p>}
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Անվանում <span className="text-red-400">*</span>
@@ -253,27 +252,38 @@ const Specializations: React.FC<SpecializationsProps> = ({
                       max="6"
                       value={formData.course}
                       onChange={(e) =>
-                        setFormData({ ...formData, course: parseInt(e.target.value) || 1, subjectHours: {} })
+                        setFormData({
+                          ...formData,
+                          course: parseInt(e.target.value) || 1,
+                          subjectHours: {},
+                        })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ուս. շաբաթ</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ուս. շաբաթ
+                    </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
                         min="1"
                         max="52"
                         value={formData.academicWeeks}
-                        onChange={(e) => setFormData({ ...formData, academicWeeks: parseInt(e.target.value) || 1 })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, academicWeeks: parseInt(e.target.value) || 1 })
+                        }
                         className="w-24 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f] text-center"
                       />
                       <span className="text-sm text-gray-500">շաբաթ</span>
                       {institution.academicWeeks !== formData.academicWeeks && (
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, academicWeeks: institution.academicWeeks })}
+                          onClick={() =>
+                            setFormData({ ...formData, academicWeeks: institution.academicWeeks })
+                          }
                           className="text-xs text-[#03524f] underline"
                         >
                           վերականգնել ({institution.academicWeeks})
@@ -285,8 +295,8 @@ const Specializations: React.FC<SpecializationsProps> = ({
 
                 {/* Subject Hours */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <BookOpen className="inline h-4 w-4 mr-1" />
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <BookOpen className="h-4 w-4" />
                     Առարկաների ժամաքանակ <span className="text-red-400">*</span>
                   </label>
 
@@ -313,11 +323,7 @@ const Specializations: React.FC<SpecializationsProps> = ({
                           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                             {searchableSubjects.length === 0 ? (
                               <div className="px-3 py-2 text-sm text-gray-400">
-                                {subjectSearch
-                                  ? 'Ոչինչ չգտնվեց'
-                                  : subjects.filter(s => s.course === formData.course).length === 0
-                                    ? `${formData.course}-ին կուրսի առարկաներ չկան`
-                                    : 'Բոլոր առարկաները ավելացված են'}
+                                {subjectSearch ? 'Ոչինչ չգտնվեց' : 'Բոլոր առարկաները ավելացված են'}
                               </div>
                             ) : (
                               searchableSubjects.map((subj) => (
@@ -345,54 +351,41 @@ const Specializations: React.FC<SpecializationsProps> = ({
                         )}
                       </div>
 
-                      {/* Added subjects with hour inputs */}
-                      {addedSubjects.length > 0 ? (
-                        <div className="border border-gray-200 rounded-md divide-y divide-gray-100 max-h-56 overflow-y-auto">
+                      {/* Added subjects with hours */}
+                      {addedSubjects.length > 0 && (
+                        <div className="border border-gray-300 rounded-md p-3 max-h-52 overflow-y-auto space-y-2">
                           {addedSubjects.map((subj) => (
-                            <div key={subj.id} className="flex items-center gap-3 px-3 py-2.5">
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm text-gray-800 font-medium truncate block">{subj.name}</span>
-                                <span className={`text-xs ${subj.type === 'lab' ? 'text-blue-600' : 'text-green-600'}`}>
-                                  {subj.type === 'lab' ? 'Լաբ.' : 'Տես.'} · {getCourseLabel(subj.course)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="500"
-                                  placeholder="0"
-                                  value={formData.subjectHours[subj.id] || ''}
-                                  onChange={(e) => setSubjectHour(subj.id, parseInt(e.target.value) || 0)}
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#03524f]"
-                                />
-                                <span className="text-xs text-gray-400 w-6">ժ.</span>
-                                <button
-                                  type="button"
-                                  onClick={() => removeSubject(subj.id)}
-                                  className="text-gray-300 hover:text-red-500 transition-colors"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </div>
+                            <div key={subj.id} className="flex items-center gap-3">
+                              <span className="flex-1 text-sm text-gray-700 truncate">{subj.name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                subj.type === 'lab' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {subj.type === 'lab' ? 'Լաբ.' : 'Տես.'}
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="500"
+                                placeholder="0"
+                                value={formData.subjectHours[subj.id] || ''}
+                                onChange={(e) => setSubjectHour(subj.id, parseInt(e.target.value) || 0)}
+                                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+                              />
+                              <span className="text-xs text-gray-400 w-5">ժ.</span>
+                              <button
+                                type="button"
+                                onClick={() => setSubjectHour(subj.id, -1)}
+                                className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <div className="border border-dashed border-gray-300 rounded-md p-4 text-center">
-                          <BookOpen className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-gray-400">Ավելացրեք առնվազն մեկ առարկա</p>
-                        </div>
                       )}
 
-                      {/* Summary */}
-                      {addedSubjects.length > 0 && (
-                        <div className="mt-2 p-2.5 bg-[#03524f] bg-opacity-5 border border-[#03524f] border-opacity-20 rounded-md flex items-center justify-between">
-                          <span className="text-sm text-[#03524f]">{addedSubjects.length} առարկա</span>
-                          <span className="text-sm font-semibold text-[#03524f]">
-                            {getTotalHours(formData.subjectHours)} ժ/տարի
-                          </span>
-                        </div>
+                      {addedSubjects.length === 0 && (
+                        <p className="text-xs text-red-500 mt-1">Ավելացրեք առնվազն մեկ առարկա</p>
                       )}
                     </>
                   )}
@@ -412,9 +405,15 @@ const Specializations: React.FC<SpecializationsProps> = ({
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md hover:bg-[#024239] transition-colors"
                 >
                   {editingSpec ? (
-                    <><Save className="h-4 w-4 mr-2" />Պահպանել</>
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Պահպանել
+                    </>
                   ) : (
-                    <><Plus className="h-4 w-4 mr-2" />Ավելացնել</>
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ավելացնել
+                    </>
                   )}
                 </button>
               </div>
@@ -451,11 +450,11 @@ const Specializations: React.FC<SpecializationsProps> = ({
         </div>
       )}
 
-      {/* Specializations Table */}
+      {/* List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {specializations.length === 0 ? (
           <div className="p-8 text-center">
-            <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Մասնագիտություններ չեն ավելացված</h3>
             <p className="text-gray-500">Ավելացրեք մասնագիտություններ՝ սեղմելով «Ավելացնել մասնագիտություն» կոճակը</p>
           </div>
@@ -464,133 +463,102 @@ const Specializations: React.FC<SpecializationsProps> = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Կոդ / Անվանում</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Կուրս</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ուս. շաբաթ</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Առարկաներ</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ընդ. ժամ</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Գործողություններ</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Կոդ / Անվանում
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Կուրս
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ուս. շաբաթ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Առարկաներ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ընդ. ժամ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Գործողություններ
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {specializations.map((spec) => {
-                  const specSubjects = subjects.filter((s) => (spec.subjectHours[s.id] ?? 0) > 0);
-                  const totalHours = getTotalHours(spec.subjectHours);
-                  const isExpanded = expandedSpec === spec.id;
+                  const specSubjects = subjects.filter((s) => spec.subjectHours[s.id]);
+                  const totalHours = Object.values(spec.subjectHours).reduce((a, b) => a + b, 0);
 
                   return (
-                    <React.Fragment key={spec.id}>
-                      <tr className="hover:bg-gray-50 transition-colors">
-                        {/* Code / Name */}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center flex-shrink-0">
-                              <GraduationCap className="h-5 w-5 text-[#03524f]" />
-                            </div>
-                            <div>
+                    <tr key={spec.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-[#03524f] bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="h-5 w-5 text-[#03524f]" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
                               <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
                                 {spec.code}
                               </span>
-                              <div className="font-medium text-gray-900 text-sm mt-0.5">{spec.name}</div>
                             </div>
+                            <div className="font-medium text-gray-900 text-sm mt-0.5">{spec.name}</div>
                           </div>
-                        </td>
-
-                        {/* Course */}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-[#03524f] bg-opacity-10 text-[#03524f] rounded-full">
-                            <GraduationCap className="h-3 w-3 mr-1" />
-                            {getCourseLabel(spec.course)}
-                          </span>
-                        </td>
-
-                        {/* Academic weeks */}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1 text-sm text-gray-700">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            {spec.academicWeeks} շ.
-                          </div>
-                        </td>
-
-                        {/* Subjects */}
-                        <td className="px-6 py-4">
-                          {specSubjects.length === 0 ? (
-                            <span className="text-xs text-gray-400 italic">չկան</span>
-                          ) : (
-                            <div className="flex flex-wrap gap-1 items-center">
-                              {specSubjects.slice(0, 3).map((s) => (
-                                <span
-                                  key={s.id}
-                                  className="inline-flex px-2 py-0.5 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded"
-                                >
-                                  {s.name}
-                                </span>
-                              ))}
-                              {specSubjects.length > 3 && (
-                                <button
-                                  onClick={() => setExpandedSpec(isExpanded ? null : spec.id)}
-                                  className="inline-flex items-center gap-0.5 text-xs text-gray-500 hover:text-[#03524f] transition-colors"
-                                >
-                                  +{specSubjects.length - 3} ևս
-                                  <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                </button>
-                              )}
-                            </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {spec.course}-ին կուրս
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-sm text-gray-700">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          {spec.academicWeeks} շ.
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {specSubjects.slice(0, 3).map((s) => (
+                            <span
+                              key={s.id}
+                              className="inline-flex px-2 py-0.5 text-xs bg-[#03524f] bg-opacity-10 text-[#03524f] rounded"
+                            >
+                              {s.name}
+                            </span>
+                          ))}
+                          {specSubjects.length > 3 && (
+                            <span className="text-xs text-gray-500">
+                              +{specSubjects.length - 3} ևս
+                            </span>
                           )}
-                        </td>
-
-                        {/* Total hours */}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1 text-sm font-semibold text-gray-700">
-                            <BookOpen className="h-4 w-4 text-gray-400" />
-                            {totalHours} ժ.
-                          </div>
-                        </td>
-
-                        {/* Actions */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => openEdit(spec)}
-                              className="text-[#03524f] hover:text-[#024239] transition-colors"
-                              title="Խմբագրել"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeletingSpec(spec)}
-                              className="text-red-600 hover:text-red-900 transition-colors"
-                              title="Ջնջել"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {/* Expanded subjects detail row */}
-                      {isExpanded && specSubjects.length > 3 && (
-                        <tr className="bg-gray-50">
-                          <td colSpan={6} className="px-6 py-3">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                              {specSubjects.map((s) => (
-                                <div key={s.id} className="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-md">
-                                  <div className="min-w-0">
-                                    <div className="text-sm text-gray-700 truncate">{s.name}</div>
-                                    <div className={`text-xs ${s.type === 'lab' ? 'text-blue-600' : 'text-green-600'}`}>
-                                      {s.type === 'lab' ? 'Լաբ.' : 'Տես.'}
-                                    </div>
-                                  </div>
-                                  <span className="text-xs font-semibold text-[#03524f] ml-2 flex-shrink-0">
-                                    {spec.subjectHours[s.id]} ժ.
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
+                          {specSubjects.length === 0 && (
+                            <span className="text-xs text-gray-400 italic">չկան</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-sm text-gray-700">
+                          <BookOpen className="h-4 w-4 text-gray-400" />
+                          {totalHours} ժ.
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openEdit(spec)}
+                            className="text-[#03524f] hover:text-[#024239] transition-colors"
+                            title="Խմբագրել"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingSpec(spec)}
+                            className="text-red-600 hover:text-red-900 transition-colors"
+                            title="Ջնջել"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
