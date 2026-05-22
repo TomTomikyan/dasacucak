@@ -1,0 +1,1050 @@
+import React, { useState, useEffect } from 'react';
+import { Calendar, Play, RotateCcw, Download, Filter, Users, BookOpen, GraduationCap, MapPin, Clock, AlertTriangle, CheckCircle, Loader2, ChevronDown, ChevronUp, Eye, EyeOff, Move, ArrowRightLeft, X } from 'lucide-react';
+import { ScheduleSlot, Institution, ClassGroup, Subject, Teacher, Classroom, Specialization } from '../types';
+import { ScheduleGenerator } from '../utils/scheduleGenerator';
+// Excel արտահանումը ներմուծվում է դինամիկ կերպով կանչի ժամանակ՝ սկզբնական փաթեթը փոքր պահելու համար
+import { useLocalization } from '../hooks/useLocalization';
+
+interface ScheduleProps {
+  schedule: ScheduleSlot[];
+  setSchedule: (schedule: ScheduleSlot[]) => void;
+  institution: Institution;
+  classGroups: ClassGroup[];
+  subjects: Subject[];
+  teachers: Teacher[];
+  classrooms: Classroom[];
+  specializations?: Specialization[];
+  showToast: {
+    showSuccess: (title: string, message: string, duration?: number) => void;
+    showError: (title: string, message: string, duration?: number) => void;
+    showWarning: (title: string, message: string, duration?: number) => void;
+    showInfo: (title: string, message: string, duration?: number) => void;
+  };
+}
+
+// Բարելավված Tooltip բաղադրիչ՝ կողային դիրքավորմամբ
+const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Հաշվարկել tooltip-ի չափերը (մոտավոր)
+    const tooltipWidth = 320; // Առավելագույն լայնություն
+    const tooltipHeight = 200; // Մոտավոր բարձրություն
+    
+    let x = rect.right + 10; // Լռելյայն՝ ցուցադրել աջ կողմում
+    let y = rect.top + rect.height / 2; // Կենտրոնացնել ուղղահայաց
+    
+    // Ստուգել, արդյոք tooltip-ը դուրս է գալիս աջ եզրից
+    if (x + tooltipWidth > viewportWidth) {
+      x = rect.left - tooltipWidth - 10; // Փոխարենը ցուցադրել ձախ կողմում
+    }
+    
+    // Ստուգել, արդյոք tooltip-ը դուրս է գալիս ստորին եզրից
+    if (y + tooltipHeight / 2 > viewportHeight) {
+      y = viewportHeight - tooltipHeight - 10;
+    }
+    
+    // Ստուգել, արդյոք tooltip-ը դուրս է գալիս վերին եզրից
+    if (y - tooltipHeight / 2 < 10) {
+      y = 10 + tooltipHeight / 2;
+    }
+    
+    setPosition({ x, y });
+    setIsVisible(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {isVisible && (
+        <div
+          className="fixed z-50 px-4 py-3 text-sm text-white bg-[#03524f] rounded-lg shadow-xl pointer-events-none border border-[#024239]"
+          style={{
+            left: position.x,
+            top: position.y - 100, // Շեղում ուղղահայաց կենտրոնացման համար
+            maxWidth: '320px',
+            whiteSpace: 'pre-wrap',
+            transform: 'translateY(-50%)', // Կենտրոնացնել ուղղահայաց
+            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(3, 82, 79, 0.95)'
+          }}
+        >
+          {content}
+          {/* Սլաք, որը մատնացույց է անում տարրը */}
+          <div 
+            className="absolute top-1/2 w-0 h-0 border-t-4 border-b-4 border-transparent transform -translate-y-1/2"
+            style={{
+              left: position.x > window.innerWidth / 2 ? '100%' : '-8px', // Սլաքը ձախ կողմում է, եթե tooltip-ը աջ կողմում է
+              borderRightColor: position.x > window.innerWidth / 2 ? 'transparent' : 'rgba(3, 82, 79, 0.95)',
+              borderLeftColor: position.x > window.innerWidth / 2 ? 'rgba(3, 82, 79, 0.95)' : 'transparent',
+              borderRightWidth: position.x > window.innerWidth / 2 ? '0' : '8px',
+              borderLeftWidth: position.x > window.innerWidth / 2 ? '8px' : '0'
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Schedule: React.FC<ScheduleProps> = ({
+  schedule,
+  setSchedule,
+  institution,
+  classGroups,
+  subjects,
+  teachers,
+  classrooms,
+  specializations = [],
+  showToast,
+}) => {
+  const { t } = useLocalization();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [generationLogs, setGenerationLogs] = useState<string[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
+  const [logsExpanded, setLogsExpanded] = useState(true);
+  
+  // Ամրացված հորիզոնական ոլորման գոտու հղումներ
+  
+  // 🔥 ԲԱՐԵԼԱՎՎԱԾ: Drag and Drop վիճակներ ավելի լավ վավերացմամբ
+  const [draggedSlot, setDraggedSlot] = useState<ScheduleSlot | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<{ day: string; lesson: number; groupId: string } | null>(null);
+  const [isDropValid, setIsDropValid] = useState(false);
+  const [dragValidationMessage, setDragValidationMessage] = useState<string>('');
+
+  // 🔥 ՆՈՐ: Ստանալ աշխատանքային օրերը ճիշտ հերթականությամբ (Երկուշաբթին առաջինը)
+  const getOrderedWorkingDays = (): string[] => {
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    // Ֆիլտրել և տեսակավորել աշխատանքային օրերը ըստ շաբաթվա ճիշտ հերթականության
+    return dayOrder.filter(day => institution.workingDays.includes(day));
+  };
+
+  // Ֆիլտրել դասացուցակը ըստ ընտրված խմբի
+  const filteredSchedule = selectedGroup === 'all' 
+    ? schedule 
+    : schedule.filter(slot => slot.classGroupId === selectedGroup);
+
+  // Ստանալ կազմակերպությունների անվանումները և մանրամասները
+  const getGroupName = (groupId: string) => {
+    const group = classGroups.find(g => g.id === groupId);
+    return group ? group.name : t('common.unknown');
+  };
+
+  const getSubjectName = (subjectId: string) => {
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+      return subject.name;
+    }
+    
+    const subjectByName = subjects.find(s => s.name === subjectId);
+    if (subjectByName) {
+      return subjectByName.name;
+    }
+    
+    return subjectId || t('common.unknown');
+  };
+
+  const getSubjectDetails = (subjectId: string) => {
+    const subject = subjects.find(s => s.id === subjectId) || subjects.find(s => s.name === subjectId);
+    if (!subject) return getSubjectName(subjectId);
+    
+    const typeText = subject.type === 'theory' ? t('subjects.theory') : t('subjects.laboratory');
+    const courseText = t(`courses.${subject.course}`);
+    return `${subject.name}\n${typeText}\n${courseText}`;
+  };
+
+  const getTeacherName = (teacherId: string) => {
+    const teacher = teachers.find(t => t.id === teacherId);
+    return teacher ? `${teacher.firstName} ${teacher.lastName}` : t('common.unknown');
+  };
+
+  const getTeacherDetails = (teacherId: string) => {
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (!teacher) return t('common.unknown');
+    
+    const subjectsList = teacher.subjects.length > 0 
+      ? teacher.subjects.join(', ') 
+      : 'Առարկաներ չեն նշանակված';
+    
+    return `${teacher.firstName} ${teacher.lastName}\nԱռարկաներ: ${subjectsList}`;
+  };
+
+  const getClassroomName = (classroomId: string) => {
+    const classroom = classrooms.find(c => c.id === classroomId);
+    return classroom ? classroom.number : t('common.unknown');
+  };
+
+  const getClassroomDetails = (classroomId: string) => {
+    const classroom = classrooms.find(c => c.id === classroomId);
+    if (!classroom) return t('common.unknown');
+    
+    const typeText = classroom.type === 'theory' 
+      ? t('classrooms.theoryClassroom')
+      : classroom.type === 'lab'
+      ? t('subjects.laboratory')
+      : t('classrooms.teacherLab');
+    
+    const computerText = classroom.hasComputers ? 'Ունի համակարգիչներ' : 'Համակարգիչներ չկան';
+    return `Դասարան ${classroom.number}\n${t('common.floor')} ${classroom.floor}\n${typeText}\n${computerText}\n${t('common.capacity')}: ${classroom.capacity}`;
+  };
+
+  const getGroupDetails = (groupId: string) => {
+    const group = classGroups.find(g => g.id === groupId);
+    if (!group) return '';
+    
+    const courseText = t(`courses.${group.course || 1}`);
+    return `${group.name}\n${courseText}\n${group.specialization || 'Ընդհանուր'}\n${group.studentsCount} ուսանող`;
+  };
+
+  // Ստանալ դասի ամբողջական մանրամասները tooltip-ի համար
+  const getLessonTooltip = (slot: ScheduleSlot) => {
+    const subject = getSubjectDetails(slot.subjectId);
+    const teacher = getTeacherDetails(slot.teacherId);
+    const classroom = getClassroomDetails(slot.classroomId);
+    const group = getGroupDetails(slot.classGroupId);
+    return `📚 ${subject}\n\n👨‍🏫 ${teacher}\n\n🏫 ${classroom}\n\n👥 ${group}\n\n⏰ ${slot.startTime} - ${slot.endTime}`;
+  };
+
+  // 🔥 ԲԱՐԵԼԱՎՎԱԾ: Drag and Drop մշակողներ ավելի լավ վավերացմամբ
+  const handleDragStart = (e: React.DragEvent, slot: ScheduleSlot) => {
+    setDraggedSlot(slot);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', slot.id);
+    
+    // Տեսողական հետադարձ կապ ավելացնել քաշվող տարրին
+    const target = e.target as HTMLElement;
+    target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    target.style.opacity = '1';
+    setDraggedSlot(null);
+    setDragOverCell(null);
+    setIsDropValid(false);
+    setDragValidationMessage('');
+  };
+
+  // 🔥 ԲԱՐԵԼԱՎՎԱԾ: Ավելի լավ վավերացման տրամաբանություն
+  const validateDragOperation = (targetDay: string, targetLesson: number, targetGroupId: string): { valid: boolean; message: string } => {
+    if (!draggedSlot) return { valid: false, message: 'Ոչ մի դաս չի ընտրված' };
+    // 1. Ստուգել, արդյոք փորձ է արվում տեղափոխել տարբեր խմբերի միջև
+    if (draggedSlot.classGroupId !== targetGroupId) {
+      const sourceGroupName = getGroupName(draggedSlot.classGroupId);
+      const targetGroupName = getGroupName(targetGroupId);
+      return { 
+        valid: false, 
+        message: `Չի կարող տեղափոխել ${sourceGroupName}-ից ${targetGroupName}` 
+      };
+    }
+
+    // 2. Ստուգել, արդյոք փորձ է արվում տեղափոխել նույն դիրքը
+    if (draggedSlot.day === targetDay && draggedSlot.lessonNumber === targetLesson) {
+      return { valid: true, message: 'Նույն դիրքը' };
+    }
+
+    // 3. Ստուգել ուսուցչի հասանելիությունը
+    const teacher = teachers.find(t => t.id === draggedSlot.teacherId);
+    if (teacher && (!teacher.availableHours[targetDay] || !teacher.availableHours[targetDay].includes(targetLesson))) {
+      return { 
+        valid: false, 
+        message: `Ուսուցիչ ${getTeacherName(draggedSlot.teacherId)} հասանելի չէ ${t(`days.${targetDay.toLowerCase()}`)} օրվա ${targetLesson}-րդ դասին` 
+      };
+    }
+
+    // 4. Ստուգել ուսուցիչների կոնֆլիկտները (բացառելով ընթացիկ սլոտը և թիրախային սլոտը փոխանակման դեպքում)
+    const existingSlot = schedule.find(s => 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson && 
+      s.classGroupId === targetGroupId
+    );
+    const teacherConflict = schedule.find(s => 
+      s.id !== draggedSlot.id && 
+      s.id !== existingSlot?.id &&
+      s.teacherId === draggedSlot.teacherId && 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson
+    );
+    if (teacherConflict) {
+      return { 
+        valid: false, 
+        message: `Ուսուցիչ ${getTeacherName(draggedSlot.teacherId)} արդեն զբաղված է այս ժամին` 
+      };
+    }
+
+    // 5. Ստուգել լսարանների կոնֆլիկտները
+    const classroomConflict = schedule.find(s => 
+      s.id !== draggedSlot.id && 
+      s.id !== existingSlot?.id &&
+      s.classroomId === draggedSlot.classroomId && 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson
+    );
+    if (classroomConflict) {
+      return { 
+        valid: false, 
+        message: `Դասարան ${getClassroomName(draggedSlot.classroomId)} արդեն զբաղված է այս ժամին` 
+      };
+    }
+
+    // 6. Եթե առկա է գոյություն ունեցող սլոտ, վավերացնել փոխանակումը
+    if (existingSlot) {
+      // Ստուգել, արդյոք գոյություն ունեցող սլոտի ուսուցիչը հասանելի է քաշվող սլոտի սկզբնական ժամին
+      const existingTeacher = teachers.find(t => t.id === existingSlot.teacherId);
+      if (existingTeacher && (!existingTeacher.availableHours[draggedSlot.day] || !existingTeacher.availableHours[draggedSlot.day].includes(draggedSlot.lessonNumber))) {
+        return { 
+          valid: false, 
+          message: `Փոխանակումը անհնար է: Ուսուցիչ ${getTeacherName(existingSlot.teacherId)} հասանելի չէ ${t(`days.${draggedSlot.day.toLowerCase()}`)} օրվա ${draggedSlot.lessonNumber}-րդ դասին` 
+        };
+      }
+
+      return { valid: true, message: `Փոխանակել ${getSubjectName(existingSlot.subjectId)}-ի հետ` };
+    }
+
+    return { valid: true, message: 'Տեղափոխել դատարկ վանդակ' };
+  };
+
+  const handleDragOver = (e: React.DragEvent, day: string, lesson: number, groupId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!draggedSlot) return;
+    
+    const validation = validateDragOperation(day, lesson, groupId);
+    setIsDropValid(validation.valid);
+    setDragValidationMessage(validation.message);
+    setDragOverCell({ day, lesson, groupId });
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Մաքրել միայն այն դեպքում, եթե իրոք լքում ենք վանդակը (այլ ոչ թե տեղափոխվում ենք ենթատարրի վրա)
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    const currentTarget = e.currentTarget as HTMLElement;
+    
+    if (!currentTarget.contains(relatedTarget)) {
+      setDragOverCell(null);
+      setIsDropValid(false);
+      setDragValidationMessage('');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDay: string, targetLesson: number, targetGroupId: string) => {
+    e.preventDefault();
+    
+    if (!draggedSlot) return;
+    const validation = validateDragOperation(targetDay, targetLesson, targetGroupId);
+    
+    if (!validation.valid) {
+      showToast.showError(
+        t('schedule.cannotSwap'),
+        validation.message
+      );
+      setDraggedSlot(null);
+      setDragOverCell(null);
+      setIsDropValid(false);
+      setDragValidationMessage('');
+      return;
+    }
+
+    // Ստուգել, արդյոք թիրախային դիրքում արդեն կա դաս
+    const existingSlot = schedule.find(s => 
+      s.day === targetDay && 
+      s.lessonNumber === targetLesson && 
+      s.classGroupId === targetGroupId
+    );
+    if (existingSlot && existingSlot.id !== draggedSlot.id) {
+      // Փոխանակել դասերը
+      handleSwapLessons(draggedSlot, existingSlot);
+    } else {
+      // Տեղափոխել դասը դատարկ սլոտ
+      handleMoveLesson(draggedSlot, targetDay, targetLesson);
+    }
+
+    setDraggedSlot(null);
+    setDragOverCell(null);
+    setIsDropValid(false);
+    setDragValidationMessage('');
+  };
+
+  const handleMoveLesson = (slot: ScheduleSlot, newDay: string, newLesson: number) => {
+    // Հաշվարկել նոր ժամերը
+    const { startTime, endTime } = calculateLessonTime(newLesson);
+    // Թարմացնել դասացուցակը
+    const updatedSchedule = schedule.map(s => 
+      s.id === slot.id 
+        ? { ...s, day: newDay, lessonNumber: newLesson, startTime, endTime }
+        : s
+    );
+    setSchedule(updatedSchedule);
+    showToast.showSuccess(
+      t('schedule.lessonMoved'),
+      t('schedule.lessonMovedDesc')
+    );
+  };
+
+  const handleSwapLessons = (slot1: ScheduleSlot, slot2: ScheduleSlot) => {
+    // Հաշվարկել նոր ժամերը երկու դասերի համար էլ
+    const { startTime: startTime1, endTime: endTime1 } = calculateLessonTime(slot2.lessonNumber);
+    const { startTime: startTime2, endTime: endTime2 } = calculateLessonTime(slot1.lessonNumber);
+
+    // Փոխանակել դասերը
+    const updatedSchedule = schedule.map(s => {
+      if (s.id === slot1.id) {
+        return { 
+          ...s, 
+          day: slot2.day, 
+          lessonNumber: slot2.lessonNumber, 
+          startTime: startTime1, 
+          endTime: endTime1 
+        };
+      }
+      if (s.id === slot2.id) {
+        return { 
+          ...s, 
+          day: slot1.day, 
+          lessonNumber: slot1.lessonNumber, 
+          startTime: startTime2, 
+          endTime: endTime2 
+        };
+      }
+      return s;
+    });
+
+    setSchedule(updatedSchedule);
+    showToast.showSuccess(
+      t('schedule.lessonsSwapped'),
+      t('schedule.lessonsSwappedDesc')
+    );
+  };
+
+  const calculateLessonTime = (lessonNumber: number): { startTime: string; endTime: string } => {
+    const [startHour, startMinute] = institution.startTime.split(':').map(Number);
+    let currentMinutes = startHour * 60 + startMinute;
+
+    // Ավելացնել ժամանակ նախորդ դասերի և դասամիջոցների համար
+    for (let i = 1; i < lessonNumber; i++) {
+      currentMinutes += institution.lessonDuration;
+      if (i < institution.lessonsPerDay && institution.breakDurations[i - 1]) {
+        currentMinutes += institution.breakDurations[i - 1];
+      }
+    }
+
+    const startTime = formatTime(currentMinutes);
+    const endTime = formatTime(currentMinutes + institution.lessonDuration);
+    return { startTime, endTime };
+  };
+
+  const formatTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  // Գեներացնել դասացուցակը
+  const handleGenerateSchedule = async (regenerate = false) => {
+    if (regenerate && schedule.length > 0) {
+      setShowRegenerateConfirm(true);
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationLogs([]);
+    setShowLogs(true);
+    setLogsExpanded(true); // Ավտոմատ բացել, երբ գեներացումը սկսվում է
+
+    try {
+      const generator = new ScheduleGenerator(
+        institution,
+        classGroups,
+        subjects,
+        teachers,
+        classrooms,
+        specializations
+      );
+      const result = await generator.generateSchedule((message: string) => {
+        setGenerationLogs(prev => [...prev, message]);
+      });
+      if (result.success) {
+        setSchedule(result.schedule);
+        if (result.collisions > 0) {
+          showToast.showError(
+            'Обнаружены коллизии в расписании',
+            `Найдено ${result.collisions} коллизий. Попробуйте регенерировать расписание.`
+          );
+        } else {
+          showToast.showSuccess(
+            regenerate ? t('toast.regenerationSuccessful') : t('toast.generationSuccessful'),
+            t('toast.generationSuccessfulDesc', { count: result.schedule.length })
+          );
+        }
+      } else {
+        showToast.showError(
+          regenerate ? t('toast.regenerationFailed') : t('toast.generationFailed'),
+          result.error || t('toast.generationErrorDesc')
+        );
+      }
+    } catch (error) {
+      showToast.showError(
+        t('toast.generationError'),
+        error instanceof Error ? error.message : t('toast.generationErrorDesc')
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const confirmRegenerate = () => {
+    setShowRegenerateConfirm(false);
+    setSchedule([]); // Մաքրել գոյություն ունեցող դասացուցակը
+    handleGenerateSchedule(false);
+  };
+
+  // Արտահանել դասացուցակը որպես Excel
+  const handleExportSchedule = async () => {
+    if (schedule.length === 0) {
+      showToast.showWarning(t('toast.noScheduleWarning'), t('toast.noScheduleWarningDesc'));
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const { exportScheduleToExcel } = await import('../utils/excelExport');
+      await exportScheduleToExcel(
+        schedule,
+        institution,
+        classGroups,
+        subjects,
+        teachers,
+        classrooms,
+        specializations,
+      );
+      showToast.showSuccess(
+        'Excel ֆայլ արտահանվեց',
+        `${schedule.length} դաս արտահանվեց հաջողությամբ`,
+      );
+    } catch (error) {
+      showToast.showError(
+        'Արտահանման սխալ',
+        error instanceof Error ? error.message : 'Չհաջողվեց ստեղծել Excel ֆայլ',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Ստուգել պահանջները
+  const checkRequirements = () => {
+    const issues = [];
+    if (classGroups.length === 0) issues.push(t('overview.noGroups'));
+    if (subjects.length === 0) issues.push(t('overview.noSubjects'));
+    if (teachers.length === 0) issues.push(t('overview.noTeachers'));
+    if (classrooms.length === 0) issues.push(t('overview.noClassrooms'));
+    const groupsWithoutSubjects = classGroups.filter(g => Object.keys(g.subjectHours || {}).length === 0);
+    if (groupsWithoutSubjects.length > 0) {
+      issues.push(t('toast.noSubjectsAssignedDesc'));
+    }
+
+    const subjectsWithoutTeachers = subjects.filter(s => s.teacherIds.length === 0);
+    if (subjectsWithoutTeachers.length > 0) {
+      issues.push(t('toast.noTeachersAssignedDesc'));
+    }
+
+    return issues;
+  };
+
+  const requirements = checkRequirements();
+  const canGenerate = requirements.length === 0;
+  // Հաշվարկել դասերի ժամերը
+  const calculateLessonTimes = () => {
+    const times: { lesson: number; startTime: string; endTime: string }[] = [];
+    const [startHour, startMinute] = institution.startTime.split(':').map(Number);
+    let currentMinutes = startHour * 60 + startMinute;
+    for (let i = 1; i <= institution.lessonsPerDay; i++) {
+      const startTime = `${Math.floor(currentMinutes / 60).toString().padStart(2, '0')}:${(currentMinutes % 60).toString().padStart(2, '0')}`;
+      currentMinutes += institution.lessonDuration;
+      const endTime = `${Math.floor(currentMinutes / 60).toString().padStart(2, '0')}:${(currentMinutes % 60).toString().padStart(2, '0')}`;
+      
+      times.push({ lesson: i, startTime, endTime });
+      if (i < institution.lessonsPerDay && institution.breakDurations[i - 1]) {
+        currentMinutes += institution.breakDurations[i - 1];
+      }
+    }
+
+    return times;
+  };
+
+  const lessonTimes = calculateLessonTimes();
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Գլխամաս */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Calendar className="h-6 w-6 text-[#03524f]" />
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{t('schedule.title')}</h2>
+            <p className="text-sm text-gray-500">
+              {schedule.length > 0 
+                ? `${schedule.length} ${t('schedule.totalLessons')}`
+                : t('schedule.noSchedule')
+              }
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => handleGenerateSchedule(schedule.length > 0)}
+            disabled={!canGenerate || isGenerating}
+            className="inline-flex items-center px-4 py-2 bg-[#03524f] text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors"
+          >
+            {isGenerating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : schedule.length > 0 ? (
+              <RotateCcw className="h-4 w-4 mr-2" />
+            ) : (
+              <Play className="h-4 w-4 mr-2" />
+            )}
+            {isGenerating 
+              ? t('schedule.generating')
+              : schedule.length > 0 
+                ? t('schedule.regenerate')
+                : t('schedule.generate')
+            }
+          </button>
+          
+          {schedule.length > 0 && (
+            <button
+              onClick={handleExportSchedule}
+              disabled={isExporting}
+              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isExporting ? 'Արտահանում...' : 'Excel արտահանել'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Պահանջների ստուգում */}
+      {requirements.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-yellow-800">{t('schedule.requirementsCheck')}</h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <ul className="list-disc list-inside space-y-1">
+                  {requirements.map((req, index) => (
+                    <li key={index}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ստեղծման գրառումներ - ԾԱԼՎՈՂ */}
+      {showLogs && generationLogs.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {/* Ծալվող գլխամաս */}
+          <div 
+            className="flex items-center justify-between p-4 bg-[#03524f] bg-opacity-5 border-b border-[#03524f] border-opacity-10 cursor-pointer transition-colors"
+            onClick={() => setLogsExpanded(!logsExpanded)}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 text-[#03524f] animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-[#03524f]" />
+                )}
+                <h3 className="text-sm font-medium text-[#03524f]">
+                  {isGenerating ? 'Ստեղծման գործընթաց...' : 'Ստեղծման գործընթաց ավարտված'}
+                </h3>
+              </div>
+              <div className="text-xs text-[#03524f] bg-[#03524f] bg-opacity-10 px-2 py-1 rounded-full">
+                {generationLogs.length} գրառում
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLogs(false);
+                }}
+                className="text-[#03524f] transition-colors p-1"
+                title="Փակել"
+              >
+                <EyeOff className="h-4 w-4" />
+              </button>
+              <div className="text-[#03524f] transition-transform duration-200" 
+                style={{ transform: logsExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                <ChevronDown className="h-4 w-4" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Ծալվող բովանդակություն */}
+          <div className={`transition-all duration-300 ease-in-out ${logsExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+            <div className="p-4">
+              <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-md p-3 border border-gray-200">
+                <div className="space-y-1 text-xs font-mono">
+                  {generationLogs.map((log, index) => (
+                    <div 
+                      key={index} 
+                      className={`text-gray-700 py-1 px-2 rounded transition-colors ${
+                        log.includes('✅') ? 'bg-green-50 text-green-700' :
+                        log.includes('❌') ? 'bg-red-50 text-red-700' :
+                        log.includes('⚠️') ? 'bg-yellow-50 text-yellow-700' :
+                        log.includes('🚀') || log.includes('🎲') ? 'bg-blue-50 text-blue-700' :
+                        ''
+                      }`}
+                    >
+                      {log}
+                    </div>
+                  ))}
+                  {isGenerating && (
+                    <div className="flex items-center space-x-2 py-2 px-2 bg-blue-50 text-blue-700 rounded">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Գործընթացը շարունակվում է...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Ամփոփում ծալված ժամանակ */}
+              {!isGenerating && (
+                <div className="mt-3 text-xs text-gray-500 flex items-center justify-between">
+                  <span>Ավարտված: {new Date().toLocaleTimeString('hy-AM')}</span>
+                  <span>Ընդամենը {generationLogs.filter(log => log.includes('✅')).length} հաջող գործողություն</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ֆիլտր */}
+      {schedule.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center space-x-4">
+            <Filter className="h-5 w-5 text-[#03524f]" />
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">{t('schedule.filterByGroup')}:</label>
+              <select
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#03524f]"
+              >
+                <option value="all">{t('schedule.allGroups')}</option>
+                {classGroups.map(group => (
+                  <option key={group.id} value={group.id}>{group.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Դասացուցակի ցանց - ԱՌԱՆՑ ՀՈՎԵՐ ԷՖԵԿՏՆԵՐԻ */}
+      {schedule.length > 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+            <table className="min-w-full">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  {/* Օրվա սյունակի գլխամաս */}
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                    {t('common.day')}
+                  </th>
+                  {/* Ժամի սյունակի գլխամաս */}
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                    {t('common.time')}
+                  </th>
+                  {/* Խմբի սյունակի գլխամասեր */}
+                  {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => (
+                    <th key={group.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
+                      <div className="flex flex-col items-center">
+                        <div className="font-bold text-[#03524f] text-lg">{group.name}</div>
+                        <div className="text-xs text-gray-400 mt-1 normal-case">
+                          {group.specialization || 'Ընդհանուր'} • {group.studentsCount} ուս.
+                        </div>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {getOrderedWorkingDays().map(day => (
+                  <React.Fragment key={day}>
+                    {lessonTimes.map((time, timeIndex) => (
+                      <tr key={`${day}-${time.lesson}`}>
+                        {/* Օրվա անունը - ցույց տալ միայն օրվա առաջին դասին */}
+                        {timeIndex === 0 && (
+                          <td 
+                            rowSpan={institution.lessonsPerDay} 
+                            className="px-4 py-4 whitespace-nowrap border-r border-gray-200 bg-gray-50 text-center"
+                          >
+                            <div className="font-semibold text-[#03524f] text-sm transform -rotate-90 whitespace-nowrap">
+                              {t(`days.${day.toLowerCase()}`)}
+                            </div>
+                          </td>
+                        )}
+
+                        {/* Դասաժամ */}
+                        <td className="px-2 py-2 text-xs text-gray-500 border-r border-gray-200 bg-gray-50 text-center">
+                          <div>
+                            <div className="font-medium text-[#03524f]">{time.lesson}</div>
+                            <div className="text-xs">{time.startTime}</div>
+                            <div className="text-xs">{time.endTime}</div>
+                          </div>
+                        </td>
+
+                        {/* Դասացուցակի սլոտներ յուրաքանչյուր խմբի համար - ԱՌԱՆՑ ՀՈՎԵՐ ԷՖԵԿՏՆԵՐԻ */}
+                        {(selectedGroup === 'all' ? classGroups : classGroups.filter(g => g.id === selectedGroup)).map(group => {
+                          const slot = filteredSchedule.find(s => 
+                            s.day === day && 
+                            s.lessonNumber === time.lesson && 
+                            s.classGroupId === group.id
+                          );
+
+                          const isDragOver = dragOverCell?.day === day && 
+                                            dragOverCell?.lesson === time.lesson && 
+                                            dragOverCell?.groupId === group.id;
+
+                          return (
+                            <td 
+                              key={group.id} 
+                              className={`px-2 py-2 transition-all duration-200 relative ${
+                                isDragOver 
+                                  ? isDropValid 
+                                    ? 'bg-green-100 border-2 border-green-400 border-dashed' 
+                                    : 'bg-red-100 border-2 border-red-400 border-dashed'
+                                  : ''
+                              }`}
+                              onDragOver={(e) => handleDragOver(e, day, time.lesson, group.id)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, day, time.lesson, group.id)}
+                            >
+                              {slot ? (
+                                <div
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, slot)}
+                                  onDragEnd={handleDragEnd}
+                                  className="bg-[#03524f] bg-opacity-10 border border-[#03524f] border-opacity-20 rounded-lg p-2 min-h-[70px] cursor-move relative overflow-hidden"
+                                >
+                                  {slot.subjectId2 ? (
+                                    /* Բաժանված վանդակ՝ առարկա1 / առարկա2 */
+                                    <div className="flex flex-col h-full">
+                                      {/* Վերին կես - առաջին առարկա (մինչև weekSwitch) */}
+                                      <div className="flex-1 pb-1 border-b border-[#03524f] border-opacity-30">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.subjectId)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                        </div>
+                                        {slot.weekSwitch && (
+                                          <div className="text-xs text-gray-400">{t("common.untilWeek")} {slot.weekSwitch}</div>
+                                        )}
+                                      </div>
+                                      {/* Բաժանարար թեք գիծ */}
+                                      <div className="text-center text-[#03524f] text-xs font-bold leading-none py-0.5 opacity-50">/</div>
+                                      {/* Ստորին կես - երկրորդ առարկա (weekSwitch-ից հետո) */}
+                                      <div className="flex-1 pt-1">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.subjectId2)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{slot.teacherId2 ? getTeacherName(slot.teacherId2) : ''}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : slot.pairSubjectId ? (
+                                    /* Զույգության զույգ՝ հայտարար/համարիչ ոճի ցուցադրում */
+                                    <div className="flex flex-col h-full">
+                                      <div className="flex-1 pb-1 border-b border-[#03524f] border-opacity-30">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.subjectId)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                        </div>
+                                      </div>
+                                      <div className="text-center text-[#03524f] text-xs font-bold leading-none py-0.5 opacity-50">/</div>
+                                      <div className="flex-1 pt-1">
+                                        <div className="font-medium text-[#03524f] text-xs truncate">
+                                          {getSubjectName(slot.pairSubjectId)}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-500">
+                                          <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                          <span className="truncate">{slot.pairTeacherId ? getTeacherName(slot.pairTeacherId) : ''}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    /* Սովորական վանդակ */
+                                    <div className="space-y-1">
+                                      <div className="font-medium text-[#03524f] text-xs truncate">
+                                        {getSubjectName(slot.subjectId)}
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <GraduationCap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getTeacherName(slot.teacherId)}</span>
+                                      </div>
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">{getClassroomName(slot.classroomId)}</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* Տեղափոխման ինդիկատոր */}
+                                  <div className="absolute top-1 right-1">
+                                    <Move className="h-3 w-3 text-[#03524f] opacity-60" />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className={`border-2 border-dashed rounded-lg p-2 min-h-[70px] flex flex-col items-center justify-center ${
+                                  isDragOver && isDropValid
+                                    ? 'border-green-400 bg-green-50'
+                                    : isDragOver && !isDropValid
+                                    ? 'border-red-400 bg-red-50'
+                                    : 'border-gray-200'
+                                }`}>
+                                  {isDragOver ? (
+                                    <div className="text-center">
+                                      <div className={`text-xs font-medium ${isDropValid ? 'text-green-700' : 'text-red-700'}`}>
+                                        {isDropValid ? (
+                                          <div className="flex items-center space-x-1">
+                                            <CheckCircle className="h-3 w-3" />
+                                            <span>{dragValidationMessage}</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center space-x-1">
+                                            <X className="h-3 w-3" />
+                                            <span>Չի կարող</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {!isDropValid && dragValidationMessage && (
+                                        <div className="text-xs text-red-600 mt-1 max-w-[140px] break-words">
+                                          {dragValidationMessage}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">Դատարկ</span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    {/* Օրերի միջև բաժանարար ավելացնել */}
+                    {day !== getOrderedWorkingDays()[getOrderedWorkingDays().length - 1] && (
+                      <tr className="bg-gray-100">
+                        <td colSpan={(selectedGroup === 'all' ? classGroups.length : 1) + 2} className="h-1"></td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('schedule.noSchedule')}</h3>
+          <p className="text-gray-500 mb-6">{t('schedule.noScheduleDesc')}</p>
+          {canGenerate && (
+            <button
+              onClick={() => handleGenerateSchedule(false)}
+              disabled={isGenerating}
+              className="inline-flex items-center px-6 py-3 bg-[#03524f] text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors"
+            >
+              {isGenerating ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <Play className="h-5 w-5 mr-2" />
+              )}
+              {isGenerating ? t('schedule.generating') : t('schedule.generate')}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Վերագեներացման հաստատման մոդալ պատուհան */}
+      {showRegenerateConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">{t('schedule.regenerateConfirm')}</h3>
+                  <p className="text-sm text-gray-500">{t('schedule.regenerateWarning')}</p>
+                </div>
+              </div>
+              
+              <ul className="text-sm text-gray-700 mb-6 space-y-1">
+                {t('schedule.regenerateWarningItems').map((item: string, index: number) => (
+                  <li key={index}>• {item}</li>
+                ))}
+              </ul>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowRegenerateConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={confirmRegenerate}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#03524f] border border-transparent rounded-md"
+                >
+                  {t('schedule.yesRegenerate')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Schedule;
